@@ -635,7 +635,8 @@ app.get('/download', (req, res) => res.sendFile(path.join(PUB, 'download.html'))
 app.get('/downloads/:file(KZStream.apk|KZStream.exe)', (req, res) => {
   const f = path.join(__dirname, 'downloads', req.params.file);
   if (fs.existsSync(f)) return res.download(f);
-  const url = req.params.file.endsWith('.apk') ? process.env.APK_URL : process.env.EXE_URL;
+  const REL = 'https://github.com/raulsahurov-maker/kzstream/releases/download/latest/';
+  const url = req.params.file.endsWith('.apk') ? (process.env.APK_URL || REL + 'KZStream.apk') : (process.env.EXE_URL || REL + 'KZStream.exe');
   if (url) return res.redirect(url);
   res.status(404).send('Файл приложения ещё не загружен на сервер. Администратору: см. README, раздел «Приложения».');
 });
