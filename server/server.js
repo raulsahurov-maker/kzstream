@@ -47,7 +47,7 @@ const q = (sql) => db.prepare(sql);
 const THEMES = ['default', 'neon', 'sunset', 'mint', 'royal', 'mono', 'candy', 'steppe', 'ice', 'gold'];
 function defaults(nick) {
   return {
-    page: { title: nick, description: 'Спасибо за поддержку стрима!', kaspi: '', receiver: '', min_amount: 100,
+    page: { title: nick, description: 'Спасибо за поддержку стрима!', kaspi: '', receiver: '', min_amount: 100, cards: '', avatar: '', banner: '', color: '#ff3b5c',
       socials: { twitch: '', youtube: '', tiktok: '', instagram: '', telegram: '' } },
     alerts: { duration: 6, gif: '', sound: '', volume: 0.8, min_alert: 0, show_msg: true, theme: 'default',
       tts: true, min_tts: 0, tts_lang: 'ru', tts_rate: 1, tts_read_name: true, variations: [] },
@@ -178,7 +178,7 @@ function finalizeDonation(u, d) {
     if (alias && !d.name) name = alias[1];
   }
   name = clampStr(name, 32) || 'Аноним';
-  const message = censor(d.message, s);
+  const message = censor(String(d.message || '').replace(/(https?:\/\/)?(www\.|m\.|music\.)?(youtube\.com|youtu\.be)\S*/gi, '🎵').trim(), s);
   // медиа
   let media_status = '';
   if (d.media_url && s.media.enabled && p.media !== 0 && d.amount >= s.media.min && ytId(d.media_url)) {
@@ -318,6 +318,9 @@ app.put('/api/settings', auth, (req, res) => {
     s.page.kaspi = clampStr(pg.kaspi ?? s.page.kaspi, 40);
     s.page.receiver = clampStr(pg.receiver ?? s.page.receiver, 60);
     s.page.min_amount = int(pg.min_amount, 1, 1e6, s.page.min_amount);
+    s.page.cards = clampStr(pg.cards ?? s.page.cards, 300);
+    for (const k of ['avatar', 'banner']) if (pg[k] !== undefined) s.page[k] = /^(\/u\/\d+\/[\w.-]+|)$/.test(pg[k]) ? pg[k] : s.page[k];
+    if (/^#[0-9a-f]{6}$/i.test(pg.color || '')) s.page.color = pg.color;
     if (pg.socials) for (const k of Object.keys(s.page.socials)) s.page.socials[k] = clampStr(pg.socials[k] ?? s.page.socials[k], 200);
   }
   if (b.alerts) {
@@ -429,6 +432,21 @@ app.post('/api/donations/test', auth, (req, res) => {
   const d = q('SELECT * FROM donations WHERE id=?').get(Number(r.lastInsertRowid));
   res.json({ ok: true, event: finalizeDonation(u, d) });
 });
+app.post('/api/test/roulette', auth, (req, res) => {
+  const u = req.user, s = getSettings(u);
+  if (!effectivePlan(u).roulette) return res.status(403).json({ error: 'Рулетка доступна с тарифа Lite' });
+  if (!s.roulette.tasks.length) return res.status(400).json({ error: 'Добавьте задания' });
+  const idx = crypto.randomInt(s.roulette.tasks.length);
+  emit(u.id, 'roulette', { index: idx, task: s.roulette.tasks[idx], tasks: s.roulette.tasks, style: s.roulette.style, name: 'Тест', amount: s.roulette.min, test: true });
+  res.json({ ok: true, task: s.roulette.tasks[idx] });
+});
+app.post('/api/test/media', auth, (req, res) => {
+  const u = req.user; if (!effectivePlan(u).media) return res.status(403).json({ error: 'Музыка и видео доступны с тарифа Lite' });
+  const url = clampStr(req.body.url, 300); if (!ytId(url)) return res.status(400).json({ error: 'Вставьте ссылку YouTube' });
+  q(`INSERT INTO donations(user_id,name,amount,message,media_url,source,status,media_status,created_at,done_at) VALUES(?,?,?,?,?,?,?,?,?,?)`)
+    .run(u.id, 'Тест музыки', 0, '', url, 'test', 'test', 'queued', now(), now());
+  pushStats(u); res.json({ ok: true });
+});
 app.post('/api/donations/manual', auth, (req, res) => { // ручное подтверждение ожидающего доната
   const u = req.user; const d = q(`SELECT * FROM donations WHERE id=? AND user_id=? AND status='pending'`).get(+req.body.id, u.id);
   if (!d) return res.status(404).json({ error: 'Не найден' });
@@ -516,32 +534,33 @@ app.post('/api/admin/users/:id', admin, (req, res) => {
 app.get('/api/page/:nick', (req, res) => {
   const u = userByNick(req.params.nick); if (!u) return res.status(404).json({ error: 'Стример не найден' });
   const s = getSettings(u), p = effectivePlan(u);
-  res.json({ nick: u.nick, page: s.page, voice: p.voice, media: s.media.enabled ? { min: s.media.min } : null,
-    roulette: s.roulette.enabled ? { min: s.roulette.min } : null, ads: p.ads });
-});
-app.post('/api/voice/:nick', express.raw({ type: 'audio/*', limit: '1mb' }), (req, res) => {
-  const u = userByNick(req.params.nick); if (!u || !effectivePlan(u).voice) return res.status(404).json({ error: 'Голосовые недоступны' });
-  if (limited('voice:' + req.ip, 10, 600e3)) return res.status(429).json({ error: 'Слишком часто' });
-  const mime = String(req.headers['content-type']).split(';')[0];
-  if (!/^audio\/(webm|ogg|mp4|mpeg|wav)$/.test(mime) || !req.body?.length) return res.status(400).json({ error: 'Неверный формат' });
-  const dir = path.join(UPLOAD_DIR, String(u.id), 'voice'); fs.mkdirSync(dir, { recursive: true });
-  const file = `${rnd(10)}.${mime.split('/')[1]}`; fs.writeFileSync(path.join(dir, file), req.body);
-  res.json({ ok: true, url: `/u/${u.id}/voice/${file}` });
-});
-app.post('/api/donate/:nick', (req, res) => {
-  const u = userByNick(req.params.nick); if (!u) return res.status(404).json({ error: 'Стример не найден' });
-  if (limited('don:' + req.ip, 15, 600e3)) return res.status(429).json({ error: 'Слишком много запросов, попробуйте позже' });
-  const s = getSettings(u);
-  const amount = int(req.body.amount, 1, 1e7, 0);
-  if (amount < s.page.min_amount) return res.status(400).json({ error: `Минимальная сумма — ${s.page.min_amount} ₸` });
-  const voice = /^\/u\/\d+\/voice\/[\w-]+\.\w+$/.test(req.body.voice_url || '') && req.body.voice_url.startsWith(`/u/${u.id}/`) ? req.body.voice_url : '';
-  const r = q(`INSERT INTO donations(user_id,name,amount,message,media_url,voice_url,source,status,created_at) VALUES(?,?,?,?,?,?,?,?,?)`)
-    .run(u.id, clampStr(req.body.name, 32) || 'Аноним', amount, clampStr(req.body.message, 300), clampStr(req.body.media_url, 300), voice, 'kaspi', 'pending', now());
-  res.json({ ok: true, id: Number(r.lastInsertRowid), kaspi: s.page.kaspi, receiver: s.page.receiver, amount });
+  res.json({ nick: u.nick, page: s.page, ads: p.ads,
+    goal: { title: s.goal.title, sum: goalSum(u, s), target: s.goal.target },
+    top: topList(u, { ...s, top: { period: 'month', count: 5 } }),
+    media: s.media.enabled ? { min: s.media.min } : null, roulette: s.roulette.enabled ? { min: s.roulette.min } : null,
+    tts: p.tts && s.alerts.tts ? { min: s.alerts.min_tts || 0 } : null });
 });
 app.get('/api/donate/status/:id', (req, res) => {
   const d = q('SELECT status FROM donations WHERE id=?').get(+req.params.id);
   res.json({ status: d?.status || 'unknown' });
+});
+
+// --- вход из приложений (Android / Windows): email + пароль -> ссылка подключения ---
+app.post('/api/app/login', (req, res) => {
+  if (limited('applogin:' + req.ip, 20, 600e3)) return res.status(429).json({ error: 'Слишком много попыток, подождите 10 минут' });
+  const login = clampStr(req.body.email, 120);
+  const u = q('SELECT * FROM users WHERE email=? OR nick=?').get(login.toLowerCase(), login);
+  if (!u || hashPass(String(req.body.password || ''), u.salt) !== u.pass) return res.status(401).json({ error: 'Неверный email или пароль' });
+  const b = baseUrl(req);
+  res.json({ ok: true, nick: u.nick, token: u.token, ingest: `${b}/api/ingest/${u.token}`, plan: effectivePlan(u).name,
+    widgets: { alerts: `${b}/w/alerts.html?t=${u.token}` } });
+});
+app.get('/api/app/me/:token', (req, res) => {
+  const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'Сессия устарела, войдите снова' });
+  const s = getSettings(u);
+  const today = q(`SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=?`).get(u.id, periodStart('day'));
+  res.json({ nick: u.nick, plan: effectivePlan(u).name, today: today.s, today_count: today.c, hotkeys: effectivePlan(u).hotkeys ? s.hotkeys : [],
+    last: q(`SELECT name, amount, message, done_at FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 10`).all(u.id) });
 });
 
 // --- приём уведомлений от приложений (Android / Windows / iPhone) ---
@@ -558,20 +577,14 @@ function ingest(req, res) {
   const parsed = parseNotification({ title, text });
   let result = 'ignored', event = null;
   if (parsed) {
-    const pending = q(`SELECT * FROM donations WHERE user_id=? AND status='pending' AND amount=? AND created_at>? ORDER BY created_at ASC LIMIT 1`)
-      .get(u.id, parsed.amount, now() - MATCH_WINDOW_MS);
-    let d = pending;
-    if (d) q('UPDATE donations SET sender=? WHERE id=?').run(parsed.sender, d.id), d.sender = parsed.sender;
-    else {
-      const r = q(`INSERT INTO donations(user_id,name,sender,amount,source,status,created_at) VALUES(?,?,?,?,?,?,?)`)
-        .run(u.id, '', parsed.sender, parsed.amount, 'kaspi', 'pending', now());
-      d = q('SELECT * FROM donations WHERE id=?').get(Number(r.lastInsertRowid));
-    }
-    event = finalizeDonation(u, d); result = pending ? 'matched' : 'new';
+    const r = q(`INSERT INTO donations(user_id,name,sender,amount,message,media_url,source,status,created_at) VALUES(?,?,?,?,?,?,?,?,?)`)
+      .run(u.id, '', parsed.sender, parsed.amount, parsed.message, parsed.media_url, 'kaspi', 'pending', now());
+    event = finalizeDonation(u, q('SELECT * FROM donations WHERE id=?').get(Number(r.lastInsertRowid)));
+    result = 'new';
   }
   q('INSERT INTO ingest_log(user_id,hash,text,result,created_at) VALUES(?,?,?,?,?)').run(u.id, hash, `${title} | ${text}`.slice(0, 500), result, now());
   emit(u.id, 'ingest', { text: `${title} | ${text}`.slice(0, 200), result, at: now() });
-  res.json({ ok: true, result, parsed, donation: event && { name: event.name, amount: event.amount } });
+  res.json({ ok: true, result, parsed, donation: event && { name: event.name, amount: event.amount, message: event.message } });
 }
 app.post('/api/ingest/:token', express.text({ type: 'text/*', limit: '64kb' }), (req, res, next) => {
   if (typeof req.body === 'string') req.body = { text: req.body };
@@ -606,10 +619,15 @@ app.get('/api/tts', async (req, res) => {
   try {
     let buf = ttsCache.get(key);
     if (!buf) {
-      const r = await fetch(`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${encodeURIComponent(text)}`,
-        { headers: { 'User-Agent': 'Mozilla/5.0', Referer: 'https://translate.google.com/' }, signal: AbortSignal.timeout(8000) });
-      if (!r.ok) throw new Error('tts ' + r.status);
-      buf = Buffer.from(await r.arrayBuffer());
+      const hosts = [`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=`,
+        `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${lang}&q=`];
+      for (const h of hosts) {
+        try {
+          const r = await fetch(h + encodeURIComponent(text), { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36', Referer: 'https://translate.google.com/' }, signal: AbortSignal.timeout(8000) });
+          if (r.ok && /audio/.test(r.headers.get('content-type') || '')) { buf = Buffer.from(await r.arrayBuffer()); break; }
+        } catch { }
+      }
+      if (!buf) throw new Error('tts');
       ttsCache.set(key, buf); if (ttsCache.size > 300) ttsCache.delete(ttsCache.keys().next().value);
     }
     res.set('Content-Type', 'audio/mpeg').send(buf);
@@ -631,15 +649,32 @@ app.get('/d/:nick', (req, res) => res.sendFile(path.join(PUB, 'donate.html')));
 app.get('/app', (req, res) => res.sendFile(path.join(PUB, 'app.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(PUB, 'admin.html')));
 app.get('/download', (req, res) => res.sendFile(path.join(PUB, 'download.html')));
-// скачивание приложений: файл из папки downloads или ссылка на GitHub Releases (APK_URL / EXE_URL)
-app.get('/downloads/:file(KZStream.apk|KZStream.exe)', (req, res) => {
-  const f = path.join(__dirname, 'downloads', req.params.file);
-  if (fs.existsSync(f)) return res.download(f);
-  const REL = 'https://github.com/raulsahurov-maker/kzstream/releases/download/latest/';
-  const url = req.params.file.endsWith('.apk') ? (process.env.APK_URL || REL + 'KZStream.apk') : (process.env.EXE_URL || REL + 'KZStream.exe');
-  if (url) return res.redirect(url);
-  res.status(404).send('Файл приложения ещё не загружен на сервер. Администратору: см. README, раздел «Приложения».');
-});
+// скачивание приложений с нашего адреса: /update/KZStream.exe и /update/KZStream.apk
+// файлы берутся из server/downloads, иначе подтягиваются из GitHub Releases и кэшируются
+const REL = process.env.RELEASE_URL || 'https://github.com/raulsahurov-maker/kzstream/releases/download/latest/';
+const CACHE_DIR = path.join(DATA_DIR, 'downloads'); fs.mkdirSync(CACHE_DIR, { recursive: true });
+const fetching = new Map();
+async function ensureFile(name) {
+  const local = path.join(__dirname, 'downloads', name);
+  if (fs.existsSync(local)) return local;
+  const cached = path.join(CACHE_DIR, name);
+  if (fs.existsSync(cached) && now() - fs.statSync(cached).mtimeMs < 3600e3) return cached;
+  if (!fetching.has(name)) fetching.set(name, (async () => {
+    const r = await fetch(REL + name, { redirect: 'follow', signal: AbortSignal.timeout(60000) });
+    if (!r.ok) throw new Error('release ' + r.status);
+    const tmp = cached + '.part'; fs.writeFileSync(tmp, Buffer.from(await r.arrayBuffer())); fs.renameSync(tmp, cached);
+    return cached;
+  })().finally(() => setTimeout(() => fetching.delete(name), 1000)));
+  try { return await fetching.get(name); } catch { return fs.existsSync(cached) ? cached : null; }
+}
+for (const prefix of ['/update', '/downloads']) {
+  app.get(prefix + '/:file(KZStream.apk|KZStream.exe)', async (req, res) => {
+    const f = await ensureFile(req.params.file);
+    if (!f) return res.status(503).send('Приложение обновляется, попробуйте через минуту.');
+    res.setHeader('Content-Type', req.params.file.endsWith('.apk') ? 'application/vnd.android.package-archive' : 'application/octet-stream');
+    res.download(f, req.params.file);
+  });
+}
 app.use(express.static(PUB, { extensions: ['html'] }));
 app.use((req, res) => res.status(404).sendFile(path.join(PUB, '404.html')));
 

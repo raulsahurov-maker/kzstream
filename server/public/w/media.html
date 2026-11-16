@@ -8,6 +8,7 @@
   .cap{padding:10px 16px;font-weight:800;font-size:18px;background:var(--w-bg);display:flex;justify-content:space-between}
   .cap b{color:var(--w-b)}
 </style></head><body>
+<div id="tap" style="display:none;position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.6);color:#fff;font:800 20px Manrope;place-items:center;cursor:pointer">▶ Нажмите, чтобы включить звук</div>
 <div id="wrap"><div id="player"></div><div class="cap"><span id="who"></span><b id="amt"></b></div></div>
 <script src="/w/widget.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -27,6 +28,7 @@
     document.getElementById('wrap').classList.add('on');
     player.setVolume(Math.round((S.volume ?? .6) * 100)); player.loadVideoById(id);
     clearTimeout(limitT); limitT = setTimeout(finish, (S.max_sec || 180) * 1000);
+    setTimeout(() => { try { if (cur && player.getPlayerState() !== 1) { const t = document.getElementById('tap'); t.style.display = 'grid'; t.onclick = () => { t.style.display = 'none'; player.unMute(); player.playVideo(); }; } } catch { } }, 2500);
   }
   function finish(skipped) {
     clearTimeout(limitT); if (!cur) return; const id = cur.id; cur = null;

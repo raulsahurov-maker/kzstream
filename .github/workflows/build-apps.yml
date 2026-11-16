@@ -36,7 +36,7 @@ jobs:
         working-directory: windows
         run: |
           pip install -r requirements.txt pyinstaller
-          pyinstaller --onefile --windowed --name KZStream kzstream_windows.py
+          pyinstaller --onefile --windowed --name KZStream --icon icon.ico --add-data "ui.html;." kzstream_windows.py
       - run: copy windows\dist\KZStream.exe KZStream.exe
       - uses: actions/upload-artifact@v4
         with: { name: KZStream-windows, path: KZStream.exe }

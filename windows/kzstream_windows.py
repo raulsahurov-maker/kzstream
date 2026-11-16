@@ -1,8 +1,10 @@
 """
 KZStream для Windows.
-1) Читает уведомления Windows (Kaspi через «Связь с телефоном» / Phone Link)
-   и отправляет входящие переводы на сервер KZStream.
-2) Выполняет хоткеи при донатах (тариф Pro).
+- Вход по email и паролю аккаунта KZStream.
+- Читает уведомления Windows (Kaspi с телефона через «Связь с телефоном» / Phone Link)
+  и отправляет входящие переводы на сервер — алерт с озвучкой появляется на стриме.
+- Выполняет хоткеи при донатах (тариф Pro).
+- Автозапуск вместе с Windows.
 """
 import asyncio
 import json
@@ -11,13 +13,12 @@ import re
 import sys
 import threading
 import time
-import tkinter as tk
-from tkinter import ttk
 
 import requests
+import webview
 
 try:
-    import keyboard  # нажатие клавиш для хоткеев
+    import keyboard
 except Exception:  # pragma: no cover
     keyboard = None
 
@@ -29,10 +30,13 @@ try:
 except Exception:  # pragma: no cover
     HAS_WINSDK = False
 
-APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'KZStream')
+APP_NAME = 'KZStream'
+VERSION = '1.1'
+DEFAULT_SERVER = 'https://kzstream.onrender.com'
+APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
 MONEY = re.compile(r'\d[\d\s  ]*([.,]\d{1,2})?\s*(₸|тг|тенге|KZT)|(₸|KZT)\s*\d', re.I)
-LINK_RE = re.compile(r'^(https?://.+)/api/ingest/([A-Za-z0-9_-]+)/?$')
+BANK_WORDS = ('kaspi', 'каспи', 'перевод', 'пополнен', 'поступ', 'зачисл', 'halyk', 'jusan', 'freedom')
 
 
 def load_cfg():
@@ -40,7 +44,7 @@ def load_cfg():
         with open(CFG_PATH, encoding='utf-8') as f:
             return json.load(f)
     except Exception:
-        return {'link': '', 'only_banks': True}
+        return {}
 
 
 def save_cfg(cfg):
@@ -49,52 +53,141 @@ def save_cfg(cfg):
         json.dump(cfg, f, ensure_ascii=False)
 
 
-class Worker:
-    def __init__(self, log):
-        self.log = log
+def set_autostart(on):
+    try:
+        import winreg
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_SET_VALUE)
+        if on:
+            exe = sys.executable if getattr(sys, 'frozen', False) else f'"{sys.executable}" "{os.path.abspath(__file__)}"'
+            winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, f'"{exe}" --minimized' if getattr(sys, 'frozen', False) else exe)
+        else:
+            try:
+                winreg.DeleteValue(key, APP_NAME)
+            except FileNotFoundError:
+                pass
+        winreg.CloseKey(key)
+        return True
+    except Exception:
+        return False
+
+
+class Api:
+    """Методы, которые вызывает интерфейс (window.pywebview.api.*)."""
+
+    def __init__(self):
+        self.cfg = load_cfg()
+        self.cfg.setdefault('server', DEFAULT_SERVER)
+        self.cfg.setdefault('only_banks', True)
+        self.cfg.setdefault('autostart', True)
+        self.window = None
         self.running = False
-        self.link = ''
-        self.only_banks = True
         self.hotkeys = []
         self.seen = set()
+        self.notif_status = 'wait'
 
-    # ---------- общие ----------
-    def base_and_token(self):
-        m = LINK_RE.match(self.link)
-        return (m.group(1), m.group(2)) if m else (None, None)
+    # ---------- связь с интерфейсом ----------
+    def push(self, kind, data):
+        if self.window:
+            try:
+                self.window.evaluate_js(f'window.kz && kz.on({json.dumps(kind)}, {json.dumps(data, ensure_ascii=False)})')
+            except Exception:
+                pass
 
+    def log(self, msg):
+        self.push('log', {'t': time.strftime('%H:%M:%S'), 'm': msg})
+
+    # ---------- API для интерфейса ----------
+    def state(self):
+        return {'logged': bool(self.cfg.get('token')), 'nick': self.cfg.get('nick', ''), 'plan': self.cfg.get('plan', ''),
+                'server': self.cfg['server'], 'only_banks': self.cfg['only_banks'], 'autostart': self.cfg['autostart'],
+                'notif': self.notif_status, 'winsdk': HAS_WINSDK, 'version': VERSION}
+
+    def login(self, email, password, server=None):
+        srv = (server or self.cfg['server']).strip().rstrip('/')
+        try:
+            r = requests.post(f'{srv}/api/app/login', json={'email': email, 'password': password}, timeout=70)
+            j = r.json()
+        except Exception as e:
+            return {'ok': False, 'error': f'Нет связи с сервером: {e}'}
+        if r.status_code != 200 or not j.get('ok'):
+            return {'ok': False, 'error': j.get('error', 'Ошибка входа')}
+        self.cfg.update(server=srv, token=j['token'], link=j['ingest'], nick=j['nick'], plan=j.get('plan', ''))
+        save_cfg(self.cfg)
+        set_autostart(self.cfg['autostart'])
+        self.start()
+        return {'ok': True, **self.state()}
+
+    def logout(self):
+        self.running = False
+        for k in ('token', 'link', 'nick', 'plan'):
+            self.cfg.pop(k, None)
+        save_cfg(self.cfg)
+        return self.state()
+
+    def set_option(self, name, value):
+        if name in ('only_banks', 'autostart'):
+            self.cfg[name] = bool(value)
+            save_cfg(self.cfg)
+            if name == 'autostart':
+                set_autostart(bool(value))
+        return self.state()
+
+    def me(self):
+        try:
+            r = requests.get(f"{self.cfg['server']}/api/app/me/{self.cfg.get('token', '')}", timeout=70)
+            if r.status_code == 404:
+                return {'expired': True}
+            j = r.json()
+            self.hotkeys = j.get('hotkeys', []) or []
+            if j.get('plan'):
+                self.cfg['plan'] = j['plan']
+            return j
+        except Exception as e:
+            return {'error': str(e)}
+
+    def test(self):
+        code, j = self.post({'title': 'Kaspi.kz', 'text': 'Перевод 1 000 ₸ от Тест Т.\nПривет! Это тест из программы для Windows', 'key': f'wtest-{time.time()}'})
+        return {'ok': code == 200, 'error': j.get('error')}
+
+    def open_site(self, path='/app'):
+        import webbrowser
+        webbrowser.open(self.cfg['server'] + path)
+
+    def open_notif_settings(self):
+        os.startfile('ms-settings:privacy-notifications')
+
+    def open_phone_link(self):
+        os.startfile('ms-phone:')
+
+    # ---------- работа ----------
     def post(self, body):
         try:
-            r = requests.post(self.link, json=body, timeout=8)
+            r = requests.post(self.cfg['link'], json=body, timeout=70)
             return r.status_code, r.json()
         except Exception as e:
             return 0, {'error': str(e)}
 
-    def start(self, link, only_banks):
-        self.link, self.only_banks = link.strip().rstrip('/'), only_banks
-        if not LINK_RE.match(self.link):
-            self.log('✗ Неверная ссылка. Скопируйте её в кабинете → «Подключение».')
-            return False
-        code, j = self.post({'ping': 1})
-        if code != 200:
-            self.log(f'✗ Нет связи с сервером: {j.get("error", code)}')
-            return False
-        self.log(f'✓ Подключено к аккаунту {j.get("nick")}')
+    def start(self):
+        if self.running or not self.cfg.get('link'):
+            return
         self.running = True
         threading.Thread(target=self.notif_thread, daemon=True).start()
         threading.Thread(target=self.events_thread, daemon=True).start()
-        return True
+        self.log(f'Подключено к аккаунту {self.cfg.get("nick")}')
 
-    def stop(self):
-        self.running = False
-        self.log('■ Остановлено')
+    def set_notif(self, st):
+        self.notif_status = st
+        self.push('notif', st)
 
-    # ---------- уведомления Windows ----------
     def notif_thread(self):
         if not HAS_WINSDK:
-            self.log('! Чтение уведомлений недоступно (нужна Windows 10/11). Хоткеи работают.')
+            self.set_notif('unsupported')
             return
-        asyncio.run(self.notif_loop())
+        try:
+            asyncio.run(self.notif_loop())
+        except Exception as e:
+            self.log(f'Ошибка уведомлений: {e}')
+            self.set_notif('error')
 
     async def notif_loop(self):
         listener = UserNotificationListener.current
@@ -103,10 +196,14 @@ class Worker:
         except Exception:
             status = listener.get_access_status()
         if status != UserNotificationListenerAccessStatus.ALLOWED:
-            self.log('✗ Нет доступа к уведомлениям. Откройте Параметры → Конфиденциальность → Уведомления '
-                     'и разрешите доступ приложениям, затем перезапустите KZStream.')
-            return
-        self.log('✓ Доступ к уведомлениям есть. Жду переводы…')
+            self.set_notif('denied')
+            self.log('Нет доступа к уведомлениям Windows')
+            while self.running and listener.get_access_status() != UserNotificationListenerAccessStatus.ALLOWED:
+                await asyncio.sleep(3)
+            if not self.running:
+                return
+        self.set_notif('ok')
+        self.log('Жду переводы Kaspi…')
         first = True
         while self.running:
             try:
@@ -115,14 +212,13 @@ class Worker:
                     if n.id in self.seen:
                         continue
                     self.seen.add(n.id)
-                    if first:
-                        continue  # старые уведомления при запуске не отправляем
-                    self.handle(n)
+                    if not first:
+                        self.handle(n)
                 first = False
                 if len(self.seen) > 5000:
                     self.seen = set(list(self.seen)[-1000:])
             except Exception as e:
-                self.log(f'! Ошибка чтения уведомлений: {e}')
+                self.log(f'Ошибка чтения: {e}')
                 await asyncio.sleep(5)
             await asyncio.sleep(1)
 
@@ -142,39 +238,26 @@ class Worker:
         full = f'{app}\n{title}\n{text}'
         if not MONEY.search(full):
             return
-        low = full.lower()
-        if self.only_banks and not any(k in low for k in ('kaspi', 'каспи', 'перевод', 'пополнен', 'поступ', 'зачисл', 'halyk')):
+        if self.cfg['only_banks'] and not any(k in full.lower() for k in BANK_WORDS):
             return
         code, j = self.post({'title': title, 'text': text, 'package': app, 'key': f'win-{n.id}'})
         if code == 200 and j.get('donation'):
             d = j['donation']
-            self.log(f'💸 Донат: {d["name"]} — {d["amount"]} ₸')
-        elif code == 200:
-            self.log(f'· Пропущено: {title[:40]}')
-        else:
-            self.log(f'✗ Ошибка отправки: {j.get("error", code)}')
-
-    # ---------- хоткеи (события с сервера) ----------
-    def load_hotkeys(self, base, token):
-        try:
-            st = requests.get(f'{base}/api/w/{token}/state', timeout=8).json()
-            self.hotkeys = st.get('settings', {}).get('hotkeys', []) or []
-            if self.hotkeys:
-                self.log(f'⌨ Загружено хоткеев: {len(self.hotkeys)}')
-        except Exception:
-            pass
+            self.log(f'💸 {d["name"]} — {d["amount"]} ₸')
+            self.push('donation', d)
+        elif code != 200:
+            self.log(f'Ошибка отправки: {j.get("error", code)}')
 
     def events_thread(self):
-        base, token = self.base_and_token()
-        self.load_hotkeys(base, token)
+        base, token = self.cfg['server'], self.cfg['token']
         while self.running:
             try:
-                with requests.get(f'{base}/api/w/{token}/stream', stream=True, timeout=(8, 60)) as r:
+                with requests.get(f'{base}/api/w/{token}/stream', stream=True, timeout=(70, 90)) as r:
                     event = None
                     for raw in r.iter_lines(decode_unicode=True):
                         if not self.running:
                             return
-                        if raw is None:
+                        if not raw:
                             continue
                         if raw.startswith('event:'):
                             event = raw[6:].strip()
@@ -182,6 +265,7 @@ class Worker:
                             data = json.loads(raw[5:].strip())
                             if event == 'donation':
                                 self.fire_hotkeys(data.get('amount', 0))
+                                self.push('donation', data)
                             elif event == 'settings':
                                 self.hotkeys = data.get('hotkeys', []) or []
                             event = None
@@ -191,80 +275,33 @@ class Worker:
     def fire_hotkeys(self, amount):
         for h in self.hotkeys:
             lo, hi = h.get('min', 0), h.get('max', 0)
-            if amount >= lo and (not hi or amount <= hi):
-                if keyboard is None:
-                    self.log('! Модуль клавиатуры недоступен')
-                    return
+            if amount >= lo and (not hi or amount <= hi) and keyboard:
                 try:
                     keyboard.send(h['keys'])
                     self.log(f'⌨ Хоткей {h["keys"]} ({amount} ₸)')
                 except Exception as e:
-                    self.log(f'! Хоткей {h.get("keys")}: {e}')
+                    self.log(f'Хоткей {h.get("keys")}: {e}')
 
 
-class App:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.title('KZStream')
-        self.root.geometry('560x520')
-        self.root.configure(bg='#07080d')
-        self.cfg = load_cfg()
-        self.worker = Worker(self.log)
+def resource(name):
+    base = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base, name)
 
-        st = ttk.Style()
-        st.theme_use('clam')
-        st.configure('TButton', padding=8, font=('Segoe UI', 10, 'bold'))
-        st.configure('TCheckbutton', background='#07080d', foreground='#eef0f7', font=('Segoe UI', 10))
 
-        tk.Label(self.root, text='KZStream', fg='#ff3b5c', bg='#07080d', font=('Segoe UI', 20, 'bold')).pack(anchor='w', padx=18, pady=(16, 0))
-        tk.Label(self.root, text='Kaspi-донаты на ваш стрим', fg='#9097ad', bg='#07080d', font=('Segoe UI', 10)).pack(anchor='w', padx=18)
-        tk.Label(self.root, text='Ссылка подключения (кабинет → «Подключение»):', fg='#eef0f7', bg='#07080d', font=('Segoe UI', 10)).pack(anchor='w', padx=18, pady=(16, 4))
-        self.link = tk.Entry(self.root, font=('Consolas', 10), bg='#12141f', fg='#eef0f7', insertbackground='#fff', relief='flat')
-        self.link.pack(fill='x', padx=18, ipady=7)
-        self.link.insert(0, self.cfg.get('link', ''))
-        self.only = tk.BooleanVar(value=self.cfg.get('only_banks', True))
-        ttk.Checkbutton(self.root, text='Только банковские уведомления', variable=self.only).pack(anchor='w', padx=18, pady=8)
-        row = tk.Frame(self.root, bg='#07080d')
-        row.pack(fill='x', padx=18)
-        self.btn = ttk.Button(row, text='▶ Старт', command=self.toggle)
-        self.btn.pack(side='left')
-        ttk.Button(row, text='Тестовый донат', command=self.test).pack(side='left', padx=8)
-        self.box = tk.Text(self.root, bg='#12141f', fg='#cfd3e3', font=('Consolas', 9), relief='flat', state='disabled')
-        self.box.pack(fill='both', expand=True, padx=18, pady=14)
-        self.log('Подключите телефон через «Связь с телефоном» (Phone Link) и разрешите уведомления Kaspi.')
-        if self.cfg.get('link'):
-            self.root.after(500, self.toggle)
+def main():
+    api = Api()
+    with open(resource('ui.html'), encoding='utf-8') as f:
+        html = f.read()
+    window = webview.create_window(f'{APP_NAME}', html=html, js_api=api, width=440, height=760,
+                                   min_size=(400, 600), background_color='#07080D', minimized='--minimized' in sys.argv)
+    api.window = window
 
-    def log(self, msg):
-        def add():
-            self.box.configure(state='normal')
-            self.box.insert('1.0', time.strftime('%H:%M:%S  ') + msg + '\n')
-            self.box.configure(state='disabled')
-        self.root.after(0, add)
-
-    def toggle(self):
-        if self.worker.running:
-            self.worker.stop()
-            self.btn.configure(text='▶ Старт')
-            return
-        self.cfg = {'link': self.link.get().strip(), 'only_banks': self.only.get()}
-        save_cfg(self.cfg)
-
-        def go():
-            if self.worker.start(self.cfg['link'], self.cfg['only_banks']):
-                self.root.after(0, lambda: self.btn.configure(text='■ Стоп'))
-        threading.Thread(target=go, daemon=True).start()
-
-    def test(self):
-        def go():
-            self.worker.link = self.link.get().strip().rstrip('/')
-            code, j = self.worker.post({'title': 'Kaspi.kz', 'text': 'Перевод 1 000 ₸ от Тест Т.', 'key': f'wtest-{time.time()}'})
-            self.log('✓ Тестовый донат отправлен' if code == 200 else f'✗ {j.get("error", code)}')
-        threading.Thread(target=go, daemon=True).start()
-
-    def run(self):
-        self.root.mainloop()
+    def on_ready():
+        if api.cfg.get('token'):
+            api.start()
+    webview.start(on_ready, private_mode=False)
+    api.running = False
 
 
 if __name__ == '__main__':
-    App().run()
+    main()

@@ -33,6 +33,14 @@ public class KaspiListener extends NotificationListenerService {
             String title = str(ex.getCharSequence(Notification.EXTRA_TITLE));
             String text = str(ex.getCharSequence(Notification.EXTRA_BIG_TEXT));
             if (text.isEmpty()) text = str(ex.getCharSequence(Notification.EXTRA_TEXT));
+            CharSequence[] lines = ex.getCharSequenceArray(Notification.EXTRA_TEXT_LINES);
+            if (lines != null && lines.length > 0) {
+                StringBuilder sb = new StringBuilder(text);
+                for (CharSequence cs : lines) { String l = str(cs); if (!l.isEmpty() && !text.contains(l)) sb.append('\n').append(l); }
+                text = sb.toString().trim();
+            }
+            String sub = str(ex.getCharSequence(Notification.EXTRA_SUB_TEXT));
+            if (!sub.isEmpty() && !text.contains(sub)) text = text + "\n" + sub;
             String full = title + "\n" + text;
 
             boolean onlyBanks = Sender.prefs(this).getBoolean("onlyBanks", true);

@@ -4,6 +4,21 @@ const fmt = n => Number(n || 0).toLocaleString('ru-RU').replace(/,/g, ' ') + ' �
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const time = t => t ? new Date(t).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 let ME = null, FILES = [];
+const THEME_COLORS = { default: ['rgba(14,15,26,.9)', '#fff', '#ff3b5c', '#ff7a45', 'Классика'], neon: ['rgba(8,4,24,.9)', '#e9e6ff', '#8b6cff', '#3ee6c4', 'Неон'], sunset: ['rgba(40,12,20,.9)', '#fff3ea', '#ff7a45', '#ffc84a', 'Закат'], mint: ['rgba(6,26,24,.9)', '#eafff9', '#3ee6c4', '#7dffb2', 'Мята'], royal: ['rgba(14,10,40,.9)', '#fff', '#5b7cff', '#c86bff', 'Роял'], mono: ['rgba(0,0,0,.9)', '#fff', '#ffffff', '#9a9a9a', 'Моно'], candy: ['rgba(40,10,36,.9)', '#fff', '#ff6bd6', '#ffb86b', 'Конфета'], steppe: ['rgba(6,24,40,.9)', '#fff', '#00b3e6', '#ffd23f', 'Степь'], ice: ['rgba(230,244,255,.95)', '#0b2a44', '#2f9bff', '#6ad7ff', 'Лёд'], gold: ['rgba(20,16,6,.92)', '#fff6dd', '#ffc84a', '#ff9d2e', 'Золото'] };
+function themePickers() {
+  $$('select[data-themes]').forEach(sel => {
+    sel.style.display = 'none';
+    let grid = sel.nextElementSibling;
+    if (!grid || !grid.classList.contains('themes')) { grid = document.createElement('div'); grid.className = 'themes'; sel.after(grid); }
+    const draw = () => {
+      grid.innerHTML = ME.themes.map(t => { const c = THEME_COLORS[t] || THEME_COLORS.default; const locked = !ME.plan.shop && t !== 'default';
+        return `<div class="th ${sel.value === t ? 'on' : ''} ${locked ? 'locked' : ''}" data-t="${t}"><div class="pv"><i style="background:${c[0]};color:${c[1]};border:1px solid ${c[2]}">Донат <span style="color:${c[3]}">1 000 ₸</span></i><u style="background:linear-gradient(90deg,${c[2]},${c[3]})"></u></div><div class="nm">${c[4]}</div></div>`; }).join('');
+    };
+    draw();
+    grid.onclick = e => { const th = e.target.closest('.th'); if (!th) return; if (th.classList.contains('locked')) return toast('Темы доступны с тарифа Lite — раздел «Тариф»', true); sel.value = th.dataset.t; draw(); };
+    sel._draw = draw;
+  });
+}
 
 function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 3200); }
 async function api(url, opts = {}) {
@@ -41,10 +56,10 @@ function render() {
   $('#nickH').textContent = ME.nick;
   $('#adminLink').style.display = ME.is_admin ? '' : 'none';
   $('#pageLinkBtn').href = ME.urls.page;
-  val('homePage', ME.urls.page); val('ingestUrl', ME.urls.ingest);
+  val('homePage', ME.urls.page); val('ingestUrl', ME.urls.ingest); val('iosUrl', ME.urls.ingest);
   $('#stToday').textContent = fmt(ME.stats.today); $('#stMonth').textContent = fmt(ME.stats.month);
   $('#stTotal').textContent = fmt(ME.stats.total); $('#stCnt').textContent = ME.stats.cnt;
-  const until = ME.plan.id !== 'free' ? `до ${new Date(ME.plan_until).toLocaleDateString('ru-RU')}` : 'бесплатно';
+  const until = ME.is_admin ? 'владелец · без срока' : ME.plan.id !== 'free' ? `до ${new Date(ME.plan_until).toLocaleDateString('ru-RU')}` : 'бесплатно';
   $('#sidePlan').innerHTML = `<div class="muted">Тариф</div><b>${p.name}</b>${ME.vip ? ' <span class="tag ok">VIP</span>' : ''}<div class="muted">${until}</div><a href="#billing" class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%">${p.id === 'pro' ? 'Продлить' : 'Улучшить'}</a>`;
   // замки
   $$('[data-need]').forEach(l => l.style.display = p[l.dataset.need] ? 'none' : '');
@@ -75,11 +90,16 @@ function render() {
   val('m_enabled', s.media.enabled); val('m_min', s.media.min); val('m_max', s.media.max_sec); val('m_volume', s.media.volume);
   // страница
   const pg = s.page;
-  val('pg_title', pg.title); val('pg_description', pg.description); val('pg_kaspi', pg.kaspi); val('pg_receiver', pg.receiver); val('pg_min', pg.min_amount);
+  val('pg_title', pg.title); val('pg_description', pg.description); val('pg_kaspi', pg.kaspi); val('pg_receiver', pg.receiver); val('pg_min', pg.min_amount); val('pg_cards', pg.cards); val('pg_avatar', pg.avatar); val('pg_banner', pg.banner); val('pg_color', pg.color || '#ff3b5c');
   Object.keys(pg.socials).forEach(k => val('s_' + k, pg.socials[k]));
   // pro
   listEdit('#hkList', s.hotkeys, [['min', 'От, ₸', 'number'], ['max', 'До, ₸ (0 = ∞)', 'number'], ['keys', 'Клавиши, напр. ctrl+shift+1']]);
   listEdit('#whList', s.webhooks.map(v => ({ v })), [['v', 'https://...']]);
+  // превью и тесты
+  if (!$('#prevFrame').src) $('#prevFrame').src = ME.urls.widgets.alerts + '&preview';
+  if (!$('#rFrame').src) $('#rFrame').src = ME.urls.widgets.roulette + '&preview';
+  $('#rOpen').href = ME.urls.widgets.roulette; $('#mOpen').href = ME.urls.widgets.media;
+  themePickers();
   // тариф
   renderBilling();
   $('#accInfo').innerHTML = `Ник: <b>${esc(ME.nick)}</b><br>Email: ${esc(ME.email)}<br>Оплачено месяцев: ${ME.paid_months}${ME.vip ? ' · VIP' : ' (VIP с 10 месяцев)'}`;
@@ -128,7 +148,7 @@ const collectors = {
   timer: () => ({ timer: { sec_per_100: val('tm_sec'), theme: val('tm_theme') } }),
   roulette: () => ({ roulette: { enabled: val('r_enabled'), min: val('r_min'), style: val('r_style'), tasks: readList('#taskList').map(r => r.v) } }),
   media: () => ({ media: { enabled: val('m_enabled'), min: val('m_min'), max_sec: val('m_max'), volume: +val('m_volume') } }),
-  page: () => ({ page: { title: val('pg_title'), description: val('pg_description'), kaspi: val('pg_kaspi'), receiver: val('pg_receiver'), min_amount: val('pg_min'),
+  page: () => ({ page: { title: val('pg_title'), description: val('pg_description'), kaspi: val('pg_kaspi'), receiver: val('pg_receiver'), min_amount: val('pg_min'), cards: val('pg_cards'), avatar: val('pg_avatar'), banner: val('pg_banner'), color: val('pg_color'),
     socials: Object.fromEntries(['twitch', 'youtube', 'tiktok', 'instagram', 'telegram'].map(k => [k, val('s_' + k)])) } }),
   hotkeys: () => ({ hotkeys: readList('#hkList') }),
   webhooks: () => ({ webhooks: readList('#whList').map(r => r.v) }),
@@ -157,6 +177,10 @@ $('#tSend').onclick = async () => {
   catch (e) { toast(e.message, true); }
 };
 
+$('#tSound').onclick = () => { try { $('#prevFrame').contentWindow.KZunlock?.(); } catch { } toast('Звук в превью включён'); };
+$('#rTest').onclick = async () => { try { const r = await api('/api/test/roulette', { method: 'POST' }); toast('Крутим! Выпадет: ' + r.task); } catch (e) { toast(e.message, true); } };
+$('#mTest').onclick = async () => { try { await api('/api/test/media', { method: 'POST', body: { url: val('mTestUrl') } }); toast('Видео добавлено в очередь — откройте плеер'); } catch (e) { toast(e.message, true); } };
+
 // ---------- лента (SSE) ----------
 const feed = [];
 function pushFeed(html) { feed.unshift(html); feed.length = Math.min(feed.length, 40); $('#feed').innerHTML = feed.map(h => `<div class="it">${h}</div>`).join(''); }
@@ -176,9 +200,9 @@ async function loadState() { try { const st = await api('/api/w/' + ME.token + '
 // ---------- донаты ----------
 async function loadDonations() {
   const list = await api('/api/donations?limit=200');
-  $('#donTable').innerHTML = list.map(d => `<tr><td class="muted">${time(d.done_at || d.created_at)}</td><td>${esc(d.name || d.sender || '—')}${d.sender && d.sender !== d.name ? `<div class="muted" style="font-size:12px">Kaspi: ${esc(d.sender)}</div>` : ''}</td><td><b>${fmt(d.amount)}</b></td><td style="max-width:320px">${esc(d.message)}${d.media_url ? ' 🎵' : ''}${d.voice_url ? ' 🎤' : ''}</td>
-    <td>${d.status === 'done' ? `<span class="tag ok">${d.source === 'test' ? 'тест' : 'получен'}</span>` : '<span class="tag wait">ожидает перевода</span>'}</td>
-    <td style="white-space:nowrap">${d.status === 'done' ? `<button class="btn btn-ghost btn-sm" data-replay="${d.id}">Повторить</button>` : `<button class="btn btn-ghost btn-sm" data-confirm="${d.id}">Подтвердить</button>`} <button class="btn btn-ghost btn-sm" data-del="${d.id}">✕</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted">Донатов пока нет</td></tr>';
+  $('#donTable').innerHTML = list.map(d => `<tr><td class="muted">${time(d.done_at || d.created_at)}</td><td>${esc(d.name || d.sender || '—')}${d.sender && d.sender !== d.name ? `<div class="muted" style="font-size:12px">Kaspi: ${esc(d.sender)}</div>` : ''}</td><td><b>${fmt(d.amount)}</b></td><td style="max-width:320px">${esc(d.message)}${d.media_url ? ' 🎵' : ''}</td>
+    <td>${d.status === 'done' ? `<span class="tag ok">${d.source === 'test' ? 'тест' : 'получен'}</span>` : '<span class="tag">тест</span>'}</td>
+    <td style="white-space:nowrap">${d.status === 'done' ? `<button class="btn btn-ghost btn-sm" data-replay="${d.id}">Повторить</button>` : ''} <button class="btn btn-ghost btn-sm" data-del="${d.id}">✕</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted">Донатов пока нет</td></tr>';
 }
 $('#donTable').onclick = async e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -226,11 +250,11 @@ $('#upload').onchange = async e => {
 // ---------- тариф ----------
 function renderBilling() {
   const p = ME.plan;
-  $('#curPlan').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap"><div><div class="muted">Текущий тариф</div><div style="font-family:Unbounded;font-size:24px">${p.name} ${ME.vip ? '<span class="tag ok">VIP</span>' : ''}</div><div class="muted">${p.id === 'free' ? 'Бесплатно навсегда' : 'Активен до ' + new Date(ME.plan_until).toLocaleString('ru-RU')}</div></div>
+  $('#curPlan').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap"><div><div class="muted">Текущий тариф</div><div style="font-family:Unbounded;font-size:24px">${p.name} ${ME.vip ? '<span class="tag ok">VIP</span>' : ''}</div><div class="muted">${ME.is_admin ? 'Вы владелец сервиса — все функции Pro без срока' : p.id === 'free' ? 'Бесплатно навсегда' : 'Активен до ' + new Date(ME.plan_until).toLocaleString('ru-RU')}</div></div>
     ${p.freezeDays ? `<button class="btn btn-ghost" id="freezeBtn" ${ME.freeze_available ? '' : 'disabled'}>❄️ Заморозить на ${p.freezeDays} дней</button>` : ''}</div>
     <p class="muted" style="margin-top:12px;font-size:13.5px">⭐ VIP: оплатите 10 месяцев — получите +10 дней Pro, ×1.5 хранилища и ранний доступ. Оплачено: ${ME.paid_months}/10.</p>`;
   const fb = $('#freezeBtn'); if (fb) fb.onclick = async () => { try { const r = await api('/api/freeze', { method: 'POST' }); toast(`Подписка продлена на ${r.days} дней`); load(); } catch (e) { toast(e.message, true); } };
-  const feat = { free: ['Алерты (до 6 сек)', 'ТОП и цель с рекламой', 'Цензура, личная страница', '10 МБ'], lite: ['Озвучка, голосовые', 'Рулетка, таймер, info', 'Ники, темы, TikTok', 'Музыка/видео 50 раз', 'Заморозка 5 дней, 50 МБ'], pro: ['Всё из Lite без лимитов', 'Продвинутая озвучка', 'Хоткеи, вебхуки', 'Мем-алерты', 'Заморозка 10 дней, 100 МБ'] };
+  const feat = { free: ['Алерты (до 8 сек) с озвучкой', 'ТОП и цель с рекламой', 'Цензура, личная страница', '10 МБ'], lite: ['Темы оформления, ник донатеру', 'Рулетка, таймер, info', 'Ники, темы, TikTok', 'Музыка/видео 50 раз', 'Заморозка 5 дней, 50 МБ'], pro: ['Всё из Lite без лимитов', 'Продвинутая озвучка', 'Хоткеи, вебхуки', 'Мем-алерты', 'Заморозка 10 дней, 100 МБ'] };
   $('#plansBox').innerHTML = ME.plans.map(pl => `<div class="plan ${pl.id === p.id ? 'cur' : ''}"><div class="muted">${pl.name}${pl.id === p.id ? ' · текущий' : ''}</div><b>${pl.price ? fmt(pl.price) + '<span class="muted" style="font-size:14px;font-family:Manrope"> /мес</span>' : '0 ₸'}</b><ul style="list-style:none;color:#cfd3e3;font-size:14px;display:flex;flex-direction:column;gap:6px">${feat[pl.id].map(f => `<li>✓ ${f}</li>`).join('')}</ul>${pl.price ? `<button class="btn ${pl.id === 'lite' ? 'btn-primary' : 'btn-ghost'}" style="width:100%;margin-top:16px" data-pick="${pl.id}">Выбрать ${pl.name}</button>` : ''}</div>`).join('');
   $$('[data-pick]').forEach(b => b.onclick = () => { val('payPlan', b.dataset.pick); calcPay(); $('#payBox').scrollIntoView({ behavior: 'smooth' }); });
   $('#payPhone').textContent = ME.pay.kaspi; $('#payName').textContent = 'получатель ' + ME.pay.name;

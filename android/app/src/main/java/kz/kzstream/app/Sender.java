@@ -27,8 +27,46 @@ public final class Sender {
         return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
+    public static final String DEFAULT_SERVER = "https://kzstream.onrender.com";
+
     public static String link(Context c) {
         return prefs(c).getString("link", "").trim();
+    }
+
+    public static String server(Context c) {
+        return prefs(c).getString("server", DEFAULT_SERVER);
+    }
+
+    public interface Result { void done(int code, JSONObject json); }
+
+    /** Простой HTTP-запрос к серверу KZStream (в фоне), ответ — JSON. */
+    public static void request(final String method, final String url, final JSONObject body, final Result cb) {
+        POOL.execute(() -> {
+            int code = 0;
+            JSONObject json = new JSONObject();
+            HttpURLConnection con = null;
+            try {
+                con = (HttpURLConnection) new URL(url).openConnection();
+                con.setConnectTimeout(15000);
+                con.setReadTimeout(60000); // бесплатный сервер может «просыпаться» до минуты
+                con.setRequestMethod(method);
+                con.setRequestProperty("Accept", "application/json");
+                if (body != null) {
+                    con.setDoOutput(true);
+                    con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                    try (OutputStream os = con.getOutputStream()) { os.write(body.toString().getBytes(StandardCharsets.UTF_8)); }
+                }
+                code = con.getResponseCode();
+                InputStream is = code < 400 ? con.getInputStream() : con.getErrorStream();
+                String resp = is == null ? "{}" : new String(readAll(is), StandardCharsets.UTF_8);
+                try { json = new JSONObject(resp); } catch (Exception e) { json = new JSONObject(); }
+            } catch (Exception e) {
+                try { json.put("error", "Нет связи с сервером: " + e.getMessage()); } catch (Exception ignored) { }
+            } finally {
+                if (con != null) con.disconnect();
+            }
+            if (cb != null) cb.done(code, json);
+        });
     }
 
     public static void send(final Context ctx, final JSONObject body, final Callback cb) {
@@ -46,7 +84,7 @@ public final class Sender {
                 try {
                     con = (HttpURLConnection) new URL(link).openConnection();
                     con.setConnectTimeout(8000);
-                    con.setReadTimeout(8000);
+                    con.setReadTimeout(60000);
                     con.setRequestMethod("POST");
                     con.setDoOutput(true);
                     con.setRequestProperty("Content-Type", "application/json; charset=utf-8");

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8">
+<style>
+  :root{--bg:#07080d;--bg2:#0d0f18;--card:#12141f;--line:#232739;--text:#eef0f7;--muted:#9097ad;--dim:#636a82;--a:#ff3b5c;--b:#ff7a45;--ok:#3ee6c4}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(ellipse at 80% -10%,rgba(255,59,92,.18),transparent 50%),var(--bg);color:var(--text);font:14px "Segoe UI",system-ui,sans-serif;padding:20px 18px;user-select:none;min-height:100vh}
+  h1,h2,.big{font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-weight:800;letter-spacing:-.01em}
+  button{font:inherit;cursor:pointer;border:none;color:inherit}
+  .logo{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--a),var(--b));display:grid;place-items:center;box-shadow:0 8px 26px rgba(255,59,92,.4)}
+  .logo svg{width:22px;height:22px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:14px}
+  .muted{color:var(--muted)}
+  .btn{width:100%;padding:12px;border-radius:12px;font-weight:700;margin-top:10px;background:#1d2133;border:1px solid var(--line);transition:.15s}
+  .btn:hover{border-color:#3a4060}
+  .btn.p{background:linear-gradient(120deg,var(--a),var(--b));border:none;box-shadow:0 6px 20px rgba(255,59,92,.3)}
+  .btn:disabled{opacity:.6}
+  input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font:inherit;margin-top:10px;outline:none;user-select:text}
+  input:focus{border-color:var(--a)}
+  .err{color:#ff8a9c;margin-top:10px;display:none}
+  .head{display:flex;gap:12px;align-items:center}
+  .chk{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .chk:last-child{border:none}
+  .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .dot.ok{background:var(--ok);box-shadow:0 0 10px var(--ok)}.dot.no{background:var(--b)}.dot.wait{background:#555;animation:p 1s infinite}
+  @keyframes p{50%{opacity:.3}}
+  .chk .t{flex:1}
+  .chk button{background:var(--a);padding:6px 10px;border-radius:9px;font-weight:700;font-size:12.5px}
+  .big{font-size:36px;background:linear-gradient(120deg,var(--a),var(--b));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .don{padding:9px 0;border-bottom:1px solid var(--line)}.don:last-child{border:none}
+  .don b{color:var(--b)}
+  .tog{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+  .sw{width:42px;height:24px;border-radius:12px;background:#2a2e44;position:relative;transition:.2s;flex-shrink:0}
+  .sw::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+  .sw.on{background:var(--a)}.sw.on::after{left:21px}
+  #log{font:12px Consolas,monospace;color:var(--muted);max-height:160px;overflow:auto;white-space:pre-wrap;user-select:text}
+  .flash{animation:fl 1.2s}
+  @keyframes fl{0%{box-shadow:0 0 0 0 rgba(255,59,92,.6)}100%{box-shadow:0 0 0 20px rgba(255,59,92,0)}}
+  .hide{display:none!important}
+  .foot{text-align:center;color:var(--dim);font-size:11.5px;margin-top:16px}
+</style></head>
+<body>
+<!-- ВХОД -->
+<div id="login" class="hide">
+  <div style="text-align:center;margin-top:30px"><div class="logo" style="width:76px;height:76px;margin:0 auto 14px;border-radius:22px"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></div>
+  <h1 style="font-size:30px">KZStream</h1><p class="muted">Kaspi-донаты на ваш стрим</p></div>
+  <div class="card" style="margin-top:26px">
+    <h2 style="font-size:20px">Вход</h2><p class="muted" style="margin-top:2px">Тот же email и пароль, что на сайте</p>
+    <input id="email" placeholder="Email или ник">
+    <input id="pass" type="password" placeholder="Пароль">
+    <button class="btn p" id="go">Войти</button>
+    <button class="btn" onclick="pywebview.api.open_site('/')">Регистрация на сайте</button>
+    <div class="err" id="err"></div>
+  </div>
+  <div class="foot" id="srv" title="Двойной клик — сменить сервер"></div>
+</div>
+
+<!-- ГЛАВНЫЙ -->
+<div id="main" class="hide">
+  <div class="head"><div class="logo"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></div>
+    <div style="flex:1"><h2 style="font-size:19px" id="nick"></h2><div class="muted" id="plan"></div></div></div>
+
+  <div class="card">
+    <b>Статус</b>
+    <div class="chk"><span class="dot ok"></span><span class="t">Аккаунт подключён</span></div>
+    <div class="chk"><span class="dot wait" id="nDot"></span><span class="t" id="nTxt">Проверяем доступ к уведомлениям…</span><button id="nBtn" class="hide" onclick="pywebview.api.open_notif_settings()">Открыть</button></div>
+    <div class="chk"><span class="dot ok"></span><span class="t">Телефон: «Связь с телефоном» с уведомлениями Kaspi</span><button onclick="pywebview.api.open_phone_link()">Открыть</button></div>
+  </div>
+
+  <div class="card" id="todayCard"><div class="muted">Сегодня</div><div class="big" id="sum">0 ₸</div><div class="muted" id="cnt">донатов: 0</div></div>
+
+  <div class="card"><b>Последние донаты</b><div id="last" style="margin-top:6px"><div class="muted">Загрузка…</div></div></div>
+
+  <div class="card">
+    <b>Управление</b>
+    <button class="btn p" id="test">Тестовый донат 1 000 ₸</button>
+    <button class="btn" onclick="pywebview.api.open_site('/app')">Открыть кабинет</button>
+    <div class="tog" style="margin-top:8px"><span>Запускать вместе с Windows</span><div class="sw" id="swAuto"></div></div>
+    <div class="tog"><span>Только уведомления банков</span><div class="sw" id="swBank"></div></div>
+    <button class="btn" id="out">Выйти из аккаунта</button>
+  </div>
+
+  <div class="card"><b>Журнал</b><div id="log" style="margin-top:8px"></div></div>
+  <div class="foot">Держите программу открытой во время стрима · хоткеи (Pro) работают отсюда<br><span id="ver"></span></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => Number(n || 0).toLocaleString('ru-RU').replace(/,/g, ' ') + ' ₸';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let ST = null, timer = null;
+window.kz = {
+  on(kind, d) {
+    if (kind === 'log') { const l = $('#log'); l.textContent = `${d.t}  ${d.m}\n` + l.textContent.slice(0, 4000); }
+    if (kind === 'notif') notif(d);
+    if (kind === 'donation') { $('#todayCard').classList.remove('flash'); void $('#todayCard').offsetWidth; $('#todayCard').classList.add('flash'); setTimeout(refresh, 800); }
+  }
+};
+function notif(st) {
+  const map = { ok: ['ok', 'Уведомления Windows: доступ есть'], denied: ['no', 'Нет доступа к уведомлениям Windows'], unsupported: ['no', 'Нужна Windows 10/11'], error: ['no', 'Ошибка чтения уведомлений'], wait: ['wait', 'Проверяем доступ к уведомлениям…'] }[st] || ['wait', st];
+  $('#nDot').className = 'dot ' + map[0]; $('#nTxt').textContent = map[1]; $('#nBtn').classList.toggle('hide', st !== 'denied');
+}
+function sw(el, on, name) { el.classList.toggle('on', !!on); el.onclick = async () => { ST = await pywebview.api.set_option(name, !el.classList.contains('on')); el.classList.toggle('on', ST[name]); }; }
+async function refresh() {
+  const j = await pywebview.api.me();
+  if (j.expired) { await pywebview.api.logout(); return render(await pywebview.api.state()); }
+  if (j.error) return;
+  $('#sum').textContent = fmt(j.today); $('#cnt').textContent = 'донатов: ' + j.today_count; $('#plan').textContent = 'Тариф ' + j.plan;
+  $('#last').innerHTML = (j.last || []).length ? j.last.map(d => `<div class="don"><div><b>${fmt(d.amount)}</b> · ${esc(d.name)}</div>${d.message ? `<div class="muted">${esc(d.message)}</div>` : ''}</div>`).join('') : '<div class="muted">Донатов пока нет</div>';
+}
+function render(st) {
+  ST = st;
+  $('#login').classList.toggle('hide', st.logged); $('#main').classList.toggle('hide', !st.logged);
+  $('#srv').textContent = 'Сервер: ' + st.server; $('#ver').textContent = 'KZStream для Windows v' + st.version;
+  clearInterval(timer);
+  if (st.logged) {
+    $('#nick').textContent = st.nick; $('#plan').textContent = 'Тариф ' + (st.plan || '');
+    notif(st.notif); sw($('#swAuto'), st.autostart, 'autostart'); sw($('#swBank'), st.only_banks, 'only_banks');
+    refresh(); timer = setInterval(refresh, 15000);
+  }
+}
+$('#go').onclick = async () => {
+  const b = $('#go'); b.disabled = true; b.textContent = 'Вход… (до 1 минуты)'; $('#err').style.display = 'none';
+  const r = await pywebview.api.login($('#email').value.trim(), $('#pass').value, window._srv || null);
+  b.disabled = false; b.textContent = 'Войти';
+  if (!r.ok) { $('#err').textContent = r.error; $('#err').style.display = 'block'; return; }
+  render(r);
+};
+$('#pass').onkeydown = e => { if (e.key === 'Enter') $('#go').click(); };
+$('#srv').ondblclick = async () => { const v = prompt('Адрес сервера', ST.server); if (v) { ST.server = v; $('#srv').textContent = 'Сервер: ' + v; window._srv = v; } };
+$('#test').onclick = async () => { const r = await pywebview.api.test(); kz.on('log', { t: new Date().toLocaleTimeString('ru-RU'), m: r.ok ? 'Тестовый донат отправлен' : 'Ошибка: ' + r.error }); setTimeout(refresh, 800); };
+$('#out').onclick = async () => render(await pywebview.api.logout());
+window.addEventListener('pywebviewready', async () => render(await pywebview.api.state()));
+</script>
+</body></html>
