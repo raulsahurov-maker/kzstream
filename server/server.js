@@ -5,7 +5,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const { DatabaseSync } = require('node:sqlite');
+const Database = require('libsql');
 const { PLANS, effectivePlan } = require('./lib/plans');
 const { parseNotification } = require('./lib/parse');
 
@@ -21,9 +21,20 @@ const MATCH_WINDOW_MS = 30 * 60 * 1000;
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 // ---------- база ----------
-const db = new DatabaseSync(path.join(DATA_DIR, 'kzstream.db'));
+// Если заданы TURSO_URL и TURSO_TOKEN — данные хранятся в облачной базе Turso (не пропадают при обновлениях).
+// Иначе — локальный файл (для запуска на своём компьютере или VPS).
+const TURSO_URL = process.env.TURSO_URL || '', TURSO_TOKEN = process.env.TURSO_TOKEN || '';
+let db;
+if (TURSO_URL && TURSO_TOKEN) {
+  db = new Database(path.join(DATA_DIR, 'replica.db'), { syncUrl: TURSO_URL, authToken: TURSO_TOKEN });
+  try { db.sync(); console.log('База Turso подключена'); } catch (e) { console.error('Ошибка синхронизации Turso:', e.message); }
+  setInterval(() => { try { db.sync(); } catch (e) { console.error('Turso sync:', e.message); } }, 60000).unref();
+} else {
+  db = new Database(path.join(DATA_DIR, 'kzstream.db'));
+  db.exec('PRAGMA journal_mode=WAL;');
+  console.log('Локальная база: ' + path.join(DATA_DIR, 'kzstream.db'));
+}
 db.exec(`
-PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS users(
   id INTEGER PRIMARY KEY, nick TEXT UNIQUE COLLATE NOCASE, email TEXT UNIQUE COLLATE NOCASE,
   pass TEXT, salt TEXT, created_at INTEGER, is_admin INTEGER DEFAULT 0,
@@ -38,10 +49,14 @@ CREATE INDEX IF NOT EXISTS d_user ON donations(user_id, status, created_at);
 CREATE TABLE IF NOT EXISTS payments(id INTEGER PRIMARY KEY, user_id INTEGER, plan TEXT, months INTEGER, amount INTEGER,
   status TEXT DEFAULT 'pending', created_at INTEGER, comment TEXT DEFAULT '');
 CREATE TABLE IF NOT EXISTS files(id INTEGER PRIMARY KEY, user_id INTEGER, name TEXT, mime TEXT, size INTEGER, file TEXT, created_at INTEGER);
+CREATE TABLE IF NOT EXISTS file_data(file TEXT PRIMARY KEY, data BLOB);
 CREATE TABLE IF NOT EXISTS ingest_log(id INTEGER PRIMARY KEY, user_id INTEGER, hash TEXT, text TEXT, result TEXT, created_at INTEGER);
 CREATE INDEX IF NOT EXISTS il_user ON ingest_log(user_id, hash);
 `);
-const q = (sql) => db.prepare(sql);
+// обёртка: убираем служебное поле _metadata, которое добавляет libsql
+const clean = (r) => { if (r && typeof r === 'object') delete r._metadata; return r; };
+const q = (sql) => { const st = db.prepare(sql); return {
+  get: (...a) => clean(st.get(...a)), all: (...a) => st.all(...a).map(clean), run: (...a) => st.run(...a) }; };
 
 // ---------- настройки по умолчанию ----------
 const THEMES = ['default', 'neon', 'sunset', 'mint', 'royal', 'mono', 'candy', 'steppe', 'ice', 'gold'];
@@ -405,9 +420,9 @@ app.post('/api/upload', auth, express.raw({ type: '*/*', limit: '20mb' }), (req,
   const limit = effectivePlan(u).storageMB * 1048576 * (u.paid_months >= 10 ? 1.5 : 1);
   if (storageUsed(u.id) + size > limit) return res.status(413).json({ error: `Не хватает места в хранилище (${effectivePlan(u).storageMB} МБ на вашем тарифе)` });
   const ext = mime.split('/')[1].replace('mpeg', 'mp3').replace('x-wav', 'wav').replace('jpeg', 'jpg');
-  const dir = path.join(UPLOAD_DIR, String(u.id)); fs.mkdirSync(dir, { recursive: true });
+  if (size > 8 * 1048576) return res.status(413).json({ error: 'Файл больше 8 МБ — сожмите гифку или звук' });
   const file = `${rnd(9)}.${ext}`;
-  fs.writeFileSync(path.join(dir, file), req.body);
+  q('INSERT INTO file_data(file,data) VALUES(?,?)').run(`${u.id}/${file}`, req.body);
   const name = clampStr(decodeURIComponent(req.headers['x-filename'] || file), 100);
   const r = q('INSERT INTO files(user_id,name,mime,size,file,created_at) VALUES(?,?,?,?,?,?)').run(u.id, name, mime, size, `${u.id}/${file}`, now());
   res.json({ ok: true, id: Number(r.lastInsertRowid), url: `/u/${u.id}/${file}` });
@@ -415,10 +430,15 @@ app.post('/api/upload', auth, express.raw({ type: '*/*', limit: '20mb' }), (req,
 app.get('/api/files', auth, (req, res) => res.json(q('SELECT id,name,mime,size,file,created_at FROM files WHERE user_id=? ORDER BY id DESC').all(req.user.id).map(f => ({ ...f, url: '/u/' + f.file }))));
 app.delete('/api/files/:id', auth, (req, res) => {
   const f = q('SELECT * FROM files WHERE id=? AND user_id=?').get(+req.params.id, req.user.id);
-  if (f) { fs.rmSync(path.join(UPLOAD_DIR, f.file), { force: true }); q('DELETE FROM files WHERE id=?').run(f.id); }
+  if (f) { q('DELETE FROM file_data WHERE file=?').run(f.file); q('DELETE FROM files WHERE id=?').run(f.id); }
   res.json({ ok: true });
 });
-app.use('/u', express.static(UPLOAD_DIR, { maxAge: '7d' }));
+app.get('/u/:uid/:file', (req, res) => {
+  const key = `${req.params.uid}/${req.params.file}`;
+  const f = q('SELECT mime FROM files WHERE file=?').get(key), d = f && q('SELECT data FROM file_data WHERE file=?').get(key);
+  if (!d) return res.status(404).end();
+  res.set({ 'Content-Type': f.mime, 'Cache-Control': 'public, max-age=604800' }).send(Buffer.from(d.data));
+});
 
 // --- донаты в кабинете ---
 app.get('/api/donations', auth, (req, res) => {

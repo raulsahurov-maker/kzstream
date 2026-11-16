@@ -10,10 +10,11 @@
     "start": "node --env-file-if-exists=.env server.js"
   },
   "license": "ISC",
-  "dependencies": {
-    "express": "^4.22.3"
-  },
   "engines": {
     "node": ">=22.13"
+  },
+  "dependencies": {
+    "express": "^4.22.3",
+    "libsql": "^0.5.29"
   }
 }
