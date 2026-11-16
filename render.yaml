@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: kzstream
+    runtime: docker
+    rootDir: server
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: PAY_KASPI
+        value: "+7 775 884 27 91"
+      - key: PAY_NAME
+        value: "Алибек Т."
+      - key: PAY_TELEGRAM
+        value: raulanrip

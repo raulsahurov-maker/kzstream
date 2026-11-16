@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — рулетка</title>
+<link rel="stylesheet" href="/w/w.css">
+<style>
+  #stage{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;opacity:0;transition:.4s}
+  #stage.on{opacity:1}
+  .who{font-family:Unbounded;font-weight:800;font-size:24px;text-shadow:0 2px 10px #000}
+  .res{font-family:Unbounded;font-weight:800;font-size:32px;padding:12px 22px;border-radius:14px;background:var(--w-bg);opacity:0;transform:scale(.8);transition:.5s cubic-bezier(.2,1.4,.4,1);text-align:center;max-width:90vw}
+  .res.on{opacity:1;transform:none}
+  /* колесо */
+  .wheel-wrap{position:relative;width:360px;height:360px}
+  .wheel{width:100%;height:100%;border-radius:50%;box-shadow:0 0 0 8px rgba(0,0,0,.5),0 0 0 11px var(--w-a);transition:transform 5s cubic-bezier(.12,.8,.12,1);position:relative}
+  .wheel span{position:absolute;left:50%;top:50%;width:46%;transform-origin:0 50%;font-weight:800;font-size:13px;text-align:right;padding-right:14px;text-shadow:0 1px 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pin{position:absolute;top:-16px;left:50%;transform:translateX(-50%);border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid #fff;z-index:3;filter:drop-shadow(0 3px 4px #000)}
+  /* слоты и кейс */
+  .win{overflow:hidden;border-radius:16px;background:var(--w-bg);border:3px solid var(--w-a);position:relative}
+  .win.slots{width:440px;height:96px}
+  .win.case{width:720px;height:130px}
+  .strip{position:absolute;left:0;top:0;transition:transform 5s cubic-bezier(.1,.75,.12,1)}
+  .slots .strip{width:100%}
+  .slots .cell{height:96px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;padding:0 14px;text-align:center}
+  .case .strip{display:flex;height:100%}
+  .case .cell{width:160px;flex-shrink:0;margin:10px 5px;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:15px;padding:8px;border-bottom:5px solid}
+  .marker{position:absolute;z-index:2;background:#fff;box-shadow:0 0 12px #fff}
+  .case .marker{left:50%;top:0;bottom:0;width:3px;transform:translateX(-50%)}
+  .slots .marker{display:none}
+  /* карточки */
+  .cards{display:flex;gap:14px;perspective:900px}
+  .card{width:130px;height:180px;position:relative;transform-style:preserve-3d;transition:transform .7s}
+  .card div{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;font-weight:800;font-size:15px}
+  .card .back{background:linear-gradient(135deg,var(--w-a),var(--w-b));font-family:Unbounded;font-size:34px}
+  .card .front{background:var(--w-bg);border:2px solid var(--w-a);transform:rotateY(180deg)}
+  .card.flip{transform:rotateY(180deg)}
+  .card.dim{opacity:.35}
+  .card.pick{animation:pk .5s 2}
+  @keyframes pk{50%{transform:translateY(-14px)}}
+  /* бокс */
+  .box{font-size:160px;line-height:1;filter:drop-shadow(0 10px 30px rgba(0,0,0,.6))}
+  .box.shake{animation:sh .12s infinite}
+  .box.open{animation:op .6s forwards}
+  @keyframes sh{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+  @keyframes op{to{transform:scale(1.6);opacity:0}}
+</style></head><body>
+<div id="stage"><div class="who" id="who"></div><div id="game"></div><div class="res" id="res"></div></div>
+<script src="/w/widget.js"></script>
+<script>
+(() => {
+  const { on, start, theme, fmt, esc } = KZ;
+  const COLORS = ['#ff3b5c', '#8b6cff', '#ff7a45', '#3ee6c4', '#5b7cff', '#ffc84a', '#ff6bd6', '#00b3e6'];
+  let queue = [], busy = false;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  on('state', st => { if (!st.plan.roulette) document.body.innerHTML = '<p style="font:15px sans-serif;padding:14px">Рулетка доступна с тарифа Lite</p>'; });
+  on('roulette', r => { queue.push(r); run(); });
+
+  const games = {
+    async wheel(g, r) {
+      const n = r.tasks.length, seg = 360 / n;
+      g.innerHTML = `<div class="wheel-wrap"><div class="pin"></div><div class="wheel" id="wh" style="background:conic-gradient(${r.tasks.map((_, i) => `${COLORS[i % 8]} ${i * seg}deg ${(i + 1) * seg}deg`).join(',')})">
+        ${r.tasks.map((t, i) => `<span style="transform:rotate(${i * seg + seg / 2 - 90}deg)">${esc(t)}</span>`).join('')}</div></div>`;
+      await sleep(80);
+      const rot = 360 * 6 + (360 - (r.index * seg + seg / 2));
+      document.getElementById('wh').style.transform = `rotate(${rot}deg)`; await sleep(5200);
+    },
+    async slots(g, r) {
+      const items = []; for (let i = 0; i < 30; i++) items.push(r.tasks[i % r.tasks.length]);
+      items.push(r.task);
+      g.innerHTML = `<div class="win slots"><div class="strip" id="st">${items.map(t => `<div class="cell">${esc(t)}</div>`).join('')}</div></div>`;
+      await sleep(80); document.getElementById('st').style.transform = `translateY(-${(items.length - 1) * 96}px)`; await sleep(5200);
+    },
+    async case(g, r) {
+      const items = []; for (let i = 0; i < 40; i++) items.push(r.tasks[Math.floor(Math.random() * r.tasks.length)]);
+      const target = 34; items[target] = r.task;
+      g.innerHTML = `<div class="win case"><div class="marker"></div><div class="strip" id="st">${items.map((t, i) => `<div class="cell" style="background:rgba(255,255,255,.06);border-color:${COLORS[i % 8]}">${esc(t)}</div>`).join('')}</div></div>`;
+      await sleep(80); const off = target * 170 + 85 - 360 + (Math.random() * 100 - 50);
+      document.getElementById('st').style.transform = `translateX(-${off}px)`; await sleep(5200);
+    },
+    async cards(g, r) {
+      const n = Math.min(5, r.tasks.length); const pick = Math.floor(Math.random() * n);
+      const shown = r.tasks.filter((_, i) => i !== r.index).sort(() => Math.random() - .5).slice(0, n - 1); shown.splice(pick, 0, r.task);
+      g.innerHTML = `<div class="cards">${shown.map((t, i) => `<div class="card" id="c${i}"><div class="back">?</div><div class="front">${esc(t)}</div></div>`).join('')}</div>`;
+      for (let k = 0; k < 10; k++) { const c = document.getElementById('c' + (k % n)); c.classList.add('pick'); await sleep(260); c.classList.remove('pick'); }
+      document.getElementById('c' + pick).classList.add('flip'); await sleep(900);
+      for (let i = 0; i < n; i++) if (i !== pick) { const c = document.getElementById('c' + i); c.classList.add('flip', 'dim'); }
+      await sleep(1200);
+    },
+    async box(g) {
+      g.innerHTML = `<div class="box" id="bx">🎁</div>`; const b = document.getElementById('bx');
+      await sleep(300); b.classList.add('shake'); await sleep(3000); b.classList.remove('shake'); b.classList.add('open'); await sleep(700);
+    },
+  };
+
+  async function run() {
+    if (busy || !queue.length) return; busy = true;
+    const r = queue.shift(); const st = document.getElementById('stage'), res = document.getElementById('res');
+    document.getElementById('who').innerHTML = `🎰 ${esc(r.name)} — <span class="grad">${fmt(r.amount)}</span>`;
+    res.classList.remove('on'); res.textContent = '';
+    await sleep(2500); // даём сначала показаться алерту
+    st.classList.add('on');
+    await (games[r.style] || games.wheel)(document.getElementById('game'), r);
+    res.textContent = '🎯 ' + r.task; res.classList.add('on');
+    await sleep(6000); st.classList.remove('on'); await sleep(500);
+    document.getElementById('game').innerHTML = ''; busy = false; run();
+  }
+  start();
+})();
+</script></body></html>

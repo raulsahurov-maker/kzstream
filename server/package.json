@@ -1,0 +1,19 @@
+{
+  "name": "kzstream",
+  "version": "1.0.0",
+  "description": "KZStream — Kaspi-донаты для стримеров",
+  "main": "server.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.22.3"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

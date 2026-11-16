@@ -1,0 +1,8 @@
+node_modules/
+server/data/
+android/.gradle/
+android/app/build/
+android/build/
+windows/build/
+windows/dist/
+*.spec

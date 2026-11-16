@@ -1,0 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap');
+:root{--w-bg:rgba(14,15,26,.82);--w-fg:#fff;--w-a:#ff3b5c;--w-b:#ff7a45}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:transparent;overflow:hidden;color:var(--w-fg);font-family:Manrope,sans-serif}
+.grad{background:linear-gradient(120deg,var(--w-a),var(--w-b));-webkit-background-clip:text;background-clip:text;color:transparent}
+.panel{background:var(--w-bg);border-radius:16px;padding:14px 18px;border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.ad{position:fixed;right:8px;bottom:6px;font-size:11px;opacity:.75;font-weight:700;letter-spacing:.04em}
+.unmute{position:fixed;left:10px;bottom:10px;background:#ff3b5c;color:#fff;font:700 13px Manrope;padding:8px 12px;border-radius:9px;cursor:pointer;display:none}

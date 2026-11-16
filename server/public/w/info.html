@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — info</title>
+<link rel="stylesheet" href="/w/w.css">
+<style>
+  .panel{display:flex;align-items:center;gap:16px;margin:10px;width:min(900px,96vw);font-weight:800;font-size:20px}
+  .badge{font-family:Unbounded;font-size:12px;padding:6px 10px;border-radius:8px;background:linear-gradient(120deg,var(--w-a),var(--w-b));color:#fff;white-space:nowrap}
+  #line{flex:1;transition:.4s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #line.out{opacity:0;transform:translateY(-10px)}
+</style></head><body>
+<div class="panel" id="panel" style="display:none"><span class="badge" id="badge">INFO</span><span id="line"></span></div>
+<script src="/w/widget.js"></script>
+<script>
+(() => {
+  const { on, start, theme, fmt } = KZ; let lines = [], last = null, i = 0, timer = null, interval = 8;
+  function items() { const a = [...lines]; if (last) a.push(`Последний донат: ${last.name} — ${fmt(last.amount)}`); return a; }
+  function show() {
+    const a = items(); if (!a.length) return; const el = document.getElementById('line');
+    el.classList.add('out'); setTimeout(() => { el.textContent = a[i++ % a.length]; el.classList.remove('out'); }, 400);
+  }
+  function apply(s) { lines = s.info.lines || []; interval = s.info.interval || 8; theme(s.info.theme); clearInterval(timer); timer = setInterval(show, interval * 1000); show(); }
+  on('state', st => { if (!st.plan.info) { document.body.innerHTML = '<p style="font:15px sans-serif;padding:14px">Info-виджет доступен с тарифа Lite</p>'; return; } document.getElementById('panel').style.display = ''; last = st.last; apply(st.settings); });
+  on('settings', apply);
+  on('donation', d => { last = d; });
+  start();
+})();
+</script></body></html>

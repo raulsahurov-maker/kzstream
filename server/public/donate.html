@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Донат — KZStream</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+  body{min-height:100vh;background:radial-gradient(ellipse at 50% -10%,rgba(255,59,92,.22),transparent 55%),var(--bg)}
+  .wrap{max-width:520px;margin:0 auto;padding:36px 18px 60px}
+  .head{text-align:center;margin-bottom:24px}
+  .ava{width:84px;height:84px;border-radius:24px;background:var(--grad);display:grid;place-items:center;font-family:Unbounded;font-size:34px;font-weight:800;margin:0 auto 14px;box-shadow:0 14px 40px rgba(255,59,92,.35)}
+  .head h1{font-size:24px;margin-bottom:6px}
+  .head p{color:var(--muted)}
+  .soc{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+  .soc a{font-size:13px;font-weight:700;padding:6px 12px;border-radius:9px;border:1px solid var(--line);color:var(--muted)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .chips button{padding:7px 12px;border-radius:9px;border:1px solid var(--line);font-weight:700;font-size:13px;color:var(--muted)}
+  .chips button:hover{border-color:var(--accent);color:var(--text)}
+  .amount-in{font-family:Unbounded;font-size:22px;font-weight:800}
+  .rec{display:flex;align-items:center;gap:10px}
+  .rec .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);animation:p 1s infinite}
+  @keyframes p{50%{opacity:.3}}
+  .big{font-family:Unbounded;font-size:34px;font-weight:800;text-align:center;margin:8px 0}
+  .kaspi{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;border-radius:13px;background:var(--bg2);border:1px solid var(--line);margin-bottom:10px}
+  .kaspi b{font-size:18px}
+  .ok{text-align:center;font-size:56px}
+  .foot{text-align:center;color:var(--dim);font-size:12.5px;margin-top:22px}
+  .err{color:#ff8a9c;font-size:14px;margin-top:10px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head"><div class="ava" id="ava">K</div><h1 id="title">…</h1><p id="desc"></p><div class="soc" id="soc"></div></div>
+
+  <div class="card" id="step1">
+    <form id="form">
+      <div class="field"><label>Ваше имя</label><input name="name" maxlength="32" placeholder="Аноним"></div>
+      <div class="field"><label>Сумма, ₸</label><input name="amount" type="number" class="amount-in" required id="amount">
+        <div class="chips" id="chips"></div><small id="minHint"></small></div>
+      <div class="field"><label>Сообщение</label><textarea name="message" maxlength="300" placeholder="Напишите что-нибудь стримеру…"></textarea></div>
+      <div class="field" id="mediaF" style="display:none"><label>Ссылка на YouTube (музыка/видео)</label><input name="media_url" placeholder="https://youtu.be/..."><small id="mediaHint"></small></div>
+      <div class="field" id="voiceF" style="display:none"><label>Голосовое сообщение</label>
+        <div class="rec"><button type="button" class="btn btn-ghost btn-sm" id="recBtn">🎤 Записать</button><span id="recState" class="muted" style="font-size:13px">до 20 сек</span></div></div>
+      <p class="muted" style="font-size:13px;margin-bottom:14px" id="rouHint"></p>
+      <button class="btn btn-primary" style="width:100%;padding:15px" type="submit">Продолжить →</button>
+      <div class="err" id="err"></div>
+    </form>
+  </div>
+
+  <div class="card" id="step2" style="display:none">
+    <p class="muted" style="text-align:center">Переведите через Kaspi ровно</p>
+    <div class="big" id="payAmt"></div>
+    <div class="kaspi"><div><div class="muted" style="font-size:12px">Номер телефона</div><b id="payPhone"></b></div><button class="btn btn-ghost btn-sm" id="copyPhone">Копировать</button></div>
+    <div class="kaspi"><div><div class="muted" style="font-size:12px">Получатель</div><b id="payName"></b></div></div>
+    <p class="muted" style="font-size:13.5px;margin:12px 0">Откройте Kaspi.kz → Переводы → По номеру телефона. Сумма должна совпадать до тенге — так мы найдём ваше сообщение. Ваш донат появится на стриме сразу после перевода.</p>
+    <div style="text-align:center;padding:10px" id="waitBox"><span class="muted">⏳ Ждём перевод…</span></div>
+    <button class="btn btn-ghost" style="width:100%" id="again">← Изменить донат</button>
+  </div>
+
+  <div class="card" id="step3" style="display:none;text-align:center">
+    <div class="ok">🎉</div><h2 style="font-size:20px;margin:8px 0">Донат получен!</h2><p class="muted">Спасибо за поддержку. Ваше сообщение уже на стриме.</p>
+    <button class="btn btn-primary" style="margin-top:18px" onclick="location.reload()">Задонатить ещё</button>
+  </div>
+  <div class="foot" id="foot">Работает на <a href="/" style="color:var(--accent)">KZStream</a> · сервис не берёт комиссию</div>
+</div>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const nick = decodeURIComponent(location.pathname.split('/')[2] || '');
+  const fmt = n => Number(n).toLocaleString('ru-RU').replace(/,/g, ' ') + ' ₸';
+  let P = null, voiceUrl = '', pollT = null;
+
+  fetch('/api/page/' + encodeURIComponent(nick)).then(r => r.ok ? r.json() : Promise.reject()).then(p => {
+    P = p; const pg = p.page;
+    document.title = `Донат для ${pg.title || p.nick} — KZStream`;
+    $('#title').textContent = pg.title || p.nick; $('#desc').textContent = pg.description; $('#ava').textContent = (pg.title || p.nick)[0].toUpperCase();
+    const names = { twitch: 'Twitch', youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram', telegram: 'Telegram' };
+    $('#soc').innerHTML = Object.entries(pg.socials || {}).filter(([, v]) => /^https?:\/\//.test(v)).map(([k, v]) => `<a href="${v.replace(/"/g, '')}" target="_blank" rel="noopener">${names[k]}</a>`).join('');
+    $('#amount').min = pg.min_amount; $('#amount').value = Math.max(pg.min_amount, 500);
+    $('#minHint').textContent = `Минимум ${fmt(pg.min_amount)}`;
+    $('#chips').innerHTML = [500, 1000, 2000, 5000, 10000].filter(v => v >= pg.min_amount).map(v => `<button type="button" data-v="${v}">${fmt(v)}</button>`).join('');
+    $('#chips').onclick = e => { const b = e.target.closest('button'); if (b) $('#amount').value = b.dataset.v; };
+    if (p.media) { $('#mediaF').style.display = ''; $('#mediaHint').textContent = `Видео включится на стриме при донате от ${fmt(p.media.min)}`; }
+    if (p.voice && navigator.mediaDevices?.getUserMedia && window.MediaRecorder) $('#voiceF').style.display = '';
+    if (p.roulette) $('#rouHint').textContent = `🎰 Донат от ${fmt(p.roulette.min)} запускает рулетку с заданием для стримера!`;
+    if (!pg.kaspi) { $('#form button[type=submit]').disabled = true; showErr('Стример ещё не указал номер Kaspi для донатов.'); }
+  }).catch(() => { $('#title').textContent = 'Стример не найден'; $('#step1').style.display = 'none'; });
+
+  function showErr(m) { $('#err').textContent = m; $('#err').style.display = 'block'; }
+
+  // запись голосового
+  let rec = null, chunks = [];
+  $('#recBtn').onclick = async () => {
+    if (rec && rec.state === 'recording') return rec.stop();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunks = []; rec = new MediaRecorder(stream);
+      rec.ondataavailable = e => chunks.push(e.data);
+      rec.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop()); clearTimeout(rec._t);
+        const blob = new Blob(chunks, { type: rec.mimeType.split(';')[0] || 'audio/webm' });
+        $('#recState').textContent = 'Загрузка…';
+        const r = await fetch('/api/voice/' + encodeURIComponent(nick), { method: 'POST', headers: { 'Content-Type': blob.type }, body: blob });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok) { voiceUrl = j.url; $('#recState').innerHTML = '✅ Записано · <a href="#" id="rePlay" style="color:var(--accent)">прослушать</a>'; $('#rePlay').onclick = e => { e.preventDefault(); new Audio(voiceUrl).play(); }; }
+        else $('#recState').textContent = j.error || 'Ошибка загрузки';
+        $('#recBtn').textContent = '🎤 Перезаписать';
+      };
+      rec.start(); $('#recBtn').textContent = '⏹ Стоп'; $('#recState').innerHTML = '<span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent)"></span> Идёт запись…';
+      rec._t = setTimeout(() => rec.state === 'recording' && rec.stop(), 20000);
+    } catch { $('#recState').textContent = 'Нет доступа к микрофону'; }
+  };
+
+  $('#form').onsubmit = async e => {
+    e.preventDefault(); $('#err').style.display = 'none';
+    const body = Object.fromEntries(new FormData(e.target)); body.voice_url = voiceUrl;
+    const r = await fetch('/api/donate/' + encodeURIComponent(nick), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return showErr(j.error || 'Ошибка');
+    $('#payAmt').textContent = fmt(j.amount); $('#payPhone').textContent = j.kaspi; $('#payName').textContent = j.receiver || P.page.title;
+    $('#step1').style.display = 'none'; $('#step2').style.display = '';
+    clearInterval(pollT);
+    pollT = setInterval(async () => {
+      const s = await fetch('/api/donate/status/' + j.id).then(r => r.json()).catch(() => ({}));
+      if (s.status === 'done') { clearInterval(pollT); $('#step2').style.display = 'none'; $('#step3').style.display = ''; }
+    }, 3000);
+  };
+  $('#again').onclick = () => { clearInterval(pollT); $('#step2').style.display = 'none'; $('#step1').style.display = ''; };
+  $('#copyPhone').onclick = () => navigator.clipboard?.writeText($('#payPhone').textContent).then(() => $('#copyPhone').textContent = 'Скопировано ✓');
+})();
+</script>
+</body>
+</html>

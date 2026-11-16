@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — цель</title>
+<link rel="stylesheet" href="/w/w.css">
+<style>
+  .panel{width:min(560px,96vw);margin:10px}
+  .t{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+  h2{font-family:Unbounded;font-size:20px}
+  .pct{font-family:Unbounded;font-size:18px;color:var(--w-b)}
+  .track{height:22px;border-radius:12px;background:rgba(255,255,255,.1);overflow:hidden;position:relative}
+  .fill{height:100%;border-radius:12px;background:linear-gradient(90deg,var(--w-a),var(--w-b));transition:width 1.2s cubic-bezier(.2,.8,.2,1);position:relative;overflow:hidden}
+  .fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sh 2.2s infinite}
+  @keyframes sh{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+  .nums{margin-top:8px;font-weight:800;font-size:17px;opacity:.9}
+</style></head><body>
+<div class="panel"><div class="t"><h2 id="title">Цель</h2><span class="pct" id="pct">0%</span></div>
+<div class="track"><div class="fill" id="fill" style="width:0"></div></div><div class="nums" id="nums"></div></div>
+<div class="ad" id="ad" style="display:none">KZStream · донаты через Kaspi</div>
+<script src="/w/widget.js"></script>
+<script>
+(() => {
+  const { on, start, theme, fmt } = KZ;
+  function draw(g) {
+    const p = g.target ? Math.min(100, g.sum / g.target * 100) : 0;
+    document.getElementById('title').textContent = g.title; document.getElementById('pct').textContent = Math.floor(p) + '%';
+    document.getElementById('fill').style.width = p + '%'; document.getElementById('nums').textContent = `${fmt(g.sum)} / ${fmt(g.target)}`;
+  }
+  on('state', st => { theme(st.settings.goal.theme); document.getElementById('ad').style.display = st.plan.ads ? '' : 'none'; draw(st.goal); });
+  on('settings', s => theme(s.goal.theme));
+  on('stats', d => draw(d.goal));
+  start();
+})();
+</script></body></html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кабинет — KZStream</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+  .layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+  aside{background:var(--bg2);border-right:1px solid var(--line);padding:22px 14px;position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column}
+  aside .logo{padding:0 8px 22px}
+  .menu a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--muted);font-weight:600;font-size:14.5px;margin-bottom:2px}
+  .menu a:hover{color:var(--text);background:rgba(255,255,255,.03)}
+  .menu a.on{color:var(--text);background:rgba(255,59,92,.1)}
+  .menu a span{width:22px;text-align:center}
+  .side-plan{margin-top:auto;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:13px}
+  .side-plan b{font-family:Unbounded;font-size:15px}
+  main{padding:30px 36px 80px;max-width:1150px;width:100%}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px;gap:12px;flex-wrap:wrap}
+  .top h1{font-size:24px}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+  .stat b{font-family:Unbounded;font-size:22px;display:block}.stat span{color:var(--muted);font-size:13px}
+  .page{display:none}.page.on{display:block}
+  .feed{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto}
+  .feed .it{display:flex;justify-content:space-between;gap:12px;padding:11px 13px;border-radius:11px;background:var(--bg2);border:1px solid var(--line);font-size:14px}
+  .feed .it b{color:var(--accent2);white-space:nowrap}
+  .wlink{display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:14px;background:var(--bg2);border:1px solid var(--line)}
+  .wlink h4{font-size:14px;display:flex;justify-content:space-between;align-items:center}
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .plan{padding:22px;border-radius:16px;background:var(--bg2);border:1px solid var(--line)}
+  .plan.cur{border-color:var(--cyan)}
+  .plan b{font-family:Unbounded;font-size:24px;display:block;margin:6px 0 12px}
+  .list-edit{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+  .list-edit .li{display:flex;gap:8px}
+  .file{display:flex;align-items:center;gap:12px;padding:10px;border-radius:11px;background:var(--bg2);border:1px solid var(--line)}
+  .file img,.file .ph{width:46px;height:46px;border-radius:8px;object-fit:cover;background:#1b1e2d;display:grid;place-items:center;flex-shrink:0}
+  .file .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+  .bar{height:8px;border-radius:9px;background:rgba(255,255,255,.07);overflow:hidden;margin:10px 0 6px}
+  .bar i{display:block;height:100%;background:var(--grad)}
+  .steps-ol{padding-left:20px;color:#cfd3e3;font-size:14.5px;display:flex;flex-direction:column;gap:7px}
+  .tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  .tabs button{padding:8px 14px;border-radius:9px;border:1px solid var(--line);font-weight:700;font-size:13.5px;color:var(--muted)}
+  .tabs button.on{border-color:var(--accent);color:var(--text);background:rgba(255,59,92,.08)}
+  .mob-top{display:none}
+  @media(max-width:900px){
+    .layout{grid-template-columns:1fr}
+    aside{position:fixed;inset:0 30% 0 0;z-index:60;transform:translateX(-100%);transition:.3s;height:100%}
+    aside.open{transform:none}
+    .mob-top{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:50}
+    main{padding:22px 16px 80px}
+    .g2,.g3,.g4,.plans,.row{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="mob-top"><a class="logo" href="/"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>KZStream</a><button class="btn btn-ghost btn-sm" onclick="document.querySelector('aside').classList.toggle('open')">Меню</button></div>
+<div class="layout">
+<aside>
+  <a class="logo" href="/"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>KZStream</a>
+  <nav class="menu">
+    <a href="#home"><span>🏠</span>Главная</a>
+    <a href="#devices"><span>📲</span>Подключение</a>
+    <a href="#alerts"><span>🔔</span>Алерты и озвучка</a>
+    <a href="#widgets"><span>📊</span>Виджеты</a>
+    <a href="#roulette"><span>🎰</span>Рулетка</a>
+    <a href="#media"><span>🎵</span>Музыка и видео</a>
+    <a href="#page"><span>🌐</span>Страница доната</a>
+    <a href="#donations"><span>💸</span>Донаты</a>
+    <a href="#files"><span>📁</span>Хранилище</a>
+    <a href="#pro"><span>⌨️</span>Хоткеи и вебхуки</a>
+    <a href="#billing"><span>💳</span>Тариф</a>
+    <a href="#account"><span>👤</span>Аккаунт</a>
+    <a href="/admin" id="adminLink" style="display:none"><span>🛡️</span>Админка</a>
+  </nav>
+  <div class="side-plan" id="sidePlan"></div>
+</aside>
+
+<main>
+  <!-- ГЛАВНАЯ -->
+  <section class="page" id="p-home">
+    <div class="top"><h1>Привет, <span id="nickH"></span> 👋</h1><a class="btn btn-ghost btn-sm" id="pageLinkBtn" target="_blank">Моя страница доната ↗</a></div>
+    <div class="grid g4" style="margin-bottom:18px">
+      <div class="card stat"><b id="stToday">0 ₸</b><span>Сегодня</span></div>
+      <div class="card stat"><b id="stMonth">0 ₸</b><span>За месяц</span></div>
+      <div class="card stat"><b id="stTotal">0 ₸</b><span>Всего</span></div>
+      <div class="card stat"><b id="stCnt">0</b><span>Донатов</span></div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Ссылка для зрителей</h3>
+        <p class="hint">Поставьте её в описание стрима и закреп чата.</p>
+        <div class="copy-row"><input readonly id="homePage"><button class="btn btn-ghost" data-copy="homePage">Копировать</button></div>
+        <h3 style="margin-top:24px">Тестовый донат</h3>
+        <p class="hint">Проверьте, как алерт выглядит в OBS.</p>
+        <div class="row"><div class="field"><input id="tName" placeholder="Имя" value="Тестовый донатер"></div><div class="field"><input id="tAmount" type="number" value="1000"></div></div>
+        <div class="field"><input id="tMsg" placeholder="Сообщение" value="Привет! Это тестовый донат 🔥"></div>
+        <button class="btn btn-primary" id="tSend">Отправить тестовый донат</button>
+      </div>
+      <div class="card">
+        <h3>Лента в реальном времени</h3>
+        <p class="hint">Донаты и уведомления от вашего приложения.</p>
+        <div class="feed" id="feed"><div class="muted">Пока пусто. Отправьте тестовый донат.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ПОДКЛЮЧЕНИЕ -->
+  <section class="page" id="p-devices">
+    <div class="top"><h1>Подключение телефона или ПК</h1></div>
+    <div class="card" style="margin-bottom:18px">
+      <h3>Ваша ссылка подключения</h3>
+      <p class="hint">Вставьте её в приложение KZStream. Никому не показывайте — по ней можно отправлять донаты на ваш стрим.</p>
+      <div class="copy-row"><input readonly id="ingestUrl"><button class="btn btn-ghost" data-copy="ingestUrl">Копировать</button><button class="btn btn-danger" id="resetToken">Сменить</button></div>
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <div class="tabs" id="devTabs"><button class="on" data-d="android">Android</button><button data-d="ios">iPhone</button><button data-d="win">Windows</button></div>
+      <div data-dp="android">
+        <ol class="steps-ol">
+          <li>Скачайте приложение KZStream для Android на странице <a href="/download" style="color:var(--accent)">«Скачать»</a> и установите APK.</li>
+          <li>Откройте приложение, вставьте ссылку подключения и нажмите «Сохранить».</li>
+          <li>Нажмите «Дать доступ к уведомлениям» и включите KZStream в списке.</li>
+          <li>Нажмите «Отключить экономию батареи» — иначе Android может выгрузить приложение.</li>
+          <li>Нажмите «Проверить связь». В ленте на главной появится запись.</li>
+        </ol>
+      </div>
+      <div data-dp="ios" style="display:none">
+        <ol class="steps-ol">
+          <li>Откройте приложение <b>«Команды»</b> → вкладка <b>«Автоматизация»</b> → «+».</li>
+          <li>Выберите триггер <b>«Уведомление»</b> (iOS 27+) → приложение <b>Kaspi.kz</b> → «Запускать сразу».</li>
+          <li>Добавьте действие <b>«Получить содержимое URL»</b>. URL — ваша ссылка подключения, метод <b>POST</b>, тело запроса <b>JSON</b>.</li>
+          <li>Добавьте поля: <code>title</code> = «Заголовок уведомления», <code>text</code> = «Текст уведомления» (переменные из триггера).</li>
+          <li>Сохраните. Попросите друга перевести 100 ₸ и проверьте ленту на главной.</li>
+        </ol>
+      </div>
+      <div data-dp="win" style="display:none">
+        <ol class="steps-ol">
+          <li>Подключите телефон к ПК через приложение Windows <b>«Связь с телефоном»</b> (Phone Link) и разрешите показ уведомлений Kaspi.</li>
+          <li>Скачайте <b>KZStream для Windows</b> на странице <a href="/download" style="color:var(--accent)">«Скачать»</a> и запустите.</li>
+          <li>Вставьте ссылку подключения и нажмите «Старт». При первом запуске Windows спросит доступ к уведомлениям — разрешите.</li>
+          <li>Программа также выполняет ваши <b>хоткеи</b> (тариф Pro) — держите её запущенной во время стрима.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="card"><h3>Последние уведомления от приложения</h3><p class="hint">Здесь видно, что приходит с телефона и как сервер это распознал.</p>
+      <table><thead><tr><th>Время</th><th>Текст</th><th>Результат</th></tr></thead><tbody id="ingestLog"></tbody></table></div>
+  </section>
+
+  <!-- АЛЕРТЫ -->
+  <section class="page" id="p-alerts">
+    <div class="top"><h1>Алерты и озвучка</h1><button class="btn btn-primary" data-save="alerts">Сохранить</button></div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Внешний вид</h3><p class="hint">Ссылка виджета для OBS — в разделе «Виджеты».</p>
+        <div class="field"><label>Время показа, сек <span id="durMax" class="muted"></span></label><input type="number" id="a_duration" min="2"></div>
+        <div class="field"><label>Гифка / картинка / видео</label><select id="a_gif" data-files="image,video"></select></div>
+        <div class="field"><label>Звук</label><select id="a_sound" data-files="audio"></select></div>
+        <div class="field"><label>Громкость</label><input type="range" id="a_volume" min="0" max="1" step="0.05"></div>
+        <div class="row">
+          <div class="field"><label>Мин. сумма для алерта</label><input type="number" id="a_min_alert" min="0"></div>
+          <div class="field"><label>Тема оформления <span class="lock" data-need="shop">Lite</span></label><select id="a_theme" data-themes></select></div>
+        </div>
+        <label class="check"><input type="checkbox" id="a_show_msg"> Показывать сообщение донатера</label>
+      </div>
+      <div class="card">
+        <h3>Озвучка доната <span class="lock" data-need="tts">Lite</span></h3><p class="hint">Сообщения читаются голосом прямо в OBS.</p>
+        <label class="check"><input type="checkbox" id="a_tts"> Включить озвучку</label>
+        <div class="field"><label>Мин. сумма для озвучки</label><input type="number" id="a_min_tts" min="0"></div>
+        <h3 style="margin-top:18px">Продвинутая озвучка <span class="lock" data-need="ttsAdvanced">Pro</span></h3><p class="hint">Язык, скорость, чтение имени.</p>
+        <div class="row">
+          <div class="field"><label>Язык</label><select id="a_tts_lang"><option value="ru">Русский</option><option value="kk">Қазақша</option><option value="en">English</option><option value="tr">Türkçe</option><option value="uk">Українська</option></select></div>
+          <div class="field"><label>Скорость</label><input type="range" id="a_tts_rate" min="0.5" max="2" step="0.1"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="a_tts_read_name"> Читать имя и сумму</label>
+      </div>
+      <div class="card">
+        <h3>Цензура</h3><p class="hint">Слова через запятую заменяются на ***.</p>
+        <div class="field"><textarea id="c_words" placeholder="слово1, слово2"></textarea></div>
+        <label class="check"><input type="checkbox" id="c_strip_links"> Убирать ссылки из сообщений</label>
+        <button class="btn btn-ghost" data-save="censor">Сохранить цензуру</button>
+      </div>
+      <div class="card">
+        <h3>Ники донатерам <span class="lock" data-need="nicks">Lite</span></h3><p class="hint">Имя из Kaspi → ник на стриме. Например «Аружан А.» → «Aru_kz».</p>
+        <div class="list-edit" id="nicksList"></div>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="addNick">+ Добавить</button><button class="btn btn-ghost btn-sm" data-save="nicks">Сохранить ники</button></div>
+      </div>
+      <div class="card" style="grid-column:1/-1">
+        <h3>Мем-алерты <span class="lock" data-need="memes">Pro</span></h3><p class="hint">Отдельная гифка и звук на точную сумму (например, 666 ₸ или 1 337 ₸).</p>
+        <div class="list-edit" id="varList"></div>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="addVar">+ Добавить мем-алерт</button><button class="btn btn-ghost btn-sm" data-save="alerts">Сохранить</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ВИДЖЕТЫ -->
+  <section class="page" id="p-widgets">
+    <div class="top"><h1>Виджеты для OBS и TikTok Live Studio</h1></div>
+    <div class="card" style="margin-bottom:18px"><h3>Как добавить</h3><p class="hint" style="margin:0">OBS → Источники → «+» → «Браузер» → вставьте ссылку. Ширина 800, высота 600 (для ТОПа и цели — 500×300). В TikTok Live Studio: «Добавить источник» → «Ссылка».</p></div>
+    <div class="grid g2" id="wlinks"></div>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card">
+        <h3>ТОП донатеров</h3><p class="hint">На Free — с водяным знаком KZStream.</p>
+        <div class="row">
+          <div class="field"><label>Период</label><select id="t_period"><option value="day">День</option><option value="week">Неделя</option><option value="month">Месяц</option><option value="all">Всё время</option></select></div>
+          <div class="field"><label>Сколько показывать</label><input type="number" id="t_count" min="1" max="10"></div>
+        </div>
+        <div class="field"><label>Тема <span class="lock" data-need="shop">Lite</span></label><select id="t_theme" data-themes></select></div>
+        <button class="btn btn-primary" data-save="top">Сохранить</button>
+      </div>
+      <div class="card">
+        <h3>Цель сбора</h3><p class="hint" id="goalNow"></p>
+        <div class="field"><label>Название</label><input id="g_title"></div>
+        <div class="row"><div class="field"><label>Цель, ₸</label><input type="number" id="g_target"></div><div class="field"><label>Уже собрано вне сервиса, ₸</label><input type="number" id="g_base"></div></div>
+        <div class="field"><label>Тема <span class="lock" data-need="shop">Lite</span></label><select id="g_theme" data-themes></select></div>
+        <div style="display:flex;gap:8px"><button class="btn btn-primary" data-save="goal">Сохранить</button><button class="btn btn-ghost" id="goalReset">Начать сбор заново</button></div>
+      </div>
+      <div class="card">
+        <h3>Info-виджет <span class="lock" data-need="info">Lite</span></h3><p class="hint">Бегущие строки + последний донат.</p>
+        <div class="list-edit" id="infoList"></div>
+        <button class="btn btn-ghost btn-sm" id="addInfo" style="margin-bottom:12px">+ Строка</button>
+        <div class="row"><div class="field"><label>Смена каждые, сек</label><input type="number" id="i_interval"></div><div class="field"><label>Тема</label><select id="i_theme" data-themes></select></div></div>
+        <button class="btn btn-primary" data-save="info">Сохранить</button>
+      </div>
+      <div class="card">
+        <h3>Таймер (сабатон) <span class="lock" data-need="timer">Lite</span></h3><p class="hint">Донаты добавляют время к стриму. Сейчас: <b id="timerNow">—</b></p>
+        <div class="row"><div class="field"><label>Секунд за каждые 100 ₸</label><input type="number" id="tm_sec"></div><div class="field"><label>Тема</label><select id="tm_theme" data-themes></select></div></div>
+        <button class="btn btn-ghost btn-sm" data-save="timer" style="margin-bottom:14px">Сохранить</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="number" id="tm_min" value="60" style="width:90px"><button class="btn btn-ghost btn-sm" data-timer="set">Установить (мин)</button>
+          <button class="btn btn-ghost btn-sm" data-timer="add">+ мин</button>
+          <button class="btn btn-primary btn-sm" data-timer="start">▶ Старт</button>
+          <button class="btn btn-ghost btn-sm" data-timer="pause">⏸ Пауза</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- РУЛЕТКА -->
+  <section class="page" id="p-roulette">
+    <div class="top"><h1>Рулетка с заданиями <span class="lock" data-need="roulette">Lite</span></h1><button class="btn btn-primary" data-save="roulette">Сохранить</button></div>
+    <div class="grid g2">
+      <div class="card">
+        <label class="check"><input type="checkbox" id="r_enabled"> Включить рулетку</label>
+        <div class="field"><label>Минимальная сумма для прокрутки, ₸</label><input type="number" id="r_min"></div>
+        <div class="field"><label>Стиль</label><select id="r_style"><option value="wheel">Колесо</option><option value="slots">Слоты</option><option value="cards">Карточки</option><option value="box">Мистери-бокс</option><option value="case">CS Case</option></select></div>
+        <p class="hint">Ссылка виджета рулетки — в разделе «Виджеты».</p>
+      </div>
+      <div class="card"><h3>Задания</h3><p class="hint">До 24 вариантов.</p><div class="list-edit" id="taskList"></div><button class="btn btn-ghost btn-sm" id="addTask">+ Задание</button></div>
+    </div>
+  </section>
+
+  <!-- МЕДИА -->
+  <section class="page" id="p-media">
+    <div class="top"><h1>Музыка и видео по ссылке</h1><button class="btn btn-primary" data-save="media">Сохранить</button></div>
+    <div class="grid g2">
+      <div class="card">
+        <p class="hint">Зрители прикладывают ссылку YouTube к донату. Lite — 50 заказов в месяц, Pro — без ограничений.</p>
+        <label class="check"><input type="checkbox" id="m_enabled"> Принимать заказы</label>
+        <div class="row"><div class="field"><label>Мин. сумма, ₸</label><input type="number" id="m_min"></div><div class="field"><label>Макс. длительность, сек</label><input type="number" id="m_max"></div></div>
+        <div class="field"><label>Громкость</label><input type="range" id="m_volume" min="0" max="1" step="0.05"></div>
+      </div>
+      <div class="card"><h3>Очередь</h3><p class="hint">Сейчас играет первое видео.</p><div class="feed" id="mediaQueue"></div><button class="btn btn-danger" id="mediaSkip" style="margin-top:12px">⏭ Пропустить текущее</button></div>
+    </div>
+  </section>
+
+  <!-- СТРАНИЦА -->
+  <section class="page" id="p-page">
+    <div class="top"><h1>Страница доната</h1><button class="btn btn-primary" data-save="page">Сохранить</button></div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="field"><label>Заголовок</label><input id="pg_title"></div>
+        <div class="field"><label>Описание</label><textarea id="pg_description"></textarea></div>
+        <div class="field"><label>Номер Kaspi для переводов</label><input id="pg_kaspi" placeholder="+7 777 123 45 67"><small>Зрители будут переводить на этот номер.</small></div>
+        <div class="field"><label>Имя получателя (как в Kaspi)</label><input id="pg_receiver" placeholder="Аружан А."></div>
+        <div class="field"><label>Минимальная сумма доната, ₸</label><input type="number" id="pg_min"></div>
+      </div>
+      <div class="card">
+        <h3>Соцсети</h3><p class="hint">Ссылки появятся на странице.</p>
+        <div class="field"><label>Twitch</label><input id="s_twitch"></div>
+        <div class="field"><label>YouTube</label><input id="s_youtube"></div>
+        <div class="field"><label>TikTok</label><input id="s_tiktok"></div>
+        <div class="field"><label>Instagram</label><input id="s_instagram"></div>
+        <div class="field"><label>Telegram</label><input id="s_telegram"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ДОНАТЫ -->
+  <section class="page" id="p-donations">
+    <div class="top"><h1>Донаты</h1><button class="btn btn-ghost" id="skipAlert">⏭ Пропустить текущий алерт</button></div>
+    <div class="card" style="overflow:auto"><table><thead><tr><th>Время</th><th>Имя</th><th>Сумма</th><th>Сообщение</th><th>Статус</th><th></th></tr></thead><tbody id="donTable"></tbody></table></div>
+  </section>
+
+  <!-- ФАЙЛЫ -->
+  <section class="page" id="p-files">
+    <div class="top"><h1>Хранилище</h1><label class="btn btn-primary">Загрузить файл<input type="file" id="upload" hidden accept="image/*,audio/*,video/mp4,video/webm" multiple></label></div>
+    <div class="card" style="margin-bottom:18px"><div id="storageTxt"></div><div class="bar"><i id="storageBar"></i></div></div>
+    <div class="grid g2" id="fileList"></div>
+  </section>
+
+  <!-- PRO -->
+  <section class="page" id="p-pro">
+    <div class="top"><h1>Хоткеи и вебхуки <span class="lock" data-need="hotkeys">Pro</span></h1></div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Хоткеи</h3><p class="hint">Программа KZStream для Windows нажмёт клавиши при донате в диапазоне суммы. Например <code>ctrl+shift+1</code> — смена сцены OBS.</p>
+        <div class="list-edit" id="hkList"></div>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="addHk">+ Хоткей</button><button class="btn btn-primary btn-sm" data-save="hotkeys">Сохранить</button></div>
+      </div>
+      <div class="card">
+        <h3>Вебхуки</h3><p class="hint">При каждом донате отправляем POST с JSON (имя, сумма, сообщение) на ваши адреса. До 5 штук.</p>
+        <div class="list-edit" id="whList"></div>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="addWh">+ URL</button><button class="btn btn-primary btn-sm" data-save="webhooks">Сохранить</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ТАРИФ -->
+  <section class="page" id="p-billing">
+    <div class="top"><h1>Тариф</h1></div>
+    <div class="card" style="margin-bottom:18px" id="curPlan"></div>
+    <div class="plans" id="plansBox"></div>
+    <div class="card" style="margin-top:18px" id="payBox">
+      <h3>Оплата через Kaspi</h3>
+      <ol class="steps-ol" style="margin-bottom:18px"><li>Выберите тариф и срок — сумма посчитается сама.</li><li>Переведите эту сумму через Kaspi на номер ниже.</li><li>Отправьте чек перевода и свой ник в Telegram <a id="payTg" target="_blank" style="color:var(--accent);font-weight:700"></a>.</li><li>Нажмите «Я оплатил». Тариф включится после проверки.</li></ol>
+      <div class="row">
+        <div class="field"><label>Тариф</label><select id="payPlan"><option value="lite">Lite</option><option value="pro">Pro</option></select></div>
+        <div class="field"><label>Месяцев</label><select id="payMonths"><option>1</option><option>2</option><option>3</option><option>6</option><option>12</option></select></div>
+      </div>
+      <div class="card" style="background:var(--bg2);margin-bottom:14px"><div class="muted" style="font-size:13px">Переведите</div><div style="font-family:Unbounded;font-size:26px" id="payAmount"></div><div class="muted" style="font-size:14px">на Kaspi <b id="payPhone" style="color:var(--text)"></b> · <span id="payName"></span></div></div>
+      <div class="field"><label>Комментарий (имя отправителя в Kaspi)</label><input id="payComment" placeholder="Например: Аружан А."></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" id="copyPayPhone">Скопировать номер</button><a class="btn btn-ghost" id="payTgBtn" target="_blank">✈️ Отправить чек в Telegram</a><button class="btn btn-primary" id="paySend">Я оплатил — отправить заявку</button></div>
+      <h3 style="margin-top:24px">История заявок</h3>
+      <table><tbody id="payHist"></tbody></table>
+    </div>
+  </section>
+
+  <!-- АККАУНТ -->
+  <section class="page" id="p-account">
+    <div class="top"><h1>Аккаунт</h1><button class="btn btn-danger" id="logout">Выйти</button></div>
+    <div class="grid g2">
+      <div class="card"><h3>Данные</h3><p class="hint" id="accInfo"></p></div>
+      <div class="card"><h3>Сменить пароль</h3>
+        <div class="field"><input type="password" id="pwOld" placeholder="Текущий пароль"></div>
+        <div class="field"><input type="password" id="pwNew" placeholder="Новый пароль (мин. 6)"></div>
+        <button class="btn btn-primary" id="pwSave">Сменить</button></div>
+    </div>
+  </section>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

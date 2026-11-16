@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — ТОП</title>
+<link rel="stylesheet" href="/w/w.css">
+<style>
+  .panel{width:min(460px,96vw);margin:10px}
+  h2{font-family:Unbounded;font-size:16px;letter-spacing:.06em;margin-bottom:10px}
+  .row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:18px;font-weight:700;animation:in .5s both}
+  .row:last-child{border:none}
+  .pos{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-family:Unbounded;font-size:13px;background:rgba(255,255,255,.08)}
+  .row:nth-child(1) .pos{background:linear-gradient(120deg,var(--w-a),var(--w-b));color:#fff}
+  .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sm{color:var(--w-b)}
+  @keyframes in{from{opacity:0;transform:translateX(-14px)}}
+  .empty{opacity:.6;font-size:15px}
+</style></head><body>
+<div class="panel"><h2 class="grad" id="h">ТОП ДОНАТЕРОВ</h2><div id="list"></div></div>
+<div class="ad" id="ad" style="display:none">KZStream · донаты через Kaspi</div>
+<script src="/w/widget.js"></script>
+<script>
+(() => {
+  const { on, start, theme, fmt, esc } = KZ; let set = null;
+  const per = { day: 'ДНЯ', week: 'НЕДЕЛИ', month: 'МЕСЯЦА', all: '' };
+  function draw(top) {
+    document.getElementById('list').innerHTML = top.length ? top.map((t, i) => `<div class="row" style="animation-delay:${i * .06}s"><span class="pos">${i + 1}</span><span class="nm">${esc(t.name)}</span><span class="sm">${fmt(t.total)}</span></div>`).join('') : '<div class="empty">Станьте первым донатером!</div>';
+  }
+  on('state', st => { set = st.settings.top; theme(set.theme); document.getElementById('h').textContent = ('ТОП ДОНАТЕРОВ ' + per[set.period]).trim(); document.getElementById('ad').style.display = st.plan.ads ? '' : 'none'; draw(st.top); });
+  on('settings', s => { set = s.top; theme(set.theme); document.getElementById('h').textContent = ('ТОП ДОНАТЕРОВ ' + per[set.period]).trim(); });
+  on('stats', d => draw(d.top));
+  start();
+})();
+</script></body></html>

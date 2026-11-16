@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — музыка и видео</title>
+<link rel="stylesheet" href="/w/w.css">
+<style>
+  #wrap{position:fixed;inset:0;display:none;flex-direction:column}
+  #wrap.on{display:flex}
+  #player{flex:1;width:100%}
+  .cap{padding:10px 16px;font-weight:800;font-size:18px;background:var(--w-bg);display:flex;justify-content:space-between}
+  .cap b{color:var(--w-b)}
+</style></head><body>
+<div id="wrap"><div id="player"></div><div class="cap"><span id="who"></span><b id="amt"></b></div></div>
+<script src="/w/widget.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+(() => {
+  const { on, start, fmt, token } = KZ;
+  let S = null, queue = [], cur = null, player = null, ready = false, limitT = null;
+  const ytId = u => (String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/) || [])[1];
+  window.onYouTubeIframeAPIReady = () => {
+    player = new YT.Player('player', { width: '100%', height: '100%', playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1 },
+      events: { onReady: () => { ready = true; next(); }, onStateChange: e => { if (e.data === 0) finish(); }, onError: () => finish() } });
+  };
+  function next() {
+    if (!ready || cur || !queue.length || !S?.enabled) return;
+    cur = queue[0]; const id = ytId(cur.media_url); if (!id) return finish();
+    document.getElementById('who').textContent = '🎵 ' + cur.name; document.getElementById('amt').textContent = fmt(cur.amount);
+    document.getElementById('wrap').classList.add('on');
+    player.setVolume(Math.round((S.volume ?? .6) * 100)); player.loadVideoById(id);
+    clearTimeout(limitT); limitT = setTimeout(finish, (S.max_sec || 180) * 1000);
+  }
+  function finish(skipped) {
+    clearTimeout(limitT); if (!cur) return; const id = cur.id; cur = null;
+    try { player.stopVideo(); } catch { }
+    document.getElementById('wrap').classList.remove('on');
+    queue = queue.filter(q => q.id !== id);
+    if (!skipped) fetch('/api/w/' + token + '/media/done', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    setTimeout(next, 1500);
+  }
+  on('state', st => { S = st.settings.media; queue = st.media; next(); });
+  on('settings', s => { S = s.media; if (player && ready) player.setVolume(Math.round((S.volume ?? .6) * 100)); });
+  on('stats', d => { queue = d.media; if (cur && !queue.some(q => q.id === cur.id)) finish(true); else next(); });
+  on('media_skip', () => finish(true));
+  start();
+})();
+</script></body></html>
