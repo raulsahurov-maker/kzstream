@@ -2,7 +2,7 @@
 const PLANS = {
   free: {
     id: 'free', name: 'Free', price: 0,
-    storageMB: 10, maxDuration: 8, tts: true, ttsAdvanced: false, voice: false,
+    storageMB: 10, maxDuration: 8, tts: false, ttsAdvanced: false, voice: false,
     nicks: false, ads: true, info: false, timer: false, shop: false, roulette: false,
     tiktok: false, media: 0, hotkeys: false, webhooks: false, memes: false, freezeDays: 0,
   },

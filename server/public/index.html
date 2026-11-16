@@ -126,6 +126,9 @@
   .f-ico{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;margin-bottom:20px;font-size:22px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
   .feat h3{font-size:18px;margin-bottom:10px}
   .feat p{color:var(--muted);font-size:15px}
+  .fbadge,.pbadge{display:inline-block;vertical-align:middle;font-family:Manrope,sans-serif;font-size:11px;font-weight:800;letter-spacing:.03em;padding:3px 8px;border-radius:7px;margin-left:6px;background:rgba(62,230,196,.14);color:#3ee6c4;border:1px solid rgba(62,230,196,.35)}
+  .pbadge{background:rgba(139,108,255,.14);color:#b7a6ff;border-color:rgba(139,108,255,.35)}
+  .pbadge.pro{background:rgba(255,122,69,.14);color:#ff9d6e;border-color:rgba(255,122,69,.35)}
   .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
   .tags span{font-size:12px;padding:4px 9px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:#b5bad0}
 
@@ -156,8 +159,8 @@
   .old s{margin-right:8px}
   .save{color:var(--cyan);font-weight:700}
   .plan ul{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:30px;flex:1}
-  .plan li{display:flex;gap:10px;font-size:14.5px;color:#cfd3e3}
-  .plan li::before{content:"";flex-shrink:0;width:18px;height:18px;margin-top:2px;border-radius:50%;background:rgba(62,230,196,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233ee6c4' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/11px no-repeat}
+  .plan li{display:block;position:relative;padding-left:28px;font-size:14.5px;color:#cfd3e3}
+  .plan li::before{content:"";position:absolute;left:0;top:2px;width:18px;height:18px;border-radius:50%;background:rgba(62,230,196,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233ee6c4' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/11px no-repeat}
   .plan li.lim{color:var(--muted)}
   .plan li.lim::before{background:rgba(255,122,69,.1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff7a45' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M12 7v6M12 17h.01'/%3E%3C/svg%3E") center/11px no-repeat}
   .plan li em{font-style:normal;color:var(--dim);font-size:13px}
@@ -378,13 +381,13 @@
       <p>Всё, что нужно стримеру в Казахстане, чтобы монетизировать эфир.</p>
     </div>
     <div class="features">
-      <div class="feat reveal"><div class="f-ico">🔔</div><h3>Алерты донатов</h3><p>Анимированные уведомления на стриме: свои гифки, звуки, время показа и шрифты.</p><div class="tags"><span>GIF</span><span>Звуки</span><span>Цензура</span></div></div>
-      <div class="feat reveal" style="--glow:rgba(62,230,196,.14)"><div class="f-ico">🗣️</div><h3>Озвучка (TTS)</h3><p>Сообщение из перевода Kaspi читается вслух на стриме. На Pro — 5 языков и скорость.</p><div class="tags"><span>Простая</span><span>Продвинутая</span><span>Қазақша</span></div></div>
-      <div class="feat reveal" style="--glow:rgba(139,108,255,.18)"><div class="f-ico">🎰</div><h3>Рулетка с заданиями</h3><p>Донат запускает рулетку с заданиями для стримера. 5 стилей анимации.</p><div class="tags"><span>Колесо</span><span>Слоты</span><span>Карточки</span><span>Мистери-бокс</span><span>CS Case</span></div></div>
-      <div class="feat reveal" style="--glow:rgba(255,122,69,.16)"><div class="f-ico">📊</div><h3>Виджеты для OBS</h3><p>ТОП донатеров, цель сбора с прогресс-баром, таймер, info-виджет и кастомная статистика.</p><div class="tags"><span>30+ дизайнов</span><span>Магазин виджетов</span></div></div>
-      <div class="feat reveal"><div class="f-ico">🎵</div><h3>Музыка и видео по ссылке</h3><p>Зритель вставляет ссылку YouTube в сообщение к переводу — видео включается прямо на стриме.</p><div class="tags"><span>YouTube</span><span>Модерация очереди</span></div></div>
-      <div class="feat reveal" style="--glow:rgba(62,230,196,.14)"><div class="f-ico">⌨️</div><h3>Хоткеи и вебхуки</h3><p>Привяжите клавиши или вебхуки к суммам донатов: сцены OBS, эффекты, звуки, мем-алерты.</p><div class="tags"><span>Хоткеи</span><span>Вебхуки</span><span>Мем-алерты</span></div></div>
-      <div class="feat reveal" style="--glow:rgba(139,108,255,.18)"><div class="f-ico">📱</div><h3>TikTok Live</h3><p>Отдельные функции и виджеты для стримов в TikTok — работают в TikTok Live Studio.</p></div>
+      <div class="feat reveal"><div class="f-ico">🔔</div><h3>Алерты донатов <span class="fbadge">Бесплатно</span></h3><p>Анимированные уведомления на стриме: свои гифки, звуки, время показа и шрифты.</p><div class="tags"><span>GIF</span><span>Звуки</span><span>Цензура</span></div></div>
+      <div class="feat reveal" style="--glow:rgba(62,230,196,.14)"><div class="f-ico">🗣️</div><h3>Озвучка (TTS) <span class="pbadge">Lite</span></h3><p>Сообщение из перевода Kaspi читается вслух на стриме. На Pro — 5 языков и скорость.</p><div class="tags"><span>Простая</span><span>Продвинутая</span><span>Қазақша</span></div></div>
+      <div class="feat reveal" style="--glow:rgba(139,108,255,.18)"><div class="f-ico">🎰</div><h3>Рулетка с заданиями <span class="pbadge">Lite</span></h3><p>Донат запускает рулетку с заданиями для стримера. 5 стилей анимации.</p><div class="tags"><span>Колесо</span><span>Слоты</span><span>Карточки</span><span>Мистери-бокс</span><span>CS Case</span></div></div>
+      <div class="feat reveal" style="--glow:rgba(255,122,69,.16)"><div class="f-ico">📊</div><h3>Цель сбора и ТОП <span class="fbadge">Бесплатно</span></h3><p>ТОП донатеров и цель сбора с прогресс-баром — бесплатно. Таймер, info-виджет и темы — в Lite.</p><div class="tags"><span>30+ дизайнов</span><span>Магазин виджетов</span></div></div>
+      <div class="feat reveal"><div class="f-ico">🎵</div><h3>Музыка и видео по ссылке <span class="pbadge">Lite</span></h3><p>Зритель вставляет ссылку YouTube в сообщение к переводу — видео включается прямо на стриме.</p><div class="tags"><span>YouTube</span><span>Модерация очереди</span></div></div>
+      <div class="feat reveal" style="--glow:rgba(62,230,196,.14)"><div class="f-ico">⌨️</div><h3>Хоткеи и вебхуки <span class="pbadge pro">Pro</span></h3><p>Привяжите клавиши или вебхуки к суммам донатов: сцены OBS, эффекты, звуки, мем-алерты.</p><div class="tags"><span>Хоткеи</span><span>Вебхуки</span><span>Мем-алерты</span></div></div>
+      <div class="feat reveal" style="--glow:rgba(139,108,255,.18)"><div class="f-ico">📱</div><h3>TikTok Live <span class="pbadge">Lite</span></h3><p>Отдельные функции и виджеты для стримов в TikTok — работают в TikTok Live Studio.</p></div>
       <div class="feat reveal" style="--glow:rgba(255,122,69,.16)"><div class="f-ico">🌐</div><h3>Личная страница</h3><p>Страница с вашим номером Kaspi, целью сбора, топом донатеров и соцсетями.</p></div>
       <div class="feat reveal"><div class="f-ico">🏦</div><h3>Kaspi Gold и другие банки</h3><p>Приём переводов на Kaspi Gold и карты других банков Казахстана, без комиссии сервиса.</p></div>
     </div>
@@ -426,20 +429,19 @@
     </div>
     <div class="pricing">
       <div class="plan reveal">
-        <h3>Free</h3>
-        <div class="sub">Чтобы попробовать сервис на своём стриме</div>
+        <h3>Free <span class="fbadge">Бесплатно</span></h3>
+        <div class="sub">Алерты, цель сбора и топ донатеров — бесплатно навсегда</div>
         <div class="price"><b>0 ₸</b><span>/ навсегда</span></div>
         <div class="old">&nbsp;</div>
         <ul>
-          <li>Автоуведомления о донатах</li>
-          <li class="lim">Смена гифок, музыки и времени <em>(до 8 сек)</em></li>
-          <li class="lim">ТОП 5 донатеров <em>(с рекламой)</em></li>
-          <li class="lim">Цель сбора <em>(с рекламой)</em></li>
-          <li>Озвучка доната (простая)</li>
+          <li>Алерты донатов на стриме <em>(до 8 сек)</em></li>
+          <li>Цель сбора <em>(с логотипом KZStream)</em></li>
+          <li>ТОП донатеров <em>(с логотипом KZStream)</em></li>
           <li>Цензура сообщений</li>
-          <li>Личная страница</li>
-          <li>Кастомная статистика</li>
+          <li>Личная страница с номером Kaspi</li>
+          <li>Статистика донатов</li>
           <li>Хранилище 10 МБ</li>
+          <li class="lim">Озвучка, рулетка, музыка и остальное — <em>в Lite и Pro</em></li>
         </ul>
         <a class="btn btn-ghost" data-open="register" data-plan="Free">Начать</a>
       </div>
@@ -453,6 +455,7 @@
         <ul>
           <li>Заморозка подписки на 5 дней</li>
           <li>Алерты: гифки, музыка, время без ограничений</li>
+          <li>Озвучка доната (простая)</li>
           <li>Темы оформления виджетов</li>
           <li>Ник донатеру, ТОП 5, цель сбора — без рекламы</li>
           <li>Info-виджет, таймер, магазин виджетов</li>
@@ -491,13 +494,13 @@
         <thead><tr><th>Функция</th><th>Free</th><th>Lite</th><th>Pro</th></tr></thead>
         <tbody>
           <tr><td>Цена в месяц</td><td>0 ₸</td><td>2 690 ₸</td><td>7 190 ₸</td></tr>
-          <tr><td>Автоуведомления о донатах</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+          <tr><td>Алерты донатов</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
           <tr><td>Настройка гифок, музыки, времени</td><td>огранич.</td><td class="y">✓</td><td class="y">✓</td></tr>
           <tr><td>Цензура сообщений</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
           <tr><td>Личная страница</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
-          <tr><td>ТОП 5 и цель сбора</td><td>с рекламой</td><td class="y">✓</td><td class="y">✓</td></tr>
+          <tr><td>ТОП донатеров и цель сбора</td><td>✓ с логотипом</td><td class="y">✓</td><td class="y">✓</td></tr>
           <tr><td>Кастомная статистика</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
-          <tr><td>Озвучка доната</td><td>простая</td><td>простая</td><td>продвинутая</td></tr>
+          <tr><td>Озвучка доната</td><td class="n">—</td><td>простая</td><td>продвинутая</td></tr>
           <tr><td>Темы оформления (магазин)</td><td class="n">—</td><td class="y">✓</td><td class="y">✓</td></tr>
           <tr><td>Ник донатеру</td><td class="n">—</td><td class="y">✓</td><td class="y">✓</td></tr>
           <tr><td>Info-виджет, таймер, магазин виджетов</td><td class="n">—</td><td class="y">✓</td><td class="y">✓</td></tr>

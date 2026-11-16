@@ -43,6 +43,11 @@
   .tabs button{padding:8px 14px;border-radius:9px;border:1px solid var(--line);font-weight:700;font-size:13.5px;color:var(--muted)}
   .tabs button.on{border-color:var(--accent);color:var(--text);background:rgba(255,59,92,.08)}
   .mob-top{display:none}
+  .mb{margin-left:auto;font-style:normal;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:6px;background:rgba(139,108,255,.14);color:#b7a6ff}
+  .mb.pro{background:rgba(255,122,69,.14);color:#ff9d6e}.mb.free{background:rgba(62,230,196,.12);color:var(--cyan)}
+  .wb{display:inline-block;vertical-align:middle;font-family:Manrope,sans-serif;font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px;margin-left:6px}
+  .wb.free{background:rgba(62,230,196,.12);color:var(--cyan);border:1px solid rgba(62,230,196,.3)}.wb.lite{background:rgba(139,108,255,.14);color:#b7a6ff;border:1px solid rgba(139,108,255,.3)}
+  .wlink.locked{opacity:.6}
   .ios-head{display:flex;gap:14px;align-items:center;margin-bottom:18px}.ios-ic{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#5b7cff,#c86bff);display:grid;place-items:center;font-size:24px}
   .ios-steps{display:flex;flex-direction:column;gap:14px}
   .ios-st{display:grid;grid-template-columns:150px 1fr;gap:18px;padding:16px;border-radius:16px;background:var(--bg2);border:1px solid var(--line);align-items:start}
@@ -86,12 +91,12 @@
     <a href="#devices"><span>📲</span>Подключение</a>
     <a href="#alerts"><span>🔔</span>Алерты и озвучка</a>
     <a href="#widgets"><span>📊</span>Виджеты</a>
-    <a href="#roulette"><span>🎰</span>Рулетка</a>
-    <a href="#media"><span>🎵</span>Музыка и видео</a>
+    <a href="#roulette"><span>🎰</span>Рулетка<i class="mb">Lite</i></a>
+    <a href="#media"><span>🎵</span>Музыка и видео<i class="mb">Lite</i></a>
     <a href="#page"><span>🌐</span>Страница доната</a>
     <a href="#donations"><span>💸</span>Донаты</a>
     <a href="#files"><span>📁</span>Хранилище</a>
-    <a href="#pro"><span>⌨️</span>Хоткеи и вебхуки</a>
+    <a href="#pro"><span>⌨️</span>Хоткеи и вебхуки<i class="mb pro">Pro</i></a>
     <a href="#billing"><span>💳</span>Тариф</a>
     <a href="#account"><span>👤</span>Аккаунт</a>
     <a href="/admin" id="adminLink" style="display:none"><span>🛡️</span>Админка</a>
@@ -238,7 +243,7 @@
     <div class="grid g2" id="wlinks"></div>
     <div class="grid g2" style="margin-top:18px">
       <div class="card">
-        <h3>ТОП донатеров</h3><p class="hint">На Free — с водяным знаком KZStream.</p>
+        <h3>ТОП донатеров <span class="wb free">Бесплатно</span></h3><p class="hint">На Free — с небольшим логотипом KZStream.</p>
         <div class="row">
           <div class="field"><label>Период</label><select id="t_period"><option value="day">День</option><option value="week">Неделя</option><option value="month">Месяц</option><option value="all">Всё время</option></select></div>
           <div class="field"><label>Сколько показывать</label><input type="number" id="t_count" min="1" max="10"></div>
@@ -247,7 +252,7 @@
         <button class="btn btn-primary" data-save="top">Сохранить</button>
       </div>
       <div class="card">
-        <h3>Цель сбора</h3><p class="hint" id="goalNow"></p>
+        <h3>Цель сбора <span class="wb free">Бесплатно</span></h3><p class="hint" id="goalNow"></p>
         <div class="field"><label>Название</label><input id="g_title"></div>
         <div class="row"><div class="field"><label>Цель, ₸</label><input type="number" id="g_target"></div><div class="field"><label>Уже собрано вне сервиса, ₸</label><input type="number" id="g_base"></div></div>
         <div class="field"><label>Тема <span class="lock" data-need="shop">Lite</span></label><select id="g_theme" data-themes></select></div>

@@ -77,7 +77,10 @@ function render() {
   listEdit('#varList', a.variations || [], [['amount', 'Сумма', 'number'], ['gif', 'Гифка (URL)', 'file:image,video'], ['sound', 'Звук (URL)', 'file:audio'], ['text', 'Подпись']]);
   // виджеты
   const names = { alerts: '🔔 Алерты', top: '🏆 ТОП донатеров', goal: '🎯 Цель сбора', roulette: '🎰 Рулетка', media: '🎵 Музыка и видео', info: 'ℹ️ Info-виджет', timer: '⏱ Таймер' };
-  $('#wlinks').innerHTML = Object.entries(ME.urls.widgets).map(([k, u]) => `<div class="wlink"><h4>${names[k]}<a class="btn btn-ghost btn-sm" href="${u}" target="_blank">Открыть ↗</a></h4><div class="copy-row"><input readonly value="${u}" id="w_${k}"><button class="btn btn-ghost btn-sm" data-copy="w_${k}">Копировать</button></div></div>`).join('');
+  const need = { alerts: null, top: null, goal: null, roulette: 'roulette', media: 'media', info: 'info', timer: 'timer' };
+  const badge = k => !need[k] ? '<span class="wb free">Бесплатно</span>' : `<span class="wb lite">Lite</span>`;
+  $('#wlinks').innerHTML = Object.entries(ME.urls.widgets).map(([k, u]) => { const locked = need[k] && !p[need[k]];
+    return `<div class="wlink ${locked ? 'locked' : ''}"><h4><span>${names[k]} ${badge(k)}</span>${locked ? '<a class="btn btn-ghost btn-sm" href="#billing">🔒 Подключить Lite</a>' : `<a class="btn btn-ghost btn-sm" href="${u}" target="_blank">Открыть ↗</a>`}</h4><div class="copy-row"><input readonly value="${u}" id="w_${k}"><button class="btn btn-ghost btn-sm" data-copy="w_${k}">Копировать</button></div></div>`; }).join('');
   val('t_period', s.top.period); val('t_count', s.top.count); val('t_theme', s.top.theme);
   val('g_title', s.goal.title); val('g_target', s.goal.target); val('g_base', s.goal.base); val('g_theme', s.goal.theme);
   listEdit('#infoList', (s.info.lines || []).map(v => ({ v })), [['v', 'Текст строки']]);
@@ -254,7 +257,7 @@ function renderBilling() {
     ${p.freezeDays ? `<button class="btn btn-ghost" id="freezeBtn" ${ME.freeze_available ? '' : 'disabled'}>❄️ Заморозить на ${p.freezeDays} дней</button>` : ''}</div>
     <p class="muted" style="margin-top:12px;font-size:13.5px">⭐ VIP: оплатите 10 месяцев — получите +10 дней Pro, ×1.5 хранилища и ранний доступ. Оплачено: ${ME.paid_months}/10.</p>`;
   const fb = $('#freezeBtn'); if (fb) fb.onclick = async () => { try { const r = await api('/api/freeze', { method: 'POST' }); toast(`Подписка продлена на ${r.days} дней`); load(); } catch (e) { toast(e.message, true); } };
-  const feat = { free: ['Алерты (до 8 сек) с озвучкой', 'ТОП и цель с рекламой', 'Цензура, личная страница', '10 МБ'], lite: ['Темы оформления, ник донатеру', 'Рулетка, таймер, info', 'Ники, темы, TikTok', 'Музыка/видео 50 раз', 'Заморозка 5 дней, 50 МБ'], pro: ['Всё из Lite без лимитов', 'Продвинутая озвучка', 'Хоткеи, вебхуки', 'Мем-алерты', 'Заморозка 10 дней, 100 МБ'] };
+  const feat = { free: ['Алерты донатов (до 8 сек)', 'Цель сбора', 'ТОП донатеров', 'Цензура, личная страница, 10 МБ'], lite: ['Озвучка, темы, ник донатеру', 'Рулетка, таймер, info', 'Ники, темы, TikTok', 'Музыка/видео 50 раз', 'Заморозка 5 дней, 50 МБ'], pro: ['Всё из Lite без лимитов', 'Продвинутая озвучка', 'Хоткеи, вебхуки', 'Мем-алерты', 'Заморозка 10 дней, 100 МБ'] };
   $('#plansBox').innerHTML = ME.plans.map(pl => `<div class="plan ${pl.id === p.id ? 'cur' : ''}"><div class="muted">${pl.name}${pl.id === p.id ? ' · текущий' : ''}</div><b>${pl.price ? fmt(pl.price) + '<span class="muted" style="font-size:14px;font-family:Manrope"> /мес</span>' : '0 ₸'}</b><ul style="list-style:none;color:#cfd3e3;font-size:14px;display:flex;flex-direction:column;gap:6px">${feat[pl.id].map(f => `<li>✓ ${f}</li>`).join('')}</ul>${pl.price ? `<button class="btn ${pl.id === 'lite' ? 'btn-primary' : 'btn-ghost'}" style="width:100%;margin-top:16px" data-pick="${pl.id}">Выбрать ${pl.name}</button>` : ''}</div>`).join('');
   $$('[data-pick]').forEach(b => b.onclick = () => { val('payPlan', b.dataset.pick); calcPay(); $('#payBox').scrollIntoView({ behavior: 'smooth' }); });
   $('#payPhone').textContent = ME.pay.kaspi; $('#payName').textContent = 'получатель ' + ME.pay.name;
