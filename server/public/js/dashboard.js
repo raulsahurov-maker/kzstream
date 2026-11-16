@@ -152,7 +152,7 @@ const collectors = {
   roulette: () => ({ roulette: { enabled: val('r_enabled'), min: val('r_min'), style: val('r_style'), tasks: readList('#taskList').map(r => r.v) } }),
   media: () => ({ media: { enabled: val('m_enabled'), min: val('m_min'), max_sec: val('m_max'), volume: +val('m_volume') } }),
   page: () => ({ page: { title: val('pg_title'), description: val('pg_description'), kaspi: val('pg_kaspi'), receiver: val('pg_receiver'), min_amount: val('pg_min'), cards: val('pg_cards'), avatar: val('pg_avatar'), banner: val('pg_banner'), color: val('pg_color'),
-    socials: Object.fromEntries(['twitch', 'youtube', 'tiktok', 'instagram', 'telegram'].map(k => [k, val('s_' + k)])) } }),
+    socials: Object.fromEntries(['tiktok', 'instagram', 'telegram'].map(k => [k, val('s_' + k)])) } }),
   hotkeys: () => ({ hotkeys: readList('#hkList') }),
   webhooks: () => ({ webhooks: readList('#whList').map(r => r.v) }),
 };
@@ -176,7 +176,7 @@ $('#goalReset').onclick = () => save('goal', { reset: true });
 
 // ---------- тестовый донат ----------
 $('#tSend').onclick = async () => {
-  try { await api('/api/donations/test', { method: 'POST', body: { name: val('tName'), amount: +val('tAmount'), message: val('tMsg') } }); toast('Тестовый донат отправлен в OBS'); }
+  try { await api('/api/donations/test', { method: 'POST', body: { name: val('tName'), amount: +val('tAmount'), message: val('tMsg') } }); toast('Тестовый донат отправлен в эфир'); }
   catch (e) { toast(e.message, true); }
 };
 
@@ -224,7 +224,7 @@ async function loadIngest() {
   $('#ingestLog').innerHTML = l.map(x => `<tr><td class="muted">${time(x.created_at)}</td><td>${esc(x.text)}</td><td>${x.result === 'ignored' ? '<span class="tag">пропущено</span>' : '<span class="tag ok">донат</span>'}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">Уведомлений ещё не было</td></tr>';
 }
 $('#devTabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; $$('#devTabs button').forEach(x => x.classList.toggle('on', x === b)); $$('[data-dp]').forEach(p => p.style.display = p.dataset.dp === b.dataset.d ? '' : 'none'); };
-$('#resetToken').onclick = async () => { if (!confirmBox()) return; await api('/api/token/reset', { method: 'POST' }); await load(); toast('Ссылка изменена. Обновите её в приложении и в OBS'); };
+$('#resetToken').onclick = async () => { if (!confirmBox()) return; await api('/api/token/reset', { method: 'POST' }); await load(); toast('Ссылка изменена. Обновите её в приложении и в TikTok Live Studio'); };
 function confirmBox() { const b = $('#resetToken'); if (b.dataset.sure) { delete b.dataset.sure; b.textContent = 'Сменить'; return true; } b.dataset.sure = 1; b.textContent = 'Точно? Нажмите ещё раз'; setTimeout(() => { delete b.dataset.sure; b.textContent = 'Сменить'; }, 4000); return false; }
 
 // ---------- файлы ----------
@@ -257,7 +257,7 @@ function renderBilling() {
     ${p.freezeDays ? `<button class="btn btn-ghost" id="freezeBtn" ${ME.freeze_available ? '' : 'disabled'}>❄️ Заморозить на ${p.freezeDays} дней</button>` : ''}</div>
     <p class="muted" style="margin-top:12px;font-size:13.5px">⭐ VIP: оплатите 10 месяцев — получите +10 дней Pro, ×1.5 хранилища и ранний доступ. Оплачено: ${ME.paid_months}/10.</p>`;
   const fb = $('#freezeBtn'); if (fb) fb.onclick = async () => { try { const r = await api('/api/freeze', { method: 'POST' }); toast(`Подписка продлена на ${r.days} дней`); load(); } catch (e) { toast(e.message, true); } };
-  const feat = { free: ['Алерты донатов (до 8 сек)', 'Цель сбора', 'ТОП донатеров', 'Цензура, личная страница, 10 МБ'], lite: ['Озвучка, темы, ник донатеру', 'Рулетка, таймер, info', 'Ники, темы, TikTok', 'Музыка/видео 50 раз', 'Заморозка 5 дней, 50 МБ'], pro: ['Всё из Lite без лимитов', 'Продвинутая озвучка', 'Хоткеи, вебхуки', 'Мем-алерты', 'Заморозка 10 дней, 100 МБ'] };
+  const feat = { free: ['Алерты донатов (до 8 сек)', 'Цель сбора', 'ТОП донатеров', 'Цензура, личная страница, 10 МБ'], lite: ['Озвучка, темы, ник донатеру', 'Рулетка, таймер, info', 'Ники и темы', 'Музыка/видео 50 раз', 'Заморозка 5 дней, 50 МБ'], pro: ['Всё из Lite без лимитов', 'Продвинутая озвучка', 'Хоткеи, вебхуки', 'Мем-алерты', 'Заморозка 10 дней, 100 МБ'] };
   $('#plansBox').innerHTML = ME.plans.map(pl => `<div class="plan ${pl.id === p.id ? 'cur' : ''}"><div class="muted">${pl.name}${pl.id === p.id ? ' · текущий' : ''}</div><b>${pl.price ? fmt(pl.price) + '<span class="muted" style="font-size:14px;font-family:Manrope"> /мес</span>' : '0 ₸'}</b><ul style="list-style:none;color:#cfd3e3;font-size:14px;display:flex;flex-direction:column;gap:6px">${feat[pl.id].map(f => `<li>✓ ${f}</li>`).join('')}</ul>${pl.price ? `<button class="btn ${pl.id === 'lite' ? 'btn-primary' : 'btn-ghost'}" style="width:100%;margin-top:16px" data-pick="${pl.id}">Выбрать ${pl.name}</button>` : ''}</div>`).join('');
   $$('[data-pick]').forEach(b => b.onclick = () => { val('payPlan', b.dataset.pick); calcPay(); $('#payBox').scrollIntoView({ behavior: 'smooth' }); });
   $('#payPhone').textContent = ME.pay.kaspi; $('#payName').textContent = 'получатель ' + ME.pay.name;

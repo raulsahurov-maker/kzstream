@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Донат — KZStream</title>
-<meta name="description" content="Поддержите стримера донатом через Kaspi — сообщение появится и озвучится на стриме.">
+<meta name="description" content="Поддержите TikTok-стримера донатом через Kaspi — сообщение появится и озвучится в эфире TikTok Live.">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/app.css">
 <style>
@@ -54,8 +54,8 @@
     <div class="steps" style="margin-top:18px">
       <div class="st"><span>Скопируйте номер и откройте <b>Kaspi.kz</b> → <b>Переводы</b> → <b>Клиенту Kaspi</b>.</span></div>
       <div class="st"><span>Введите сумму <b id="minTxt"></b>.</span></div>
-      <div class="st"><span>В поле <b>«Сообщение получателю»</b> напишите текст — он появится на стриме и будет озвучен.</span></div>
-      <div class="st"><span>Нажмите «Перевести». Готово — донат сразу на стриме!</span></div>
+      <div class="st"><span>В поле <b>«Сообщение получателю»</b> напишите текст — он появится в эфире TikTok Live и будет озвучен.</span></div>
+      <div class="st"><span>Нажмите «Перевести». Готово — донат сразу в эфире!</span></div>
     </div>
     <div class="perks" id="perks"></div>
   </div>
@@ -78,8 +78,8 @@
     $('#title').textContent = name; $('#desc').textContent = pg.description;
     if (pg.avatar) { $('#ava').style.backgroundImage = `url("${pg.avatar}")`; $('#ava').textContent = ''; } else $('#ava').textContent = name[0].toUpperCase();
     if (pg.banner) $('#banner').style.backgroundImage = `url("${pg.banner}")`;
-    const names = { twitch: 'Twitch', youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram', telegram: 'Telegram' };
-    $('#soc').innerHTML = Object.entries(pg.socials || {}).filter(([, v]) => /^https?:\/\//.test(v)).map(([k, v]) => `<a href="${esc(v)}" target="_blank" rel="noopener">${names[k]}</a>`).join('');
+    const names = { tiktok: 'TikTok', instagram: 'Instagram', telegram: 'Telegram' };
+    $('#soc').innerHTML = Object.entries(pg.socials || {}).filter(([k, v]) => names[k]).filter(([, v]) => /^https?:\/\//.test(v)).map(([k, v]) => `<a href="${esc(v)}" target="_blank" rel="noopener">${names[k]}</a>`).join('');
     $('#num').textContent = pg.kaspi || 'Номер не указан'; $('#rcv').textContent = pg.receiver ? 'Получатель: ' + pg.receiver : '';
     $('#cards').textContent = pg.cards ? 'Другие банки: ' + pg.cards : '';
     $('#minTxt').textContent = 'от ' + fmt(pg.min_amount);

@@ -117,16 +117,16 @@
     <div class="grid g2">
       <div class="card">
         <h3>Ссылка для зрителей</h3>
-        <p class="hint">Поставьте её в описание стрима и закреп чата.</p>
+        <p class="hint">Поставьте её в профиль TikTok и закрепите в чате эфира.</p>
         <div class="copy-row"><input readonly id="homePage"><button class="btn btn-ghost" data-copy="homePage">Копировать</button></div>
         <h3 style="margin-top:24px">Тестовый донат</h3>
-        <p class="hint">Проверьте, как алерт выглядит в OBS.</p>
+        <p class="hint">Проверьте, как алерт выглядит в эфире.</p>
         <div class="row"><div class="field"><input id="tName" placeholder="Имя" value="Тестовый донатер"></div><div class="field"><input id="tAmount" type="number" value="1000"></div></div>
         <div class="field"><input id="tMsg" placeholder="Сообщение" value="Привет! Это тестовый донат 🔥"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="tSend">Отправить тестовый донат</button><button class="btn btn-ghost" id="tSound">🔊 Включить звук в превью</button></div>
       </div>
       <div class="card" style="grid-column:1/-1">
-        <h3>Превью — так алерт выглядит в OBS</h3><p class="hint">Отправьте тестовый донат и смотрите. Чтобы слышать звук и озвучку здесь, нажмите «Включить звук в превью».</p>
+        <h3>Превью — так алерт выглядит в TikTok Live</h3><p class="hint">Отправьте тестовый донат и смотрите. Чтобы слышать звук и озвучку здесь, нажмите «Включить звук в превью».</p>
         <div class="obs-prev"><iframe id="prevFrame" allow="autoplay"></iframe></div>
       </div>
       <div class="card">
@@ -173,7 +173,7 @@
               <div class="kv"><code>text</code><span>→ переменная <b>«Текст»</b> (из «Уведомление»)</span></div>
               <p class="muted" style="font-size:12.5px;margin-top:6px">Переменные выбираются над клавиатурой после нажатия на поле значения.</p></div></div>
           <div class="ios-st"><div class="ph"><div class="ph-top">Готово</div><div class="ph-ok">✓</div></div>
-            <div><b>5. Сохраните и проверьте</b><p>Нажмите «Готово». Попросите друга перевести 100 ₸ с сообщением — алерт появится на стриме, а запись — в журнале ниже.</p>
+            <div><b>5. Сохраните и проверьте</b><p>Нажмите «Готово». Попросите друга перевести 100 ₸ с сообщением — алерт появится в эфире, а запись — в журнале ниже.</p>
               <p class="muted" style="font-size:12.5px">Совет: в Настройках → Уведомления → Kaspi.kz включите «Допуск уведомлений» и «Показ миниатюр: Всегда».</p></div></div>
         </div>
       </div>
@@ -182,7 +182,7 @@
           <li>Подключите телефон к ПК через приложение Windows <b>«Связь с телефоном»</b> (Phone Link) и разрешите показ уведомлений Kaspi.</li>
           <li>Скачайте <b>KZStream для Windows</b> на странице <a href="/download" style="color:var(--accent)">«Скачать»</a> и запустите.</li>
           <li>Войдите своим email и паролем. При первом запуске Windows спросит доступ к уведомлениям — разрешите.</li>
-          <li>Программа также выполняет ваши <b>хоткеи</b> (тариф Pro) — держите её запущенной во время стрима.</li>
+          <li>Программа также выполняет ваши <b>хоткеи</b> (тариф Pro) — держите её запущенной во время эфира.</li>
         </ol>
       </div>
     </div>
@@ -195,7 +195,7 @@
     <div class="top"><h1>Алерты и озвучка</h1><button class="btn btn-primary" data-save="alerts">Сохранить</button></div>
     <div class="grid g2">
       <div class="card">
-        <h3>Внешний вид</h3><p class="hint">Ссылка виджета для OBS — в разделе «Виджеты».</p>
+        <h3>Внешний вид</h3><p class="hint">Ссылка виджета для TikTok Live Studio — в разделе «Виджеты».</p>
         <div class="field"><label>Время показа, сек <span id="durMax" class="muted"></span></label><input type="number" id="a_duration" min="2"></div>
         <div class="field"><label>Гифка / картинка / видео</label><select id="a_gif" data-files="image,video"></select></div>
         <div class="field"><label>Звук</label><select id="a_sound" data-files="audio"></select></div>
@@ -207,7 +207,7 @@
         <label class="check"><input type="checkbox" id="a_show_msg"> Показывать сообщение донатера</label>
       </div>
       <div class="card">
-        <h3>Озвучка доната <span class="lock" data-need="tts">Lite</span></h3><p class="hint">Сообщения читаются голосом прямо в OBS.</p>
+        <h3>Озвучка доната <span class="lock" data-need="tts">Lite</span></h3><p class="hint">Сообщения читаются голосом прямо в эфире.</p>
         <label class="check"><input type="checkbox" id="a_tts"> Включить озвучку</label>
         <div class="field"><label>Мин. сумма для озвучки</label><input type="number" id="a_min_tts" min="0"></div>
         <h3 style="margin-top:18px">Продвинутая озвучка <span class="lock" data-need="ttsAdvanced">Pro</span></h3><p class="hint">Язык, скорость, чтение имени.</p>
@@ -224,7 +224,7 @@
         <button class="btn btn-ghost" data-save="censor">Сохранить цензуру</button>
       </div>
       <div class="card">
-        <h3>Ники донатерам <span class="lock" data-need="nicks">Lite</span></h3><p class="hint">Имя из Kaspi → ник на стриме. Например «Аружан А.» → «Aru_kz».</p>
+        <h3>Ники донатерам <span class="lock" data-need="nicks">Lite</span></h3><p class="hint">Имя из Kaspi → ник в эфире. Например «Аружан А.» → «Aru_kz».</p>
         <div class="list-edit" id="nicksList"></div>
         <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="addNick">+ Добавить</button><button class="btn btn-ghost btn-sm" data-save="nicks">Сохранить ники</button></div>
       </div>
@@ -238,8 +238,8 @@
 
   <!-- ВИДЖЕТЫ -->
   <section class="page" id="p-widgets">
-    <div class="top"><h1>Виджеты для OBS и TikTok Live Studio</h1></div>
-    <div class="card" style="margin-bottom:18px"><h3>Как добавить</h3><p class="hint" style="margin:0">OBS → Источники → «+» → «Браузер» → вставьте ссылку. Ширина 800, высота 600 (для ТОПа и цели — 500×300). В TikTok Live Studio: «Добавить источник» → «Ссылка».</p></div>
+    <div class="top"><h1>Виджеты для TikTok Live Studio</h1></div>
+    <div class="card" style="margin-bottom:18px"><h3>Как добавить в TikTok Live Studio</h3><p class="hint" style="margin:0">Откройте TikTok Live Studio → «Добавить источник» → «Ссылка» (Link) → вставьте ссылку виджета → «Добавить». Растяните виджет на нужное место кадра. Алерты и рулетку лучше растянуть на весь экран, ТОП и цель сбора поставить сбоку. Перед эфиром отправьте тестовый донат на главной.</p></div>
     <div class="grid g2" id="wlinks"></div>
     <div class="grid g2" style="margin-top:18px">
       <div class="card">
@@ -266,7 +266,7 @@
         <button class="btn btn-primary" data-save="info">Сохранить</button>
       </div>
       <div class="card">
-        <h3>Таймер (сабатон) <span class="lock" data-need="timer">Lite</span></h3><p class="hint">Донаты добавляют время к стриму. Сейчас: <b id="timerNow">—</b></p>
+        <h3>Таймер (сабатон) <span class="lock" data-need="timer">Lite</span></h3><p class="hint">Донаты добавляют время к эфиру. Сейчас: <b id="timerNow">—</b></p>
         <div class="row"><div class="field"><label>Секунд за каждые 100 ₸</label><input type="number" id="tm_sec"></div><div class="field"><label>Тема</label><select id="tm_theme" data-themes></select></div></div>
         <button class="btn btn-ghost btn-sm" data-save="timer" style="margin-bottom:14px">Сохранить</button>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -304,7 +304,7 @@
         <label class="check"><input type="checkbox" id="m_enabled"> Принимать заказы</label>
         <div class="row"><div class="field"><label>Мин. сумма, ₸</label><input type="number" id="m_min"></div><div class="field"><label>Макс. длительность, сек</label><input type="number" id="m_max"></div></div>
         <div class="field"><label>Громкость</label><input type="range" id="m_volume" min="0" max="1" step="0.05"></div>
-        <p class="hint" style="margin-top:6px">Зритель вставляет ссылку YouTube в сообщение к переводу Kaspi — видео само включится в виджете «Музыка и видео» (добавьте его в OBS).</p>
+        <p class="hint" style="margin-top:6px">Зритель вставляет ссылку YouTube в сообщение к переводу Kaspi — видео само включится в виджете «Музыка и видео» (добавьте его в TikTok Live Studio).</p>
         <h3 style="margin-top:8px">Проверить</h3>
         <div class="copy-row"><input id="mTestUrl" placeholder="https://youtu.be/..." value="https://www.youtube.com/watch?v=dQw4w9WgXcQ"><button class="btn btn-ghost" id="mTest">▶ Тест</button></div>
         <a class="btn btn-ghost btn-sm" id="mOpen" target="_blank" style="margin-top:10px">Открыть плеер ↗</a>
@@ -333,9 +333,7 @@
       </div>
       <div class="card">
         <h3>Соцсети</h3><p class="hint">Ссылки появятся на странице.</p>
-        <div class="field"><label>Twitch</label><input id="s_twitch"></div>
-        <div class="field"><label>YouTube</label><input id="s_youtube"></div>
-        <div class="field"><label>TikTok</label><input id="s_tiktok"></div>
+                        <div class="field"><label>TikTok</label><input id="s_tiktok"></div>
         <div class="field"><label>Instagram</label><input id="s_instagram"></div>
         <div class="field"><label>Telegram</label><input id="s_telegram"></div>
       </div>
@@ -360,7 +358,7 @@
     <div class="top"><h1>Хоткеи и вебхуки <span class="lock" data-need="hotkeys">Pro</span></h1></div>
     <div class="grid g2">
       <div class="card">
-        <h3>Хоткеи</h3><p class="hint">Программа KZStream для Windows нажмёт клавиши при донате в диапазоне суммы. Например <code>ctrl+shift+1</code> — смена сцены OBS.</p>
+        <h3>Хоткеи</h3><p class="hint">Программа KZStream для Windows нажмёт клавиши при донате в диапазоне суммы. Например <code>ctrl+shift+1</code> — смена сцены в TikTok Live Studio.</p>
         <div class="list-edit" id="hkList"></div>
         <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="addHk">+ Хоткей</button><button class="btn btn-primary btn-sm" data-save="hotkeys">Сохранить</button></div>
       </div>
