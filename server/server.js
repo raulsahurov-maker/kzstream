@@ -74,6 +74,14 @@ async function initStorage() {
   if (!USE_TURSO) { console.log('Локальная база: ' + LOCAL_DB); return; }
   const { createClient } = require('@libsql/client');
   const url = TURSO_URL.replace(/^libsql:\/\//, 'https://');
+  // диагностика без раскрытия ключа
+  const parts = TURSO_TOKEN.split('.');
+  console.log(`Turso: адрес ${url}, ключ: длина ${TURSO_TOKEN.length}, частей ${parts.length}, начинается с "${TURSO_TOKEN.slice(0, 3)}"`);
+  try {
+    const r = await fetch(url + '/v2/pipeline', { method: 'POST', headers: { Authorization: 'Bearer ' + TURSO_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests: [{ type: 'execute', stmt: { sql: 'SELECT 1' } }, { type: 'close' }] }), signal: AbortSignal.timeout(15000) });
+    console.log('Turso: проверка связи →', r.status, (await r.text()).slice(0, 300));
+  } catch (e) { console.log('Turso: проверка связи не удалась:', e.message); }
   const client = createClient({ url, authToken: TURSO_TOKEN });
   const stmts = SCHEMA.split(';').map(x => x.trim()).filter(Boolean);
   for (const st of stmts) {
