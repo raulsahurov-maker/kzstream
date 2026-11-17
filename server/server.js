@@ -23,18 +23,15 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 // ---------- база ----------
 // Если заданы TURSO_URL и TURSO_TOKEN — данные хранятся в облачной базе Turso (не пропадают при обновлениях).
 // Иначе — локальный файл (для запуска на своём компьютере или VPS).
-const TURSO_URL = process.env.TURSO_URL || '', TURSO_TOKEN = process.env.TURSO_TOKEN || '';
-let db;
-if (TURSO_URL && TURSO_TOKEN) {
-  db = new Database(path.join(DATA_DIR, 'replica.db'), { syncUrl: TURSO_URL, authToken: TURSO_TOKEN });
-  try { db.sync(); console.log('База Turso подключена'); } catch (e) { console.error('Ошибка синхронизации Turso:', e.message); }
-  setInterval(() => { try { db.sync(); } catch (e) { console.error('Turso sync:', e.message); } }, 60000).unref();
-} else {
-  db = new Database(path.join(DATA_DIR, 'kzstream.db'));
-  db.exec('PRAGMA journal_mode=WAL;');
-  console.log('Локальная база: ' + path.join(DATA_DIR, 'kzstream.db'));
-}
-db.exec(`
+const TURSO_URL = (process.env.TURSO_URL || '').trim(), TURSO_TOKEN = (process.env.TURSO_TOKEN || '').trim();
+const USE_TURSO = !!(TURSO_URL && TURSO_TOKEN);
+// Сайт работает с быстрой локальной копией базы. Если подключён Turso — при запуске копия
+// заполняется данными из Turso, а каждое изменение по очереди отправляется в Turso.
+const LOCAL_DB = path.join(DATA_DIR, USE_TURSO ? 'mirror.db' : 'kzstream.db');
+if (USE_TURSO) for (const ext of ['', '-wal', '-shm']) fs.rmSync(LOCAL_DB + ext, { force: true });
+const db = new Database(LOCAL_DB);
+db.exec('PRAGMA journal_mode=WAL;');
+const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users(
   id INTEGER PRIMARY KEY, nick TEXT UNIQUE COLLATE NOCASE, email TEXT UNIQUE COLLATE NOCASE,
   pass TEXT, salt TEXT, created_at INTEGER, is_admin INTEGER DEFAULT 0,
@@ -52,11 +49,49 @@ CREATE TABLE IF NOT EXISTS files(id INTEGER PRIMARY KEY, user_id INTEGER, name T
 CREATE TABLE IF NOT EXISTS file_data(file TEXT PRIMARY KEY, data BLOB);
 CREATE TABLE IF NOT EXISTS ingest_log(id INTEGER PRIMARY KEY, user_id INTEGER, hash TEXT, text TEXT, result TEXT, created_at INTEGER);
 CREATE INDEX IF NOT EXISTS il_user ON ingest_log(user_id, hash);
-`);
+`;
+db.exec(SCHEMA);
 // обёртка: убираем служебное поле _metadata, которое добавляет libsql
 const clean = (r) => { if (r && typeof r === 'object') delete r._metadata; return r; };
+// ---- зеркалирование в Turso ----
+let remote = null;
+const outbox = []; let pushing = false;
+const toRemoteArg = (v) => Buffer.isBuffer(v) ? new Uint8Array(v) : (typeof v === 'boolean' ? (v ? 1 : 0) : v);
+async function pushLoop() {
+  if (pushing || !remote) return; pushing = true;
+  while (outbox.length) {
+    const job = outbox[0];
+    try { await remote.execute({ sql: job.sql, args: job.args.map(toRemoteArg) }); outbox.shift(); }
+    catch (e) { console.error('Turso: не удалось записать, повтор через 3 сек:', e.message); await new Promise(r => setTimeout(r, 3000)); }
+  }
+  pushing = false;
+}
 const q = (sql) => { const st = db.prepare(sql); return {
-  get: (...a) => clean(st.get(...a)), all: (...a) => st.all(...a).map(clean), run: (...a) => st.run(...a) }; };
+  get: (...a) => clean(st.get(...a)), all: (...a) => st.all(...a).map(clean),
+  run: (...a) => { const r = st.run(...a); if (remote) { outbox.push({ sql, args: a }); pushLoop(); } return r; } }; };
+const TABLES = ['users', 'sessions', 'donations', 'payments', 'files', 'file_data', 'ingest_log'];
+async function initStorage() {
+  if (!USE_TURSO) { console.log('Локальная база: ' + LOCAL_DB); return; }
+  const { createClient } = require('@libsql/client');
+  const url = TURSO_URL.replace(/^libsql:\/\//, 'https://');
+  const client = createClient({ url, authToken: TURSO_TOKEN });
+  await client.executeMultiple(SCHEMA);
+  let total = 0;
+  for (const t of TABLES) {
+    const r = await client.execute(`SELECT * FROM ${t}`);
+    if (!r.rows.length) continue;
+    const cols = r.columns, ins = db.prepare(`INSERT OR REPLACE INTO ${t}(${cols.join(',')}) VALUES(${cols.map(() => '?').join(',')})`);
+    db.exec('BEGIN');
+    for (const row of r.rows) ins.run(...cols.map(c => { const v = row[c]; return v instanceof ArrayBuffer ? Buffer.from(v) : (typeof v === 'bigint' ? Number(v) : v); }));
+    db.exec('COMMIT');
+    total += r.rows.length;
+  }
+  remote = client;
+  console.log(`База Turso подключена, загружено строк: ${total}`);
+}
+// при остановке сервера — дописываем очередь в Turso
+async function flushAndExit() { const t = Date.now(); while ((outbox.length || pushing) && Date.now() - t < 8000) { pushLoop(); await new Promise(r => setTimeout(r, 200)); } process.exit(0); }
+process.on('SIGTERM', flushAndExit); process.on('SIGINT', flushAndExit);
 
 // ---------- настройки по умолчанию ----------
 const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
@@ -706,4 +741,5 @@ for (const prefix of ['/update', '/downloads']) {
 app.use(express.static(PUB, { extensions: ['html'] }));
 app.use((req, res) => res.status(404).sendFile(path.join(PUB, '404.html')));
 
-app.listen(PORT, () => console.log(`KZStream запущен: http://localhost:${PORT}`));
+initStorage().then(() => app.listen(PORT, () => console.log(`KZStream запущен: http://localhost:${PORT}`)))
+  .catch(e => { console.error('Не удалось подключиться к Turso:', e.message); process.exit(1); });
