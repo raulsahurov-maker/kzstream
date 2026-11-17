@@ -51,6 +51,15 @@ CREATE TABLE IF NOT EXISTS ingest_log(id INTEGER PRIMARY KEY, user_id INTEGER, h
 CREATE INDEX IF NOT EXISTS il_user ON ingest_log(user_id, hash);
 `;
 db.exec(SCHEMA);
+
+// миграции: новые поля для подтверждения email (старые аккаунты считаются подтверждёнными)
+const MIGRATIONS = [
+  ['ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0', 'UPDATE users SET email_verified=1'],
+  ['ALTER TABLE users ADD COLUMN verify_code TEXT', null],
+  ['ALTER TABLE users ADD COLUMN verify_sent_at INTEGER DEFAULT 0', null],
+  ['ALTER TABLE users ADD COLUMN verify_tries INTEGER DEFAULT 0', null],
+];
+for (const [alter, after] of MIGRATIONS) { try { db.exec(alter); if (after) db.exec(after); } catch { /* поле уже есть */ } }
 // обёртка: убираем служебное поле _metadata, которое добавляет libsql
 const clean = (r) => { if (r && typeof r === 'object') delete r._metadata; return r; };
 // ---- зеркалирование в Turso ----
@@ -88,6 +97,7 @@ async function initStorage() {
     try { await client.execute(st); }
     catch (e) { console.error('Turso: ошибка в запросе:', st.slice(0, 80).replace(/\s+/g, ' '), '→', e.message, e.cause?.message || ''); throw e; }
   }
+  for (const [alter, after] of MIGRATIONS) { try { await client.execute(alter); if (after) await client.execute(after); } catch { /* поле уже есть */ } }
   let total = 0;
   for (const t of TABLES) {
     const r = await client.execute(`SELECT * FROM ${t}`);
@@ -282,6 +292,44 @@ function finalizeDonation(u, d) {
   return event;
 }
 
+// ---------- почта: подтверждение email кодом ----------
+// Письма отправляются через Brevo (бесплатно 300 писем/день): BREVO_API_KEY и MAIL_FROM (подтверждённый в Brevo адрес).
+// Если почта не настроена — подтверждение выключено, чтобы сайт продолжал работать.
+const BREVO_API_KEY = (process.env.BREVO_API_KEY || '').trim();
+const MAIL_FROM = (process.env.MAIL_FROM || '').trim();
+const VERIFY_ON = !!(BREVO_API_KEY && MAIL_FROM);
+if (!VERIFY_ON) console.log('Почта не настроена (BREVO_API_KEY, MAIL_FROM) — подтверждение email выключено');
+async function sendMail(to, subject, html) {
+  const r = await fetch((process.env.BREVO_URL || 'https://api.brevo.com') + '/v3/smtp/email', { method: 'POST',
+    headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({ sender: { name: 'KZStream', email: MAIL_FROM }, to: [{ email: to }], subject, htmlContent: html }),
+    signal: AbortSignal.timeout(15000) });
+  if (!r.ok) throw new Error('Brevo ' + r.status + ': ' + (await r.text()).slice(0, 200));
+}
+function codeMail(code, nick) {
+  return `<div style="font-family:Arial,sans-serif;background:#07080d;padding:32px 16px"><div style="max-width:440px;margin:0 auto;background:#12141f;border:1px solid #232739;border-radius:18px;padding:28px;color:#eef0f7">
+  <div style="font-size:22px;font-weight:800;margin-bottom:6px"><span style="display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border-radius:9px;background:#ff3b5c;color:#fff;margin-right:8px">▶</span>KZStream</div>
+  <p style="color:#9097ad;font-size:15px">Привет, ${nick}! Ваш код подтверждения email:</p>
+  <div style="font-size:38px;font-weight:800;letter-spacing:10px;text-align:center;background:#0d0f18;border-radius:14px;padding:18px;margin:18px 0;color:#ff7a45">${code}</div>
+  <p style="color:#9097ad;font-size:13px">Код действует 30 минут. Если вы не регистрировались на KZStream — просто проигнорируйте это письмо.</p></div></div>`;
+}
+const dns = require('dns').promises;
+async function emailDomainOk(email) {
+  const domain = email.split('@')[1];
+  try { const mx = await dns.resolveMx(domain); return mx.length > 0; }
+  catch (e) {
+    if (e.code !== 'ENOTFOUND' && e.code !== 'ENODATA') return true;
+    // если не работает сам DNS (проверяем на gmail.com) — не блокируем регистрацию
+    try { await dns.resolveMx('gmail.com'); return false; } catch { return true; }
+  }
+}
+async function sendVerifyCode(u) {
+  const code = String(crypto.randomInt(100000, 1000000));
+  q('UPDATE users SET verify_code=?, verify_sent_at=?, verify_tries=0 WHERE id=?').run(code, now(), u.id);
+  await sendMail(u.email, `Код KZStream: ${code}`, codeMail(code, u.nick));
+}
+const needsVerify = (u) => VERIFY_ON && !u.email_verified;
+
 // ---------- приложение ----------
 const app = express();
 app.set('trust proxy', true);
@@ -297,6 +345,15 @@ function auth(req, res, next) {
   const s = sid && q('SELECT * FROM sessions WHERE id=?').get(sid);
   const u = s && userById(s.user_id);
   if (!u) return res.status(401).json({ error: 'Требуется вход' });
+  if (needsVerify(u)) return res.status(403).json({ error: 'Подтвердите email', verify: true, email: u.email });
+  req.user = u; next();
+}
+// вход без проверки подтверждения — только для страниц подтверждения email
+function authAny(req, res, next) {
+  const sid = readCookie(req, 'sid');
+  const s = sid && q('SELECT * FROM sessions WHERE id=?').get(sid);
+  const u = s && userById(s.user_id);
+  if (!u) return res.status(401).json({ error: 'Требуется вход' });
   req.user = u; next();
 }
 function admin(req, res, next) { auth(req, res, () => req.user.is_admin ? next() : res.status(403).json({ error: 'Нет доступа' })); }
@@ -307,7 +364,7 @@ function startSession(res, uid) {
 }
 
 // --- регистрация / вход ---
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
   if (limited('reg:' + req.ip, 10, 3600e3)) return res.status(429).json({ error: 'Слишком много попыток, попробуйте позже' });
   const nick = clampStr(req.body.nick, 24);
   const email = clampStr(req.body.email, 120).toLowerCase();
@@ -317,6 +374,7 @@ app.post('/api/register', (req, res) => {
   if (password.length < 6) return res.status(400).json({ error: 'Пароль минимум 6 символов' });
   if (userByNick(nick)) return res.status(409).json({ error: 'Такой ник уже занят' });
   if (q('SELECT id FROM users WHERE email=?').get(email)) return res.status(409).json({ error: 'Этот email уже зарегистрирован' });
+  if (VERIFY_ON && !(await emailDomainOk(email))) return res.status(400).json({ error: 'Такой почты не существует — проверьте адрес' });
   const salt = rnd(16);
   const isFirst = q('SELECT COUNT(*) c FROM users').get().c === 0;
   const isAdmin = isFirst || ADMIN_EMAILS.includes(email) ? 1 : 0;
@@ -324,8 +382,40 @@ app.post('/api/register', (req, res) => {
   const platform = clampStr(req.body.platform, 20);
   const r = q(`INSERT INTO users(nick,email,pass,salt,created_at,is_admin,token,settings) VALUES(?,?,?,?,?,?,?,?)`)
     .run(nick, email, hashPass(password, salt), salt, now(), isAdmin, rnd(18), JSON.stringify({ page: settings.page, platform }));
-  startSession(res, Number(r.lastInsertRowid));
+  const uid = Number(r.lastInsertRowid);
+  startSession(res, uid);
+  if (!VERIFY_ON) { q('UPDATE users SET email_verified=1 WHERE id=?').run(uid); return res.json({ ok: true }); }
+  try { await sendVerifyCode(userById(uid)); res.json({ ok: true, verify: true, email }); }
+  catch (e) { console.error('Почта:', e.message); res.json({ ok: true, verify: true, email, mail_error: 'Не удалось отправить письмо, нажмите «Отправить код ещё раз»' }); }
+});
+app.post('/api/verify/resend', authAny, async (req, res) => {
+  const u = req.user;
+  if (!needsVerify(u)) return res.json({ ok: true, verified: true });
+  const wait = 60e3 - (now() - (u.verify_sent_at || 0));
+  if (wait > 0) return res.status(429).json({ error: `Подождите ${Math.ceil(wait / 1000)} сек. перед повторной отправкой` });
+  if (limited('vres:' + u.id, 6, 3600e3)) return res.status(429).json({ error: 'Слишком много писем, попробуйте через час' });
+  try { await sendVerifyCode(u); res.json({ ok: true, email: u.email }); }
+  catch (e) { console.error('Почта:', e.message); res.status(502).json({ error: 'Не удалось отправить письмо, попробуйте позже' }); }
+});
+app.post('/api/verify', authAny, (req, res) => {
+  const u = req.user;
+  if (!needsVerify(u)) return res.json({ ok: true });
+  if ((u.verify_tries || 0) >= 8) return res.status(429).json({ error: 'Слишком много попыток. Отправьте новый код' });
+  const code = String(req.body.code || '').replace(/\D/g, '');
+  if (!u.verify_code || now() - (u.verify_sent_at || 0) > 30 * 60e3) return res.status(400).json({ error: 'Код устарел — отправьте новый' });
+  if (code !== u.verify_code) { q('UPDATE users SET verify_tries=verify_tries+1 WHERE id=?').run(u.id); return res.status(400).json({ error: 'Неверный код' }); }
+  q("UPDATE users SET email_verified=1, verify_code=NULL WHERE id=?").run(u.id);
   res.json({ ok: true });
+});
+app.post('/api/verify/change-email', authAny, async (req, res) => {
+  const u = req.user; if (!needsVerify(u)) return res.json({ ok: true });
+  const email = clampStr(req.body.email, 120).toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Некорректный email' });
+  if (q('SELECT id FROM users WHERE email=? AND id!=?').get(email, u.id)) return res.status(409).json({ error: 'Этот email уже зарегистрирован' });
+  if (!(await emailDomainOk(email))) return res.status(400).json({ error: 'Такой почты не существует — проверьте адрес' });
+  q('UPDATE users SET email=?, verify_sent_at=0 WHERE id=?').run(email, u.id);
+  try { await sendVerifyCode(userById(u.id)); res.json({ ok: true, email }); }
+  catch (e) { console.error('Почта:', e.message); res.status(502).json({ error: 'Не удалось отправить письмо' }); }
 });
 app.post('/api/login', (req, res) => {
   if (limited('login:' + req.ip, 20, 600e3)) return res.status(429).json({ error: 'Слишком много попыток, подождите 10 минут' });
@@ -333,7 +423,7 @@ app.post('/api/login', (req, res) => {
   const u = q('SELECT * FROM users WHERE email=? OR nick=?').get(login.toLowerCase(), login);
   if (!u || hashPass(String(req.body.password || ''), u.salt) !== u.pass) return res.status(401).json({ error: 'Неверный email или пароль' });
   startSession(res, u.id);
-  res.json({ ok: true });
+  res.json({ ok: true, verify: needsVerify(u), email: u.email });
 });
 app.post('/api/logout', (req, res) => {
   const sid = readCookie(req, 'sid'); if (sid) q('DELETE FROM sessions WHERE id=?').run(sid);
@@ -626,6 +716,7 @@ app.post('/api/app/login', (req, res) => {
   const login = clampStr(req.body.email, 120);
   const u = q('SELECT * FROM users WHERE email=? OR nick=?').get(login.toLowerCase(), login);
   if (!u || hashPass(String(req.body.password || ''), u.salt) !== u.pass) return res.status(401).json({ error: 'Неверный email или пароль' });
+  if (needsVerify(u)) return res.status(403).json({ error: 'Сначала подтвердите email: войдите на сайте и введите код из письма' });
   const b = baseUrl(req);
   res.json({ ok: true, nick: u.nick, token: u.token, ingest: `${b}/api/ingest/${u.token}`, plan: effectivePlan(u).name,
     widgets: { alerts: `${b}/w/alerts.html?t=${u.token}` } });

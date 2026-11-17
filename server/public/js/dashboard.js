@@ -43,6 +43,7 @@ function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.classNa
 async function api(url, opts = {}) {
   const r = await fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) }, body: opts.body && typeof opts.body !== 'string' && !(opts.body instanceof Blob) ? JSON.stringify(opts.body) : opts.body });
   if (r.status === 401) { location.href = '/#login'; throw new Error('Требуется вход'); }
+  if (r.status === 403) { const j = await r.clone().json().catch(() => ({})); if (j.verify) { location.href = '/#verify'; throw new Error('Подтвердите email'); } }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || 'Ошибка сервера');
   return j;

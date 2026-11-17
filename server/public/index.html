@@ -238,6 +238,9 @@
   .m-switch{text-align:center;font-size:14px;color:var(--muted);margin-top:16px}
   .m-switch a{color:var(--accent);font-weight:700;cursor:pointer}
   .m-err{display:none;margin-top:14px;padding:12px;border-radius:11px;background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.35);color:#ff8a9c;font-size:14px;text-align:center}
+  .v-ico{width:64px;height:64px;border-radius:20px;background:var(--grad);display:grid;place-items:center;font-size:30px;margin:0 auto 14px;box-shadow:0 10px 30px rgba(255,59,92,.35)}
+  .v-code{width:100%;text-align:center;font-family:Unbounded,sans-serif;font-size:30px;letter-spacing:.45em;padding:14px 0 14px .45em;border-radius:14px;border:1px solid var(--line);background:var(--bg2);color:var(--text);outline:none}
+  .v-code:focus{border-color:var(--accent)}
   .m-note{display:none;margin-top:14px;padding:12px;border-radius:11px;background:rgba(62,230,196,.08);border:1px solid rgba(62,230,196,.25);color:var(--cyan);font-size:14px;text-align:center}
 
   .reveal{opacity:0;transform:translateY(24px);transition:.7s ease}
@@ -616,6 +619,21 @@
       </form>
       <div class="m-switch">Уже есть аккаунт? <a data-view="login">Войти</a></div>
     </div>
+    <div id="verifyView" style="display:none">
+      <div class="v-ico">✉️</div>
+      <h3 style="text-align:center">Подтвердите почту</h3>
+      <p class="m-sub" style="text-align:center">Мы отправили 6-значный код на<br><b id="vEmail" style="color:var(--text)"></b></p>
+      <form id="verifyForm">
+        <input id="vCode" class="v-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" required>
+        <button class="btn btn-primary" style="width:100%;margin-top:14px" type="submit">Подтвердить</button>
+        <div class="m-err" id="vErr"></div>
+        <div class="m-note" id="vNote"></div>
+      </form>
+      <div class="m-switch" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <a id="vResend">Отправить код ещё раз</a><a id="vChange">Изменить email</a>
+      </div>
+      <p class="muted" style="font-size:12.5px;text-align:center;margin-top:12px;color:var(--dim)">Не пришло? Проверьте папку «Спам» и «Промоакции».</p>
+    </div>
     <div id="loginView" style="display:none">
       <h3>Вход</h3>
       <p class="m-sub">Добро пожаловать в KZStream</p>
@@ -698,7 +716,7 @@
 
   // modal
   const modal=$('#modal');
-  function view(v){$('#regView').style.display=v==='login'?'none':'block';$('#loginView').style.display=v==='login'?'block':'none';$$('.m-err').forEach(n=>n.style.display='none')}
+  function view(v){$('#regView').style.display=v==='register'?'block':'none';$('#loginView').style.display=v==='login'?'block':'none';$('#verifyView').style.display=v==='verify'?'block':'none';$$('.m-err,.m-note').forEach(n=>n.style.display='none')}
   $$('[data-open]').forEach(el=>el.addEventListener('click',e=>{
     if(!el.dataset.open) return; e.preventDefault(); view(el.dataset.open); $('#planName').textContent=el.dataset.plan||'Free'; modal.classList.add('open'); mm.classList.remove('open');
   }));
@@ -712,15 +730,29 @@
       const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(form)))});
       const j=await r.json().catch(()=>({}));
       if(!r.ok) throw new Error(j.error||'Ошибка, попробуйте ещё раз');
-      const plan=$('#planName').textContent.toLowerCase();
-      location.href='/app'+(plan&&plan!=='free'?'#billing':'');
+      if(j.verify){ openVerify(j.email, j.mail_error); btn.disabled=false; return; }
+      goApp();
     }catch(err){errEl.textContent=err.message;errEl.style.display='block'}
     btn.disabled=false;
   }
+  function goApp(){ const plan=$('#planName').textContent.toLowerCase(); location.href='/app'+(plan&&plan!=='free'?'#billing':''); }
+  function note(el,msg){ el.textContent=msg; el.style.display='block'; }
+  function openVerify(email,warn){ view('verify'); $('#vEmail').textContent=email||''; $('#vCode').value=''; modal.classList.add('open'); setTimeout(()=>$('#vCode').focus(),50); if(warn) note($('#vErr'),warn); }
+  const post=(u,b)=>fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})}).then(async r=>{const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||'Ошибка'); return j;});
+  $('#vCode').oninput=e=>{ e.target.value=e.target.value.replace(/\D/g,'').slice(0,6); if(e.target.value.length===6) $('#verifyForm').requestSubmit(); };
+  $('#verifyForm').onsubmit=async e=>{ e.preventDefault(); $('#vErr').style.display='none';
+    try{ await post('/api/verify',{code:$('#vCode').value}); note($('#vNote'),'Почта подтверждена ✓'); setTimeout(goApp,600); }
+    catch(er){ note($('#vErr'),er.message); $('#vCode').select(); } };
+  $('#vResend').onclick=async()=>{ $('#vErr').style.display='none';
+    try{ const j=await post('/api/verify/resend'); if(j.verified) return goApp(); note($('#vNote'),'Новый код отправлен на '+(j.email||'почту')); }
+    catch(er){ note($('#vErr'),er.message); } };
+  $('#vChange').onclick=async()=>{ const em=prompt('Новый email', $('#vEmail').textContent); if(!em) return; $('#vErr').style.display='none';
+    try{ const j=await post('/api/verify/change-email',{email:em}); $('#vEmail').textContent=j.email; note($('#vNote'),'Код отправлен на '+j.email); }
+    catch(er){ note($('#vErr'),er.message); } };
   $('#regForm').onsubmit=e=>{e.preventDefault();send(e.target,'/api/register',$('#regErr'))};
   $('#loginForm').onsubmit=e=>{e.preventDefault();send(e.target,'/api/login',$('#loginErr'))};
   // если уже вошли — показываем кнопку кабинета
-  fetch('/api/me').then(r=>r.ok?r.json():null).then(me=>{ if(!me) return;
+  fetch('/api/me').then(async r=>{ if(r.status===403){ const j=await r.json().catch(()=>({})); if(j.verify) openVerify(j.email); return null; } return r.ok?r.json():null; }).then(me=>{ if(!me) return;
     $$('[data-open]').forEach(el=>{ el.removeAttribute('data-open'); if(el.closest('.plan')){ el.href='/app#billing'; return; } el.href='/app'; el.textContent=el.classList.contains('btn-ghost')?'Кабинет':'Открыть кабинет →'; });
   }).catch(()=>{});
 })();
