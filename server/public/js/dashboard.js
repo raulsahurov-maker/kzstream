@@ -76,7 +76,7 @@ function render() {
   $('#nickH').textContent = ME.nick;
   $('#adminLink').style.display = ME.is_admin ? '' : 'none';
   $('#pageLinkBtn').href = ME.urls.page;
-  val('homePage', ME.urls.page); val('ingestUrl', ME.urls.ingest); val('iosUrl', ME.urls.ingest);
+  val('ingestUrl', ME.urls.ingest); val('iosUrl', ME.urls.ingest);
   $('#stToday').textContent = fmt(ME.stats.today); $('#stMonth').textContent = fmt(ME.stats.month);
   renderStatsTiles();
   const until = ME.is_admin ? 'владелец · без срока' : ME.plan.id !== 'free' ? `до ${new Date(ME.plan_until).toLocaleDateString('ru-RU')}` : 'бесплатно';
@@ -91,7 +91,7 @@ function render() {
   $('#durMax').textContent = `(до ${p.maxDuration})`; $('#a_duration').max = p.maxDuration;
   ['duration', 'volume', 'min_alert', 'min_tts', 'tts_lang', 'tts_rate', 'theme'].forEach(k => val('a_' + k, a[k]));
   val('a_gif', a.gif); val('a_sound', a.sound);
-  ['show_msg', 'tts', 'tts_read_name'].forEach(k => val('a_' + k, a[k]));
+  ['show_msg', 'tts'].forEach(k => val('a_' + k, a[k]));
   val('c_words', s.censor.words); val('c_strip_links', s.censor.strip_links);
   listEdit('#nicksList', Object.entries(s.nicks || {}).map(([k, v]) => ({ k, v })), [['k', 'Имя в Kaspi'], ['v', 'Ник']]);
   listEdit('#varList', a.variations || [], [['amount', 'Сумма', 'number'], ['gif', 'Гифка (URL)', 'file:image,video'], ['sound', 'Звук (URL)', 'file:audio'], ['text', 'Подпись']]);
@@ -164,7 +164,7 @@ const readList = sel => [...$(sel).children].map(r => Object.fromEntries([...r.q
 // ---------- сохранение ----------
 const collectors = {
   alerts: () => ({ alerts: { duration: val('a_duration'), gif: val('a_gif'), sound: val('a_sound'), volume: +val('a_volume'), min_alert: val('a_min_alert'), theme: val('a_theme'),
-    show_msg: val('a_show_msg'), tts: val('a_tts'), min_tts: val('a_min_tts'), tts_lang: val('a_tts_lang'), tts_rate: +val('a_tts_rate'), tts_read_name: val('a_tts_read_name'),
+    show_msg: val('a_show_msg'), tts: val('a_tts'), min_tts: val('a_min_tts'), tts_lang: val('a_tts_lang'), tts_rate: +val('a_tts_rate'),
     variations: readList('#varList') } }),
   censor: () => ({ censor: { words: val('c_words'), strip_links: val('c_strip_links') } }),
   nicks: () => ({ nicks: Object.fromEntries(readList('#nicksList').map(r => [r.k, r.v])) }),

@@ -133,10 +133,7 @@
     <div class="test-bar" id="testBar"><span id="testInfo">Тестовых донатов нет</span><button class="btn btn-danger btn-sm" id="resetTests">🧹 Сбросить тестовые донаты</button></div>
     <div class="grid g2">
       <div class="card">
-        <h3>Ссылка для зрителей</h3>
-        <p class="hint">Поставьте её в профиль TikTok и закрепите в чате эфира.</p>
-        <div class="copy-row"><input readonly id="homePage"><button class="btn btn-ghost" data-copy="homePage">Копировать</button></div>
-        <h3 style="margin-top:24px">Тестовый донат</h3>
+        <h3>Тестовый донат</h3>
         <p class="hint">Проверьте, как алерт выглядит в эфире.</p>
         <div class="row"><div class="field"><input id="tName" placeholder="Имя" value="Тестовый донатер"></div><div class="field"><input id="tAmount" type="number" value="1000"></div></div>
         <div class="field"><input id="tMsg" placeholder="Сообщение" value="Привет! Это тестовый донат 🔥"></div>
@@ -224,7 +221,7 @@
         <label class="check"><input type="checkbox" id="a_show_msg"> Показывать сообщение донатера</label>
       </div>
       <div class="card">
-        <h3>Озвучка доната <span class="lock" data-need="tts">Lite</span></h3><p class="hint">Сообщения читаются голосом прямо в эфире.</p>
+        <h3>Озвучка доната <span class="lock" data-need="tts">Lite</span></h3><p class="hint">Мужской голос читает только текст сообщения доната.</p>
         <label class="check"><input type="checkbox" id="a_tts"> Включить озвучку</label>
         <div class="field"><label>Мин. сумма для озвучки</label><input type="number" id="a_min_tts" min="0"></div>
         <h3 style="margin-top:18px">Продвинутая озвучка <span class="lock" data-need="ttsAdvanced">Pro</span></h3><p class="hint">Язык, скорость, чтение имени.</p>
@@ -232,7 +229,6 @@
           <div class="field"><label>Язык</label><select id="a_tts_lang"><option value="ru">Русский</option><option value="kk">Қазақша</option><option value="en">English</option><option value="tr">Türkçe</option><option value="uk">Українська</option></select></div>
           <div class="field"><label>Скорость</label><input type="range" id="a_tts_rate" min="0.5" max="2" step="0.1"></div>
         </div>
-        <label class="check"><input type="checkbox" id="a_tts_read_name"> Читать имя и сумму</label>
       </div>
       <div class="card">
         <h3>Цензура</h3><p class="hint">Слова через запятую заменяются на ***.</p>

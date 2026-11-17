@@ -16,6 +16,7 @@
   "dependencies": {
     "@libsql/client": "^0.15.15",
     "express": "^4.22.3",
-    "libsql": "^0.5.29"
+    "libsql": "^0.5.29",
+    "msedge-tts": "^2.1.1"
   }
 }

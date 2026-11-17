@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const Database = require('libsql');
 const { PLANS, effectivePlan } = require('./lib/plans');
 const { parseNotification } = require('./lib/parse');
+const { MsEdgeTTS, OUTPUT_FORMAT } = require('msedge-tts');
 
 // ---------- конфиг ----------
 const PORT = +process.env.PORT || 3000;
@@ -124,7 +125,7 @@ function defaults(nick) {
     page: { title: nick, description: 'Спасибо за поддержку стрима!', kaspi: '', receiver: '', min_amount: 100, cards: '', avatar: '', banner: '', color: '#ff3b5c',
       socials: { twitch: '', youtube: '', tiktok: '', instagram: '', telegram: '' } },
     alerts: { duration: 6, gif: '', sound: '', volume: 0.8, min_alert: 0, show_msg: true, theme: 'default',
-      tts: true, min_tts: 0, tts_lang: 'ru', tts_rate: 1, tts_read_name: true, variations: [] },
+      tts: true, min_tts: 0, tts_lang: 'ru', tts_rate: 1, tts_read_name: false, variations: [] },
     censor: { words: '', strip_links: true },
     nicks: {},
     goal: { title: 'Цель сбора', target: 100000, base: 0, start_at: Date.now(), theme: 'default' },
@@ -492,7 +493,6 @@ app.put('/api/settings', auth, (req, res) => {
     if (a.tts !== undefined) A.tts = !!a.tts;
     if (a.tts_lang !== undefined) { if (!p.ttsAdvanced && a.tts_lang !== 'ru') errors.push('Выбор языка озвучки — тариф Pro'); else if (['ru', 'kk', 'en', 'tr', 'uk'].includes(a.tts_lang)) A.tts_lang = a.tts_lang; }
     if (a.tts_rate !== undefined) A.tts_rate = p.ttsAdvanced ? Math.min(2, Math.max(0.5, +a.tts_rate || 1)) : 1;
-    if (a.tts_read_name !== undefined) A.tts_read_name = p.ttsAdvanced ? !!a.tts_read_name : true;
     if (Array.isArray(a.variations)) {
       if (!p.memes && a.variations.length) errors.push('Мем-алерты доступны на тарифе Pro');
       else A.variations = a.variations.slice(0, 30).map(v => ({ amount: int(v.amount, 1, 1e7, 0), gif: clampStr(v.gif, 300), sound: clampStr(v.sound, 300), text: clampStr(v.text, 80) })).filter(v => v.amount);
@@ -788,13 +788,43 @@ app.post('/api/w/:token/media/done', (req, res) => {
 
 // --- озвучка (TTS-прокси) ---
 const ttsCache = new Map();
+// Мужские голоса Microsoft Edge (бесплатно, без ключа). Если недоступно — запасной вариант Google.
+const MALE_VOICES = { ru: 'ru-RU-DmitryNeural', kk: 'kk-KZ-DauletNeural', en: 'en-US-GuyNeural', tr: 'tr-TR-AhmetNeural', uk: 'uk-UA-OstapNeural' };
+async function edgeTts(text, lang, rate) {
+  const tts = new MsEdgeTTS();
+  try {
+    await tts.setMetadata(MALE_VOICES[lang] || MALE_VOICES.ru, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+    const { audioStream } = tts.toStream(text, { rate: `${Math.round((rate - 1) * 100) >= 0 ? '+' : ''}${Math.round((rate - 1) * 100)}%` });
+    const chunks = [];
+    await new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('timeout')), 12000);
+      audioStream.on('data', c => chunks.push(c));
+      audioStream.on('end', () => { clearTimeout(t); resolve(); });
+      audioStream.on('error', e => { clearTimeout(t); reject(e); });
+    });
+    const buf = Buffer.concat(chunks);
+    if (buf.length < 500) throw new Error('empty audio');
+    return buf;
+  } finally { try { tts.close(); } catch { } }
+}
+// проверка озвучки: какой движок сейчас работает (без звука)
+let ttsStatus = null;
+app.get('/api/tts/status', async (req, res) => {
+  if (!ttsStatus || now() - ttsStatus.at > 600e3) {
+    const edge = await edgeTts('Проверка', 'ru', 1).then(b => b.length).catch(e => 'ошибка: ' + e.message);
+    ttsStatus = { at: now(), edge_male_voice: edge };
+  }
+  res.json(ttsStatus);
+});
 app.get('/api/tts', async (req, res) => {
   const u = userByToken(req.query.t); if (!u || !effectivePlan(u).tts) return res.status(403).end();
-  const text = clampStr(req.query.text, 200); const lang = ['ru', 'kk', 'en', 'tr', 'uk'].includes(req.query.lang) ? req.query.lang : 'ru';
+  const text = clampStr(req.query.text, 300); const lang = ['ru', 'kk', 'en', 'tr', 'uk'].includes(req.query.lang) ? req.query.lang : 'ru';
+  const rate = Math.min(2, Math.max(0.5, +req.query.rate || 1));
   if (!text) return res.status(400).end();
-  const key = lang + '|' + text;
+  const key = lang + '|' + rate + '|' + text;
   try {
     let buf = ttsCache.get(key);
+    if (!buf) buf = await edgeTts(text, lang, rate).catch(e => { console.error('Edge TTS:', e.message); return null; });
     if (!buf) {
       const hosts = [`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=`,
         `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${lang}&q=`];
