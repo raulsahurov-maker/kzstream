@@ -75,7 +75,11 @@ async function initStorage() {
   const { createClient } = require('@libsql/client');
   const url = TURSO_URL.replace(/^libsql:\/\//, 'https://');
   const client = createClient({ url, authToken: TURSO_TOKEN });
-  await client.executeMultiple(SCHEMA);
+  const stmts = SCHEMA.split(';').map(x => x.trim()).filter(Boolean);
+  for (const st of stmts) {
+    try { await client.execute(st); }
+    catch (e) { console.error('Turso: ошибка в запросе:', st.slice(0, 80).replace(/\s+/g, ' '), '→', e.message, e.cause?.message || ''); throw e; }
+  }
   let total = 0;
   for (const t of TABLES) {
     const r = await client.execute(`SELECT * FROM ${t}`);
@@ -741,5 +745,9 @@ for (const prefix of ['/update', '/downloads']) {
 app.use(express.static(PUB, { extensions: ['html'] }));
 app.use((req, res) => res.status(404).sendFile(path.join(PUB, '404.html')));
 
-initStorage().then(() => app.listen(PORT, () => console.log(`KZStream запущен: http://localhost:${PORT}`)))
-  .catch(e => { console.error('Не удалось подключиться к Turso:', e.message); process.exit(1); });
+const listen = () => app.listen(PORT, () => console.log(`KZStream запущен: http://localhost:${PORT}`));
+initStorage().then(listen).catch(e => {
+  console.error('Не удалось подключиться к Turso:', e.message, e.code || '', e.cause?.message || '');
+  console.error('ВНИМАНИЕ: сайт запущен БЕЗ сохранения данных в Turso. Проверьте TURSO_URL и TURSO_TOKEN.');
+  remote = null; listen();
+});
