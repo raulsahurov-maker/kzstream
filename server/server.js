@@ -1,5 +1,6 @@
 // KZStream — сервер: регистрация, кабинет, приём уведомлений, виджеты OBS
 'use strict';
+process.env.TZ = process.env.TZ || 'Asia/Almaty'; // «сегодня/месяц/год» по времени Казахстана
 process.removeAllListeners('warning');
 const express = require('express');
 const path = require('path');
@@ -200,6 +201,7 @@ function periodStart(period) {
   if (period === 'day') return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   if (period === 'week') return now() - 7 * 864e5;
   if (period === 'month') return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+  if (period === 'year') return new Date(d.getFullYear(), 0, 1).getTime();
   return 0;
 }
 function topList(u, s) {
@@ -444,13 +446,15 @@ app.get('/api/me', auth, (req, res) => {
   const stats = q(`SELECT COUNT(*) cnt, COALESCE(SUM(amount),0) total FROM donations WHERE user_id=? AND status='done' AND hidden=0`).get(u.id);
   const today = q(`SELECT COALESCE(SUM(amount),0) s FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=?`).get(u.id, periodStart('day')).s;
   const month = q(`SELECT COALESCE(SUM(amount),0) s FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=?`).get(u.id, periodStart('month')).s;
+  const year = q(`SELECT COALESCE(SUM(amount),0) s FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=?`).get(u.id, periodStart('year')).s;
+  const tests = q(`SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM donations WHERE user_id=? AND source='test'`).get(u.id);
   res.json({
     id: u.id, nick: u.nick, email: u.email, is_admin: !!u.is_admin, token: u.token,
     plan: publicPlan(u), plan_raw: u.plan, plan_until: u.plan_until, vip: u.paid_months >= 10, paid_months: u.paid_months,
     freeze_available: effectivePlan(u).freezeDays > 0 && now() - u.freeze_used_at > 30 * 864e5,
     storage: { used: storageUsed(u.id), limit: effectivePlan(u).storageMB * 1048576 },
     settings: s, themes: THEMES, plans: Object.values(PLANS).map(p => ({ ...p, media: p.media === Infinity ? -1 : p.media })),
-    stats: { ...stats, today, month },
+    stats: { ...stats, today, month, year, tests: tests.c, tests_sum: tests.s },
     urls: {
       page: `${b}/d/${u.nick}`, ingest: `${b}/api/ingest/${u.token}`,
       widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
@@ -596,6 +600,13 @@ app.post('/api/donations/test', auth, (req, res) => {
     .run(u.id, clampStr(req.body.name || 'Тестовый донатер', 32), int(req.body.amount, 1, 1e7, 1000), clampStr(req.body.message ?? 'Это тестовый донат от KZStream!', 300), clampStr(req.body.media_url, 300), 'test', 'pending', now());
   const d = q('SELECT * FROM donations WHERE id=?').get(Number(r.lastInsertRowid));
   res.json({ ok: true, event: finalizeDonation(u, d) });
+});
+// сброс статистики: удаляются ТОЛЬКО тестовые донаты, настоящие (из Kaspi) не трогаются
+app.post('/api/donations/reset-tests', auth, (req, res) => {
+  const u = req.user;
+  const r = q(`DELETE FROM donations WHERE user_id=? AND source='test'`).run(u.id);
+  pushStats(u);
+  res.json({ ok: true, deleted: Number(r.changes || 0) });
 });
 app.post('/api/test/roulette', auth, (req, res) => {
   const u = req.user, s = getSettings(u);
@@ -744,7 +755,7 @@ function ingest(req, res) {
   let result = 'ignored', event = null;
   if (parsed) {
     const r = q(`INSERT INTO donations(user_id,name,sender,amount,message,media_url,source,status,created_at) VALUES(?,?,?,?,?,?,?,?,?)`)
-      .run(u.id, '', parsed.sender, parsed.amount, parsed.message, parsed.media_url, 'kaspi', 'pending', now());
+      .run(u.id, '', parsed.sender, parsed.amount, parsed.message, parsed.media_url, /^w?test-/.test(String(src.key || '')) ? 'test' : 'kaspi', 'pending', now());
     event = finalizeDonation(u, q('SELECT * FROM donations WHERE id=?').get(Number(r.lastInsertRowid)));
     result = 'new';
   }

@@ -78,7 +78,7 @@ function render() {
   $('#pageLinkBtn').href = ME.urls.page;
   val('homePage', ME.urls.page); val('ingestUrl', ME.urls.ingest); val('iosUrl', ME.urls.ingest);
   $('#stToday').textContent = fmt(ME.stats.today); $('#stMonth').textContent = fmt(ME.stats.month);
-  $('#stTotal').textContent = fmt(ME.stats.total); $('#stCnt').textContent = ME.stats.cnt;
+  renderStatsTiles();
   const until = ME.is_admin ? 'владелец · без срока' : ME.plan.id !== 'free' ? `до ${new Date(ME.plan_until).toLocaleDateString('ru-RU')}` : 'бесплатно';
   $('#sidePlan').innerHTML = `<div class="muted">Тариф</div><b>${p.name}</b>${ME.vip ? ' <span class="tag ok">VIP</span>' : ''}<div class="muted">${until}</div><a href="#billing" class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%">${p.id === 'pro' ? 'Продлить' : 'Улучшить'}</a>`;
   // замки
@@ -211,12 +211,28 @@ $('#tSound').onclick = () => { try { $('#prevFrame').contentWindow.KZunlock?.();
 $('#rTest').onclick = async () => { try { const r = await api('/api/test/roulette', { method: 'POST' }); toast('Крутим! Выпадет: ' + r.task); } catch (e) { toast(e.message, true); } };
 $('#mTest').onclick = async () => { try { await api('/api/test/media', { method: 'POST', body: { url: val('mTestUrl') } }); toast('Видео добавлено в очередь — откройте плеер'); } catch (e) { toast(e.message, true); } };
 
+// ---------- статистика и сброс тестовых донатов ----------
+function renderStatsTiles() {
+  const st = ME.stats;
+  $('#stToday').textContent = fmt(st.today); $('#stMonth').textContent = fmt(st.month); $('#stYear').textContent = fmt(st.year); $('#stCnt').textContent = st.cnt;
+  $('#testInfo').innerHTML = st.tests ? `В статистике <b style="color:var(--text)">${st.tests}</b> тестовых донатов на <b style="color:var(--text)">${fmt(st.tests_sum)}</b>. Настоящие донаты из Kaspi сброс не затронет.` : 'Тестовых донатов нет — в статистике только настоящие донаты.';
+  $('#resetTests').disabled = !st.tests;
+}
+async function reloadStats() { try { const me = await api('/api/me'); ME.stats = me.stats; renderStatsTiles(); } catch { } }
+$('#resetTests').onclick = async () => {
+  const b = $('#resetTests');
+  if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Точно удалить тестовые? Нажмите ещё раз'; setTimeout(() => { delete b.dataset.sure; b.textContent = '🧹 Сбросить тестовые донаты'; }, 4000); return; }
+  delete b.dataset.sure; b.textContent = '🧹 Сбросить тестовые донаты';
+  try { const r = await api('/api/donations/reset-tests', { method: 'POST' }); toast(`Удалено тестовых донатов: ${r.deleted}`); feed.length = 0; $('#feed').innerHTML = '<div class="muted">Пока пусто.</div>'; await reloadStats(); if (location.hash === '#donations') loadDonations(); }
+  catch (e) { toast(e.message, true); }
+};
+
 // ---------- лента (SSE) ----------
 const feed = [];
 function pushFeed(html) { feed.unshift(html); feed.length = Math.min(feed.length, 40); $('#feed').innerHTML = feed.map(h => `<div class="it">${h}</div>`).join(''); }
 function connectEvents() {
   const es = new EventSource('/api/events');
-  es.addEventListener('donation', e => { const d = JSON.parse(e.data); pushFeed(`<span>💸 <b>${esc(d.name)}</b> ${esc(d.message || '')}</span><b>${fmt(d.amount)}</b>`); ME.stats.today += d.amount; ME.stats.month += d.amount; ME.stats.total += d.amount; ME.stats.cnt++; $('#stToday').textContent = fmt(ME.stats.today); $('#stMonth').textContent = fmt(ME.stats.month); $('#stTotal').textContent = fmt(ME.stats.total); $('#stCnt').textContent = ME.stats.cnt; });
+  es.addEventListener('donation', e => { const d = JSON.parse(e.data); pushFeed(`<span>💸 <b>${esc(d.name)}</b> ${esc(d.message || '')}</span><b>${fmt(d.amount)}</b>`); clearTimeout(window._st); window._st = setTimeout(reloadStats, 600); });
   es.addEventListener('ingest', e => { const d = JSON.parse(e.data); const r = { matched: '✅ донат', new: '✅ донат', ignored: '— пропущено' }[d.result]; pushFeed(`<span class="muted">📲 ${esc(d.text)}</span><span>${r}</span>`); });
   es.addEventListener('stats', e => { const d = JSON.parse(e.data); renderStats(d); });
 }

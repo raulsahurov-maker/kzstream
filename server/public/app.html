@@ -43,6 +43,7 @@
   .tabs button{padding:8px 14px;border-radius:9px;border:1px solid var(--line);font-weight:700;font-size:13.5px;color:var(--muted)}
   .tabs button.on{border-color:var(--accent);color:var(--text);background:rgba(255,59,92,.08)}
   .mob-top{display:none}
+  .test-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-radius:14px;background:var(--bg2);border:1px dashed #3a3f5c;margin:-4px 0 18px;font-size:14px;color:var(--muted)}
   .top-grid{display:grid;grid-template-columns:330px 1fr;gap:24px;align-items:start}
   .top-prev{position:relative;height:440px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:repeating-conic-gradient(#14172a 0% 25%,#101322 0% 50%) 50%/24px 24px}
   .top-prev iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
@@ -126,9 +127,10 @@
     <div class="grid g4" style="margin-bottom:18px">
       <div class="card stat"><b id="stToday">0 ₸</b><span>Сегодня</span></div>
       <div class="card stat"><b id="stMonth">0 ₸</b><span>За месяц</span></div>
-      <div class="card stat"><b id="stTotal">0 ₸</b><span>Всего</span></div>
+      <div class="card stat"><b id="stYear">0 ₸</b><span>За год</span></div>
       <div class="card stat"><b id="stCnt">0</b><span>Донатов</span></div>
     </div>
+    <div class="test-bar" id="testBar"><span id="testInfo">Тестовых донатов нет</span><button class="btn btn-danger btn-sm" id="resetTests">🧹 Сбросить тестовые донаты</button></div>
     <div class="grid g2">
       <div class="card">
         <h3>Ссылка для зрителей</h3>
