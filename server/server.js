@@ -59,6 +59,7 @@ const q = (sql) => { const st = db.prepare(sql); return {
   get: (...a) => clean(st.get(...a)), all: (...a) => st.all(...a).map(clean), run: (...a) => st.run(...a) }; };
 
 // ---------- настройки по умолчанию ----------
+const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
 const THEMES = ['default', 'neon', 'sunset', 'mint', 'royal', 'mono', 'candy', 'steppe', 'ice', 'gold'];
 function defaults(nick) {
   return {
@@ -69,7 +70,7 @@ function defaults(nick) {
     censor: { words: '', strip_links: true },
     nicks: {},
     goal: { title: 'Цель сбора', target: 100000, base: 0, start_at: Date.now(), theme: 'default' },
-    top: { period: 'month', count: 5, theme: 'default' },
+    top: { period: 'month', count: 5, theme: 'default', style: 'classic', font: 'manrope', title: '', size: 'md', radius: 16, opacity: 0.9 },
     roulette: { enabled: false, min: 1000, style: 'wheel',
       tasks: ['Спеть песню', 'Катка без прицела', '10 отжиманий', 'Говорить с акцентом', 'Ответить на 3 вопроса', 'Танец 15 сек'] },
     media: { enabled: false, min: 500, max_sec: 180, volume: 0.6 },
@@ -165,7 +166,7 @@ function widgetState(u) {
   const p = effectivePlan(u);
   const lastDon = q(`SELECT name, amount, message FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 1`).get(u.id);
   return {
-    nick: u.nick, plan: publicPlan(u), settings: { alerts: s.alerts, goal: s.goal, top: s.top, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, hotkeys: p.hotkeys ? s.hotkeys : [] },
+    nick: u.nick, plan: publicPlan(u), settings: { alerts: s.alerts, goal: s.goal, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, hotkeys: p.hotkeys ? s.hotkeys : [] },
     top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title },
     timer: timerState(s), last: lastDon || null, media: mediaQueue(u),
   };
@@ -372,6 +373,13 @@ app.put('/api/settings', auth, (req, res) => {
     if (['day', 'week', 'month', 'all'].includes(b.top.period)) s.top.period = b.top.period;
     s.top.count = int(b.top.count, 1, 10, s.top.count);
     if (b.top.theme && THEMES.includes(b.top.theme)) s.top.theme = p.shop ? b.top.theme : 'default';
+    // конструктор ТОПа: дизайн и шрифт — с тарифа Lite, остальное бесплатно
+    if (TOP_STYLES.includes(b.top.style)) { if (!p.shop && b.top.style !== 'classic') errors.push('Дизайны ТОПа доступны с тарифа Lite'); else s.top.style = b.top.style; }
+    if (TOP_FONTS.includes(b.top.font)) { if (!p.shop && b.top.font !== 'manrope') errors.push('Шрифты ТОПа доступны с тарифа Lite'); else s.top.font = b.top.font; }
+    if (b.top.title !== undefined) s.top.title = clampStr(b.top.title, 40);
+    if (['sm', 'md', 'lg'].includes(b.top.size)) s.top.size = b.top.size;
+    if (b.top.radius !== undefined) s.top.radius = int(b.top.radius, 0, 32, s.top.radius);
+    if (b.top.opacity !== undefined) s.top.opacity = Math.min(1, Math.max(0.3, +b.top.opacity || 0.9));
   }
   if (b.roulette) {
     if (!p.roulette && b.roulette.enabled) errors.push('Рулетка доступна с тарифа Lite');

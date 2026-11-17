@@ -5,6 +5,25 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const time = t => t ? new Date(t).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 let ME = null, FILES = [];
 const THEME_COLORS = { default: ['rgba(14,15,26,.9)', '#fff', '#ff3b5c', '#ff7a45', 'Классика'], neon: ['rgba(8,4,24,.9)', '#e9e6ff', '#8b6cff', '#3ee6c4', 'Неон'], sunset: ['rgba(40,12,20,.9)', '#fff3ea', '#ff7a45', '#ffc84a', 'Закат'], mint: ['rgba(6,26,24,.9)', '#eafff9', '#3ee6c4', '#7dffb2', 'Мята'], royal: ['rgba(14,10,40,.9)', '#fff', '#5b7cff', '#c86bff', 'Роял'], mono: ['rgba(0,0,0,.9)', '#fff', '#ffffff', '#9a9a9a', 'Моно'], candy: ['rgba(40,10,36,.9)', '#fff', '#ff6bd6', '#ffb86b', 'Конфета'], steppe: ['rgba(6,24,40,.9)', '#fff', '#00b3e6', '#ffd23f', 'Степь'], ice: ['rgba(230,244,255,.95)', '#0b2a44', '#2f9bff', '#6ad7ff', 'Лёд'], gold: ['rgba(20,16,6,.92)', '#fff6dd', '#ffc84a', '#ff9d2e', 'Золото'] };
+// ---------- конструктор ТОПа ----------
+const TOP_DESIGNS = [
+  { id: 'classic', name: 'Классика KZStream', desc: 'Фирменный стиль', pv: `<div class="pv" style="background:#0e0f1a;border:1px solid rgba(255,255,255,.12)"><b style="text-align:left;padding:0 2px;background:linear-gradient(120deg,#ff3b5c,#ff7a45);-webkit-background-clip:text;background-clip:text;color:transparent">ТОП ДНЯ</b><i style="color:#fff;border-bottom:1px solid rgba(255,255,255,.1)">Әлихан <span style="color:#ff7a45">15 000 ₸</span></i><i style="color:#fff">Dias <span style="color:#ff7a45">8 500 ₸</span></i></div>` },
+  { id: 'glassneon', name: 'Cyberpunk Glass', desc: 'Неон и стекло', pv: `<div class="pv" style="background:#0d101b;border:1px solid rgba(236,72,153,.45)"><b style="background:linear-gradient(90deg,#ec4899,#8b5cf6,#06b6d4);color:#fff;border-radius:4px">ТОП ДНЯ</b><i style="background:linear-gradient(90deg,#ec4899,#8b5cf6);color:#fff;border-radius:4px">Әлихан <span>15 000 ₸</span></i><i style="background:rgba(255,255,255,.05);border:1px solid rgba(6,182,212,.35);color:#38bdf8;border-radius:4px">Dias <span>8 500 ₸</span></i></div>` },
+  { id: 'esports', name: 'Esports Elite', desc: 'Острые углы', pv: `<div class="pv" style="background:#0a0a0c;border-left:3px solid #facc15;border-radius:0;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%)"><b style="background:#facc15;color:#000">ТОП ДНЯ</b><i style="background:linear-gradient(90deg,#facc15,#eab308);color:#000">Әлихан <span>15 000 ₸</span></i><i style="background:#18181b;border-left:2px solid #3f3f46;color:#f4f4f5">Dias <span>8 500 ₸</span></i></div>` },
+  { id: 'darkgold', name: 'Dark & Gold', desc: 'Премиум золото', pv: `<div class="pv" style="background:#121214;border:1px solid rgba(212,175,55,.45)"><b style="background:linear-gradient(135deg,#bf953f,#fcf6ba,#b38728);color:#121214;border-radius:4px">ТОП ДНЯ</b><i style="background:linear-gradient(135deg,#d4af37,#fff2b2,#aa771c);color:#121214;border-radius:4px">Әлихан <span>15 000 ₸</span></i><i style="background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.25);color:#e4e4e7;border-radius:4px">Dias <span>8 500 ₸</span></i></div>` },
+  { id: 'hud', name: 'Futuristic HUD', desc: 'Игровой интерфейс', pv: `<div class="pv" style="background:#061818;border:2px solid #10b981"><b style="background:rgba(16,185,129,.15);border:1px solid #10b981;color:#10b981;border-radius:3px">ТОП ДНЯ</b><i style="background:rgba(16,185,129,.3);border:1px solid #34d399;color:#6ee7b7;border-radius:3px">Әлихан <span>15 000 ₸</span></i><i style="border:1px solid rgba(16,185,129,.35);color:#a7f3d0;border-radius:3px">Dias <span>8 500 ₸</span></i></div>` },
+];
+const TOP_FONTS = [['manrope', 'Manrope'], ['montserrat', 'Montserrat'], ['unbounded', 'Unbounded'], ['oswald', 'OSWALD'], ['rubik', 'Rubik'], ['inter', 'Inter']];
+const FONT_CSS = { manrope: 'Manrope', montserrat: 'Montserrat', unbounded: 'Unbounded', oswald: 'Oswald', rubik: 'Rubik', inter: 'Inter' };
+let TOPSEL = { style: 'classic', font: 'manrope' };
+function topPickers() {
+  const locked = !ME.plan.shop;
+  $('#t_styles').innerHTML = TOP_DESIGNS.map(d => `<div class="dz ${TOPSEL.style === d.id ? 'on' : ''} ${locked && d.id !== 'classic' ? 'locked' : ''}" data-s="${d.id}">${d.pv}<div class="nm">${d.name}</div><div class="ds">${d.desc}</div></div>`).join('');
+  $('#t_fonts').innerHTML = TOP_FONTS.map(([id, nm]) => `<button type="button" class="${TOPSEL.font === id ? 'on' : ''}" data-f="${id}" style="font-family:${FONT_CSS[id]},sans-serif">${nm}${locked && id !== 'manrope' ? ' 🔒' : ''}</button>`).join('');
+  $('#t_theme_field').style.display = TOPSEL.style === 'classic' ? '' : 'none';
+}
+function postTop() { try { $('#topFrame').contentWindow.postMessage({ kzTop: collectors.top().top }, location.origin); } catch { } }
+
 function themePickers() {
   $$('select[data-themes]').forEach(sel => {
     sel.style.display = 'none';
@@ -15,7 +34,7 @@ function themePickers() {
         return `<div class="th ${sel.value === t ? 'on' : ''} ${locked ? 'locked' : ''}" data-t="${t}"><div class="pv"><i style="background:${c[0]};color:${c[1]};border:1px solid ${c[2]}">Донат <span style="color:${c[3]}">1 000 ₸</span></i><u style="background:linear-gradient(90deg,${c[2]},${c[3]})"></u></div><div class="nm">${c[4]}</div></div>`; }).join('');
     };
     draw();
-    grid.onclick = e => { const th = e.target.closest('.th'); if (!th) return; if (th.classList.contains('locked')) return toast('Темы доступны с тарифа Lite — раздел «Тариф»', true); sel.value = th.dataset.t; draw(); };
+    grid.onclick = e => { const th = e.target.closest('.th'); if (!th) return; if (th.classList.contains('locked')) return toast('Темы доступны с тарифа Lite — раздел «Тариф»', true); sel.value = th.dataset.t; draw(); sel.dispatchEvent(new Event('change', { bubbles: true })); };
     sel._draw = draw;
   });
 }
@@ -82,6 +101,9 @@ function render() {
   $('#wlinks').innerHTML = Object.entries(ME.urls.widgets).map(([k, u]) => { const locked = need[k] && !p[need[k]];
     return `<div class="wlink ${locked ? 'locked' : ''}"><h4><span>${names[k]} ${badge(k)}</span>${locked ? '<a class="btn btn-ghost btn-sm" href="#billing">🔒 Подключить Lite</a>' : `<a class="btn btn-ghost btn-sm" href="${u}" target="_blank">Открыть ↗</a>`}</h4><div class="copy-row"><input readonly value="${u}" id="w_${k}"><button class="btn btn-ghost btn-sm" data-copy="w_${k}">Копировать</button></div></div>`; }).join('');
   val('t_period', s.top.period); val('t_count', s.top.count); val('t_theme', s.top.theme);
+  val('t_title', s.top.title); val('t_size', s.top.size); val('t_radius', s.top.radius); val('t_opacity', s.top.opacity);
+  TOPSEL = { style: s.top.style || 'classic', font: s.top.font || 'manrope' }; topPickers();
+  if (!$('#topFrame').src) { $('#topFrame').onload = () => setTimeout(postTop, 400); $('#topFrame').src = ME.urls.widgets.top + '&demo'; } else postTop();
   val('g_title', s.goal.title); val('g_target', s.goal.target); val('g_base', s.goal.base); val('g_theme', s.goal.theme);
   listEdit('#infoList', (s.info.lines || []).map(v => ({ v })), [['v', 'Текст строки']]);
   val('i_interval', s.info.interval); val('i_theme', s.info.theme);
@@ -145,7 +167,7 @@ const collectors = {
     variations: readList('#varList') } }),
   censor: () => ({ censor: { words: val('c_words'), strip_links: val('c_strip_links') } }),
   nicks: () => ({ nicks: Object.fromEntries(readList('#nicksList').map(r => [r.k, r.v])) }),
-  top: () => ({ top: { period: val('t_period'), count: val('t_count'), theme: val('t_theme') } }),
+  top: () => ({ top: { period: val('t_period'), count: val('t_count'), theme: val('t_theme'), style: TOPSEL.style, font: TOPSEL.font, title: val('t_title'), size: val('t_size'), radius: +val('t_radius'), opacity: +val('t_opacity') } }),
   goal: () => ({ goal: { title: val('g_title'), target: val('g_target'), base: val('g_base'), theme: val('g_theme') } }),
   info: () => ({ info: { lines: readList('#infoList').map(r => r.v), interval: val('i_interval'), theme: val('i_theme') } }),
   timer: () => ({ timer: { sec_per_100: val('tm_sec'), theme: val('tm_theme') } }),
@@ -172,6 +194,10 @@ document.addEventListener('click', e => {
   const tm = e.target.closest('[data-timer]');
   if (tm) api('/api/timer', { method: 'POST', body: { action: tm.dataset.timer, minutes: +$('#tm_min').value } }).then(() => toast('Таймер обновлён')).catch(er => toast(er.message, true));
 });
+// конструктор ТОПа: выбор дизайна и шрифта, живое превью
+$('#t_styles').onclick = e => { const d = e.target.closest('.dz'); if (!d) return; TOPSEL.style = d.dataset.s; topPickers(); postTop(); if (d.classList.contains('locked')) toast('Это предпросмотр. Чтобы включить дизайн в эфире, подключите Lite', true); };
+$('#t_fonts').onclick = e => { const b = e.target.closest('button'); if (!b) return; TOPSEL.font = b.dataset.f; topPickers(); postTop(); if (!ME.plan.shop && b.dataset.f !== 'manrope') toast('Это предпросмотр. Шрифты доступны с тарифа Lite', true); };
+['input', 'change'].forEach(ev => $('.topcfg').addEventListener(ev, postTop));
 $('#goalReset').onclick = () => save('goal', { reset: true });
 
 // ---------- тестовый донат ----------

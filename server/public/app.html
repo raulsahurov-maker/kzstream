@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Кабинет — KZStream</title>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@400;500;600;700&family=Montserrat:wght@800&family=Oswald:wght@700&family=Rubik:wght@700&family=Inter:wght@800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/app.css">
 <style>
   .layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
@@ -43,6 +43,21 @@
   .tabs button{padding:8px 14px;border-radius:9px;border:1px solid var(--line);font-weight:700;font-size:13.5px;color:var(--muted)}
   .tabs button.on{border-color:var(--accent);color:var(--text);background:rgba(255,59,92,.08)}
   .mob-top{display:none}
+  .top-grid{display:grid;grid-template-columns:330px 1fr;gap:24px;align-items:start}
+  .top-prev{position:relative;height:440px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:repeating-conic-gradient(#14172a 0% 25%,#101322 0% 50%) 50%/24px 24px}
+  .top-prev iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .designs{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+  .dz{position:relative;border-radius:14px;border:2px solid var(--line);padding:8px;cursor:pointer;background:var(--bg2);transition:.15s}
+  .dz:hover{border-color:#3a4060}.dz.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,59,92,.16)}
+  .dz .pv{border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:4px;height:78px;justify-content:center;overflow:hidden}
+  .dz .pv b{display:block;font-size:9px;font-weight:900;text-align:center;padding:3px;letter-spacing:.06em}
+  .dz .pv i{display:flex;justify-content:space-between;font-style:normal;font-size:8.5px;font-weight:800;padding:3px 6px}
+  .dz .nm{font-size:12.5px;font-weight:800;margin-top:7px}.dz .ds{font-size:11px;color:var(--muted)}
+  .dz.locked::after{content:"🔒 Lite";position:absolute;bottom:9px;right:9px;font-size:10px;font-weight:800;background:rgba(0,0,0,.75);padding:2px 6px;border-radius:6px}
+  .fonts{display:flex;flex-wrap:wrap;gap:8px}
+  .fonts button{padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);font-weight:800;font-size:13.5px;color:var(--muted);transition:.15s}
+  .fonts button:hover{border-color:#3a4060}.fonts button.on{border-color:var(--accent);color:var(--text);background:rgba(255,59,92,.08)}
+  @media(max-width:900px){.top-grid{grid-template-columns:1fr}.top-prev{height:400px}}
   .mb{margin-left:auto;font-style:normal;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:6px;background:rgba(139,108,255,.14);color:#b7a6ff}
   .mb.pro{background:rgba(255,122,69,.14);color:#ff9d6e}.mb.free{background:rgba(62,230,196,.12);color:var(--cyan)}
   .wb{display:inline-block;vertical-align:middle;font-family:Manrope,sans-serif;font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px;margin-left:6px}
@@ -242,14 +257,32 @@
     <div class="card" style="margin-bottom:18px"><h3>Как добавить в TikTok Live Studio</h3><p class="hint" style="margin:0">Откройте TikTok Live Studio → «Добавить источник» → «Ссылка» (Link) → вставьте ссылку виджета → «Добавить». Растяните виджет на нужное место кадра. Алерты и рулетку лучше растянуть на весь экран, ТОП и цель сбора поставить сбоку. Перед эфиром отправьте тестовый донат на главной.</p></div>
     <div class="grid g2" id="wlinks"></div>
     <div class="grid g2" style="margin-top:18px">
-      <div class="card">
-        <h3>ТОП донатеров <span class="wb free">Бесплатно</span></h3><p class="hint">На Free — с небольшим логотипом KZStream.</p>
-        <div class="row">
-          <div class="field"><label>Период</label><select id="t_period"><option value="day">День</option><option value="week">Неделя</option><option value="month">Месяц</option><option value="all">Всё время</option></select></div>
-          <div class="field"><label>Сколько показывать</label><input type="number" id="t_count" min="1" max="10"></div>
+      <div class="card topcfg" style="grid-column:1/-1">
+        <h3>ТОП донатеров <span class="wb free">Бесплатно</span></h3><p class="hint">Конструктор виджета: выберите дизайн, шрифт и размеры — превью меняется сразу. На Free — дизайн «Классика» с небольшим логотипом KZStream.</p>
+        <div class="top-grid">
+          <div>
+            <div class="top-prev"><iframe id="topFrame" title="Превью ТОПа"></iframe></div>
+            <p class="muted" style="font-size:12.5px;margin-top:8px">В превью — примерные донатеры. В эфире будут ваши настоящие донаты.</p>
+          </div>
+          <div>
+            <div class="field"><label>Дизайн <span class="lock" data-need="shop">Lite</span></label><div class="designs" id="t_styles"></div></div>
+            <div class="field" id="t_theme_field"><label>Цвета «Классики» <span class="lock" data-need="shop">Lite</span></label><select id="t_theme" data-themes></select></div>
+            <div class="field"><label>Шрифт <span class="lock" data-need="shop">Lite</span></label><div class="fonts" id="t_fonts"></div></div>
+            <div class="row">
+              <div class="field"><label>Заголовок</label><input id="t_title" maxlength="40" placeholder="Авто: ТОП ДНЯ / ТОП МЕСЯЦА"></div>
+              <div class="field"><label>Период</label><select id="t_period"><option value="day">День</option><option value="week">Неделя</option><option value="month">Месяц</option><option value="all">Всё время</option></select></div>
+            </div>
+            <div class="row">
+              <div class="field"><label>Сколько показывать</label><input type="number" id="t_count" min="1" max="10"></div>
+              <div class="field"><label>Размер шрифта</label><select id="t_size"><option value="sm">Компактный</option><option value="md">Стандартный</option><option value="lg">Крупный</option></select></div>
+            </div>
+            <div class="row">
+              <div class="field"><label>Скругление углов</label><select id="t_radius"><option value="8">Прямые (8px)</option><option value="16">Скруглённые (16px)</option><option value="24">Овальные (24px)</option></select></div>
+              <div class="field"><label>Прозрачность фона</label><select id="t_opacity"><option value="0.75">75% — прозрачный</option><option value="0.9">90% — плотный</option><option value="1">100% — непрозрачный</option></select></div>
+            </div>
+            <button class="btn btn-primary" data-save="top">Сохранить</button>
+          </div>
         </div>
-        <div class="field"><label>Тема <span class="lock" data-need="shop">Lite</span></label><select id="t_theme" data-themes></select></div>
-        <button class="btn btn-primary" data-save="top">Сохранить</button>
       </div>
       <div class="card">
         <h3>Цель сбора <span class="wb free">Бесплатно</span></h3><p class="hint" id="goalNow"></p>
