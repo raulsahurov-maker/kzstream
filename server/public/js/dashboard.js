@@ -49,7 +49,7 @@ function goalDirty() {
   const g = ME.settings.goal, dirty = GOALSEL !== (g.style || 'classic') || val('g_title') !== g.title || +val('g_target') !== +g.target || +val('g_base') !== +g.base || val('g_theme') !== g.theme;
   const b = $('#goalSaved'); b.textContent = dirty ? '● Не сохранено' : '✓ Сохранено'; b.style.color = dirty ? '#ffc84a' : '#3ee6c4';
 }
-function postGoal(extra) { $('#goalFrame').style.height = ({ water: 430, thermo: 400, ring: 210, battery: 170 }[GOALSEL] || 150) + 'px'; try { $('#goalFrame').contentWindow.postMessage(extra || { kzGoal: { style: GOALSEL, title: val('g_title') || 'Цель сбора', target: Math.min(2000000, +val('g_target') || 1), theme: val('g_theme') } }, location.origin); } catch { } }
+function postGoal(extra) { $('#goalFrame').style.height = ({ water: 430, thermo: 400, ring: 210, battery: 170 }[GOALSEL] || 150) + 'px'; setTimeout(fitPreviews, 30); try { $('#goalFrame').contentWindow.postMessage(extra || { kzGoal: { style: GOALSEL, title: val('g_title') || 'Цель сбора', target: Math.min(2000000, +val('g_target') || 1), theme: val('g_theme') } }, location.origin); } catch { } }
 
 // ---------- голоса озвучки ----------
 const VOICE_LIST = [
@@ -105,6 +105,29 @@ function shareBlock() {
     c.fillStyle = '#fff'; c.beginPath(); c.moveTo(m - 6, m - 9); c.lineTo(m - 6, m + 9); c.lineTo(m + 9, m); c.closePath(); c.fill();
   } catch { }
 }
+
+// ---------- телефон: превью виджетов показываем уменьшенной копией «как на компьютере» ----------
+// На компьютере ничего не меняется: функция работает только на узких экранах.
+const MOB = matchMedia('(max-width:760px)');
+const PREVIEW_W = { prevFrame: [760, 428], rFrame: [760, 428], mHereFrame: [760, 428], goalFrame: [680, 0], infoFrame: [560, 0] };
+function fitPreviews() {
+  Object.entries(PREVIEW_W).forEach(([id, [vw0, vh]]) => { let vw = vw0;
+    const f = document.getElementById(id); if (!f) return;
+    if (id === 'goalFrame') vw = ['water', 'thermo'].includes(GOALSEL) ? 300 : GOALSEL === 'ring' ? 520 : 680;
+    const box = f.parentElement, abs = vh > 0;
+    if (!MOB.matches) { f.classList.remove('mob-scale'); f.style.transform = ''; f.style.width = ''; f.style.marginBottom = ''; f.style.marginRight = ''; if (abs) f.style.height = ''; return; }
+    const cw = box.clientWidth - (abs ? 0 : parseFloat(getComputedStyle(box).paddingLeft) + parseFloat(getComputedStyle(box).paddingRight));
+    if (!cw) return;
+    const k = Math.min(1, cw / vw);
+    f.classList.add('mob-scale'); f.style.width = vw + 'px'; f.style.transform = `scale(${k})`;
+    if (abs) f.style.height = vh + 'px';
+    else { const h = parseFloat(f.style.height) || f.offsetHeight; f.style.marginBottom = -(h * (1 - k)) + 'px'; f.style.marginRight = -(vw * (1 - k)) + 'px'; }
+  });
+}
+addEventListener('resize', () => requestAnimationFrame(fitPreviews));
+MOB.addEventListener?.('change', fitPreviews);
+addEventListener('hashchange', () => setTimeout(fitPreviews, 60));
+setInterval(() => { if (MOB.matches) fitPreviews(); }, 1500);
 
 function themePickers() {
   $$('select[data-themes]').forEach(sel => {

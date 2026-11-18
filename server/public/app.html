@@ -141,6 +141,20 @@
   .th .pv u{display:block;height:5px;width:70%;border-radius:4px;text-decoration:none}
   .th .nm{font-size:12px;font-weight:700;text-align:center;margin-top:5px;color:#cfd3e3}
   .th.locked{opacity:.55}.th.locked::after{content:"🔒 Lite";position:absolute;top:8px;right:8px;font-size:10px;font-weight:800;background:rgba(0,0,0,.7);padding:2px 6px;border-radius:6px}
+  @media(max-width:760px){
+    main{min-width:0}
+    .g4.stats-g{grid-template-columns:1fr 1fr!important;gap:10px}
+    .stats-g .stat{padding:14px}.stats-g .stat b{font-size:18px}
+    .copy-row{flex-wrap:wrap}.copy-row input{flex:1 1 100%;min-width:0}.copy-row .btn{flex:1}
+    .top h1{font-size:20px}
+    .toast{left:12px;right:12px;transform:translateY(20px);text-align:center;max-width:none}.toast.show{transform:none}
+    .card{padding:16px}
+    .as-grid{gap:8px}.gs{grid-template-columns:96px 1fr;gap:10px}.gs .gpv{height:60px}
+    .gl-bar{grid-template-columns:1fr}
+    .voices{grid-template-columns:1fr 1fr}
+    table{font-size:13px}th,td{white-space:nowrap}
+    .mob-scale{transform-origin:0 0;max-width:none!important}
+  }
   @media(max-width:900px){
     .layout{grid-template-columns:1fr}
     aside{position:fixed;inset:0 30% 0 0;z-index:60;transform:translateX(-100%);transition:.3s;height:100%}
@@ -178,7 +192,7 @@
   <!-- ГЛАВНАЯ -->
   <section class="page" id="p-home">
     <div class="top"><h1>Привет, <span id="nickH"></span> 👋</h1><a class="btn btn-ghost btn-sm" id="pageLinkBtn" target="_blank">Моя страница доната ↗</a></div>
-    <div class="grid g4" style="margin-bottom:18px">
+    <div class="grid g4 stats-g" style="margin-bottom:18px">
       <div class="card stat"><b id="stToday">0 ₸</b><span>Сегодня</span></div>
       <div class="card stat"><b id="stMonth">0 ₸</b><span>За месяц</span></div>
       <div class="card stat"><b id="stYear">0 ₸</b><span>За год</span></div>
@@ -433,7 +447,7 @@
         <button class="btn btn-danger" id="mediaSkip" style="margin-top:12px">⏭ Пропустить текущее</button></div>
       <div class="card" style="grid-column:1/-1"><h3>Плеер</h3><p class="hint">Добавьте ссылку плеера в TikTok Live Studio («Добавить источник» → «Ссылка») — видео будут включаться сами по очереди. Здесь можно включить тот же плеер для проверки (в эфире он не нужен дважды).</p>
         <div class="copy-row" style="margin-bottom:10px"><input readonly id="mPlayerUrl"><button class="btn btn-ghost" data-copy="mPlayerUrl">Копировать</button><button class="btn btn-ghost" id="mHere">▶ Включить плеер здесь</button></div>
-        <div id="mHereBox" style="display:none;aspect-ratio:16/9;max-height:460px;border-radius:16px;overflow:hidden;background:#000"><iframe id="mHereFrame" allow="autoplay; encrypted-media" style="width:100%;height:100%;border:0"></iframe></div>
+        <div id="mHereBox" style="display:none;position:relative;aspect-ratio:16/9;max-height:460px;border-radius:16px;overflow:hidden;background:#000"><iframe id="mHereFrame" allow="autoplay; encrypted-media" style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>
       </div>
     </div>
   </section>

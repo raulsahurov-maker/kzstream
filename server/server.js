@@ -777,9 +777,17 @@ app.get('/api/app/me/:token', (req, res) => {
   const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'Сессия устарела, войдите снова' });
   const s = getSettings(u);
   const today = q(`SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=?`).get(u.id, periodStart('day'));
+  const b = baseUrl(req);
   res.json({ nick: u.nick, plan: effectivePlan(u).name, today: today.s, today_count: today.c, hotkeys: effectivePlan(u).hotkeys ? s.hotkeys : [],
+    hotkeys_allowed: !!effectivePlan(u).hotkeys, page: `${b}/d/${encodeURIComponent(u.nick)}`, ingest: `${b}/api/ingest/${u.token}`,
+    widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
     last: q(`SELECT name, amount, message, done_at FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 10`).all(u.id) });
 });
+
+// версия программы для Windows — по ней программа предлагает обновиться
+const WIN_APP_VERSION = '2.0.0';
+app.get('/api/app/version', (req, res) => res.json({ windows: WIN_APP_VERSION, url: `${baseUrl(req)}/update/KZStream.exe`,
+  notes: 'Новый дизайн, три способа подключения телефона, трей, автообновление' }));
 
 // --- приём уведомлений от приложений (Android / Windows / iPhone) ---
 function ingest(req, res) {
