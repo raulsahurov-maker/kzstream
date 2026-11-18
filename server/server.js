@@ -827,18 +827,21 @@ app.post('/api/w/:token/media/done', (req, res) => {
 // Голоса Microsoft Neural (бесплатно, без ключа — тот же движок, что у FreeTTS). Если недоступно — запасной вариант Google.
 const pct = r => { const v = Math.round((r - 1) * 100); return (v >= 0 ? '+' : '') + v + '%'; };
 function addPct(a, b) { const v = (parseInt(a) || 0) + (parseInt(b) || 0); return (v >= 0 ? '+' : '') + v + '%'; }
+// у Microsoft иногда «залипает» конкретный голос с настройками по умолчанию — пробуем несколько вариантов
 async function edgeTts(text, voiceId, rate) {
-  try { return await edgeTtsOnce(text, voiceId, rate); } catch { }
-  await new Promise(r => setTimeout(r, 300));
-  try { return await edgeTtsOnce(text, voiceId, rate); } catch { }
-  return edgeTtsOnce(text, voiceId, rate, '-10%'); // запасной вариант: чуть другая высота голоса
+  const tries = [[], [], ['-10%', ''], ['-6%', '-5%'], ['-14%', '-6%']];
+  let err;
+  for (const [pitch, r2] of tries) {
+    try { return await edgeTtsOnce(text, voiceId, rate, pitch, r2); } catch (e) { err = e; await new Promise(r => setTimeout(r, 250)); }
+  }
+  throw err;
 }
-async function edgeTtsOnce(text, voiceId, rate, pitchOverride) {
+async function edgeTtsOnce(text, voiceId, rate, pitchOverride, rateAdd) {
   const v = VOICES[voiceId] || VOICES.dmitry;
   const tts = new MsEdgeTTS();
   try {
     await tts.setMetadata(v[0], OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-    const opts = { rate: addPct(pct(rate), v[3]) };
+    const opts = { rate: addPct(addPct(pct(rate), v[3]), rateAdd || '') };
     if (pitchOverride || v[2]) opts.pitch = pitchOverride || v[2];
     const { audioStream } = tts.toStream(text, opts);
     const chunks = [];
