@@ -2,7 +2,7 @@ name: Не давать сайту засыпать
 
 on:
   schedule:
-    - cron: '*/10 * * * *'   # каждые 10 минут (Render засыпает после 15 минут без запросов)
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -10,12 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Пинг сайта
-        run: |
-          for i in 1 2 3; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" -m 90 https://kzstream.onrender.com/healthz) || true
-            echo "Ответ: $code"
-            [ "$code" = "200" ] && exit 0
-            sleep 10
-          done
-          exit 0
+      - run: curl -s -o /dev/null -w "%{http_code}\n" --max-time 90 https://kzstream.onrender.com/healthz || true

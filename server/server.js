@@ -886,6 +886,14 @@ app.use(express.static(PUB, { extensions: ['html'] }));
 app.use((req, res) => res.status(404).sendFile(path.join(PUB, '404.html')));
 
 const listen = () => app.listen(PORT, () => console.log(`KZStream запущен: http://localhost:${PORT}`));
+
+// Не даём бесплатному серверу Render «засыпать»: каждые 10 минут обращаемся к своему публичному адресу.
+// (Render усыпляет сервис после 15 минут без входящих запросов, и первый вход потом грузится ~1 минуту.)
+const SELF_URL = (process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || '').replace(/\/$/, '');
+if (SELF_URL) {
+  setInterval(() => { fetch(SELF_URL + '/healthz', { signal: AbortSignal.timeout(20000) }).catch(() => {}); }, 10 * 60 * 1000);
+  console.log('Защита от сна включена: ' + SELF_URL);
+}
 initStorage().then(listen).catch(e => {
   console.error('Не удалось подключиться к Turso:', e.message, e.code || '', e.cause?.message || '');
   console.error('ВНИМАНИЕ: сайт запущен БЕЗ сохранения данных в Turso. Проверьте TURSO_URL и TURSO_TOKEN.');
