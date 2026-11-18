@@ -3,6 +3,7 @@
 const KEY = (process.env.FACEIT_API_KEY || '').trim();
 const UA = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36', Accept: 'application/json' };
 const cache = new Map(); // ник -> { at, data }
+let lastKeys = [], lastStatsErr = '';
 
 async function j(url, headers = {}) {
   const r = await fetch(url, { headers: { ...UA, ...headers }, signal: AbortSignal.timeout(12000) });
@@ -40,8 +41,13 @@ async function viaPublic(nick) {
   const g = (u.games || {}).cs2 || {};
   if (!u.id) { const e = new Error('Игрок не найден на FACEIT'); e.code = 404; throw e; }
   if (!g.faceit_elo) { const e = new Error('У игрока нет матчей в CS2 на FACEIT'); e.code = 404; throw e; }
-  let L = {};
-  try { L = (await j(`https://www.faceit.com/api/stats/v1/stats/users/${u.id}/games/cs2`)).lifetime || {}; } catch { }
+  let L = {}, statsErr = '';
+  for (const url of [`https://www.faceit.com/api/stats/v1/stats/users/${u.id}/games/cs2`, `https://api.faceit.com/stats/v1/stats/users/${u.id}/games/cs2`,
+    `https://www.faceit.com/api/stats/v1/stats/users/${u.id}/games/cs2`]) {
+    try { const r = await j(url); L = r.lifetime || {}; lastKeys = Object.keys(L).slice(0, 40); if (Object.keys(L).length) break; }
+    catch (e) { statsErr = e.message; await new Promise(r => setTimeout(r, 400)); }
+  }
+  lastStatsErr = statsErr;
   const recent = pick(L, 's0', 'Recent Results') || [];
   return {
     id: u.id, nick: u.nickname, avatar: u.avatar || '', country: (u.country || '').toLowerCase(),
@@ -62,9 +68,11 @@ async function getPlayer(nick, fresh = false) {
     try { data = await fn(nick); break; } catch (e) { if (e.code === 404) throw e; errs.push(e.message); }
   }
   if (!data) { if (c) return c.data; throw new Error('FACEIT сейчас недоступен: ' + errs.join('; ')); }
+  if (c && data.kd == null && c.data.kd != null) for (const k of ['kd', 'wr', 'hs', 'matches', 'streak', 'adr', 'last']) data[k] = c.data[k];
+  if (data.kd == null && !(data.last || []).length) { data.at = Date.now(); cache.set(key, { at: Date.now() - 4 * 60e3, data }); return data; } // повторим через минуту
   data.at = Date.now();
   cache.set(key, { at: Date.now(), data });
   if (cache.size > 2000) cache.delete(cache.keys().next().value);
   return data;
 }
-module.exports = { getPlayer, hasKey: () => !!KEY };
+module.exports = { getPlayer, hasKey: () => !!KEY, debug: () => ({ keys: lastKeys, statsErr: lastStatsErr }) };
