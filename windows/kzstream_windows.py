@@ -32,7 +32,7 @@ import webbrowser
 import requests
 
 APP_NAME = 'KZStream'
-VERSION = '2.0.0'
+VERSION = '2.1.0'
 DEFAULT_SERVER = 'https://kzstream.onrender.com'
 APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
@@ -337,7 +337,7 @@ class Api:
         try:
             j = requests.get(f"{self.cfg['server']}/api/app/version", timeout=40).json()
             if ver_tuple(j.get('windows')) > ver_tuple(VERSION):
-                self.update_info = {'version': j['windows'], 'url': j.get('url') or self.cfg['server'] + '/update/KZStream.exe', 'notes': j.get('notes', '')}
+                self.update_info = {'version': j['windows'], 'url': j.get('url') or self.cfg['server'] + '/update/KZStream-Setup.exe', 'setup': j.get('setup'), 'notes': j.get('notes', '')}
                 self.push('update', self.update_info)
                 return self.update_info
             return {'none': True}
@@ -345,27 +345,29 @@ class Api:
             return {'error': str(e)}
 
     def do_update(self):
+        """Скачивает новый установщик и тихо ставит его поверх, затем перезапускает программу."""
         if not self.update_info or not getattr(sys, 'frozen', False):
-            return {'ok': False, 'error': 'Обновление работает в установленной программе (KZStream.exe)'}
+            return {'ok': False, 'error': 'Обновление работает в установленной программе KZStream'}
         try:
-            new = os.path.join(tempfile.gettempdir(), 'KZStream_new.exe')
-            with requests.get(self.update_info['url'], stream=True, timeout=(30, 300)) as r:
+            setup = os.path.join(tempfile.gettempdir(), 'KZStream-Setup-new.exe')
+            url = self.update_info.get('setup') or self.update_info['url']
+            with requests.get(url, stream=True, timeout=(30, 300)) as r:
                 r.raise_for_status()
                 total, done = int(r.headers.get('content-length') or 0), 0
-                with open(new, 'wb') as f:
+                with open(setup, 'wb') as f:
                     for chunk in r.iter_content(1 << 16):
                         f.write(chunk)
                         done += len(chunk)
                         if total:
                             self.push('upd_progress', round(done * 100 / total))
-            if os.path.getsize(new) < 1_000_000:
+            if os.path.getsize(setup) < 1_000_000:
                 return {'ok': False, 'error': 'Файл обновления повреждён, попробуйте позже'}
-            cur = sys.executable
+            app_exe = sys.executable
             bat = os.path.join(tempfile.gettempdir(), 'kzstream_update.bat')
             with open(bat, 'w', encoding='cp866', errors='ignore') as f:
-                f.write('@echo off\r\n:w\r\ntimeout /t 1 /nobreak >nul\r\n'
-                        f'move /y "{new}" "{cur}" >nul 2>&1 || goto w\r\n'
-                        f'start "" "{cur}" --after-update\r\ndel "%~f0"\r\n')
+                f.write('@echo off\r\ntimeout /t 2 /nobreak >nul\r\n'
+                        f'start "" /wait "{setup}" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS\r\n'
+                        f'start "" "{app_exe}" --after-update\r\ndel "{setup}"\r\ndel "%~f0"\r\n')
             subprocess.Popen(['cmd', '/c', bat], creationflags=NO_WINDOW | 0x00000008)
             threading.Timer(0.5, self.quit).start()
             return {'ok': True}

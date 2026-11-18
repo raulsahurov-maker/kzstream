@@ -32,34 +32,60 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - name: Сборка EXE
+      - name: PyInstaller со своим загрузчиком (меньше ложных срабатываний антивирусов)
+        env: { PYINSTALLER_COMPILE_BOOTLOADER: '1' }
+        run: |
+          pip install -r windows/requirements.txt
+          pip install --no-binary pyinstaller "pyinstaller==6.11.1"
+      - name: Сборка программы (папка, без самораспаковки)
         working-directory: windows
         run: |
-          pip install -r requirements.txt pyinstaller
-          pyinstaller --onefile --windowed --name KZStream --icon icon.ico --version-file version_info.txt --add-data "ui.html;." --add-data "icon.ico;." --add-data "qrcode.js;." --hidden-import pystray._win32 --collect-submodules winsdk.windows.ui.notifications --collect-submodules webview kzstream_windows.py
-      - name: Самопроверка EXE (всё ли внутри)
+          pyinstaller --noconfirm --onedir --windowed --name KZStream --icon icon.ico --version-file version_info.txt --add-data "ui.html;." --add-data "icon.ico;." --add-data "qrcode.js;." --hidden-import pystray._win32 --collect-submodules winsdk.windows.ui.notifications --collect-submodules webview kzstream_windows.py
+      - name: Самопроверка (всё ли внутри)
         working-directory: windows
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath dist\KZStream.exe -ArgumentList '--selftest' -Wait -PassThru
-          $r = Get-Content dist\selftest.txt -Raw
+          $p = Start-Process -FilePath dist\KZStream\KZStream.exe -ArgumentList '--selftest' -Wait -PassThru
+          $r = Get-Content dist\KZStream\selftest.txt -Raw
           Write-Host "Результат: $r (код $($p.ExitCode))"
+          Remove-Item dist\KZStream\selftest.txt
           if (-not $r.StartsWith('OK')) { exit 1 }
-      - name: Пробный запуск окна (интерфейс + трей + снимок экрана)
+      - name: Пробный запуск окна (интерфейс + трей)
         working-directory: windows
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath dist\KZStream.exe -ArgumentList '--smoketest' -PassThru
+          $p = Start-Process -FilePath dist\KZStream\KZStream.exe -ArgumentList '--smoketest' -PassThru
           if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force; Write-Host 'Окно не закрылось за 90 сек' }
-          $r = Get-Content dist\smoke.txt -Raw -ErrorAction SilentlyContinue
+          $r = Get-Content dist\KZStream\smoke.txt -Raw -ErrorAction SilentlyContinue
           Write-Host "Результат запуска: $r"
+          Remove-Item dist\KZStream\smoke.txt, dist\KZStream\smoke.png -ErrorAction SilentlyContinue
           if (-not "$r".StartsWith('OK')) { exit 1 }
+      - name: Установщик (Inno Setup)
+        working-directory: windows
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Проверка установщика (тихая установка и запуск)
+        working-directory: windows
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath output\KZStream-Setup.exe -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          $exe = "$env:LOCALAPPDATA\Programs\KZStream\KZStream.exe"
+          if (-not (Test-Path $exe)) { Write-Host 'Программа не установилась'; exit 1 }
+          $q = Start-Process -FilePath $exe -ArgumentList '--selftest' -Wait -PassThru
+          $r = Get-Content "$env:LOCALAPPDATA\Programs\KZStream\selftest.txt" -Raw
+          Write-Host "Установлено, проверка: $r"
+          if (-not $r.StartsWith('OK')) { exit 1 }
+      - name: Файлы для скачивания
+        shell: pwsh
+        run: |
+          Copy-Item windows\output\KZStream-Setup.exe KZStream-Setup.exe
+          Copy-Item windows\output\KZStream-Setup.exe KZStream.exe
+          Compress-Archive -Path windows\output\KZStream-Setup.exe -DestinationPath KZStream-Windows.zip
       - uses: actions/upload-artifact@v4
-        if: always()
-        with: { name: windows-smoke-screenshot, path: windows/dist/smoke.png, if-no-files-found: ignore }
-      - run: copy windows\dist\KZStream.exe KZStream.exe
-      - uses: actions/upload-artifact@v4
-        with: { name: KZStream-windows, path: KZStream.exe }
+        with: { name: KZStream-windows, path: "KZStream-Setup.exe\nKZStream.exe\nKZStream-Windows.zip" }
 
   release:
     needs: [android, windows]
@@ -76,3 +102,5 @@ jobs:
           files: |
             KZStream.apk
             KZStream.exe
+            KZStream-Setup.exe
+            KZStream-Windows.zip

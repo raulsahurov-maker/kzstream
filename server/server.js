@@ -785,9 +785,9 @@ app.get('/api/app/me/:token', (req, res) => {
 });
 
 // версия программы для Windows — по ней программа предлагает обновиться
-const WIN_APP_VERSION = '2.0.0';
-app.get('/api/app/version', (req, res) => res.json({ windows: WIN_APP_VERSION, url: `${baseUrl(req)}/update/KZStream.exe`,
-  notes: 'Новый дизайн, три способа подключения телефона, трей, автообновление' }));
+const WIN_APP_VERSION = '2.1.0';
+app.get('/api/app/version', (req, res) => res.json({ windows: WIN_APP_VERSION, url: `${baseUrl(req)}/update/KZStream-Setup.exe`, setup: `${baseUrl(req)}/update/KZStream-Setup.exe`,
+  notes: 'Программа теперь ставится обычным установщиком: ярлыки в «Пуске», удаление через «Параметры»' }));
 
 // --- приём уведомлений от приложений (Android / Windows / iPhone) ---
 function ingest(req, res) {
@@ -954,10 +954,11 @@ async function ensureFile(name) {
   try { return await fetching.get(name); } catch { return fs.existsSync(cached) ? cached : null; }
 }
 for (const prefix of ['/update', '/downloads']) {
-  app.get(prefix + '/:file(KZStream.apk|KZStream.exe)', async (req, res) => {
+  app.get(prefix + '/:file(KZStream.apk|KZStream.exe|KZStream-Setup.exe|KZStream-Windows.zip)', async (req, res) => {
     const f = await ensureFile(req.params.file);
     if (!f) return res.status(503).send('Приложение обновляется, попробуйте через минуту.');
-    res.setHeader('Content-Type', req.params.file.endsWith('.apk') ? 'application/vnd.android.package-archive' : 'application/octet-stream');
+    const ext = req.params.file.split('.').pop();
+    res.setHeader('Content-Type', { apk: 'application/vnd.android.package-archive', zip: 'application/zip' }[ext] || 'application/vnd.microsoft.portable-executable');
     res.download(f, req.params.file);
   });
 }
