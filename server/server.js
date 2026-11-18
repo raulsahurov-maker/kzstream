@@ -158,7 +158,7 @@ function defaults(nick) {
     top: { period: 'month', count: 5, theme: 'default', style: 'classic', font: 'manrope', title: '', size: 'md', radius: 16, opacity: 0.9 },
     roulette: { enabled: false, min: 1000, style: 'wheel',
       tasks: ['Спеть песню', 'Катка без прицела', '10 отжиманий', 'Говорить с акцентом', 'Ответить на 3 вопроса', 'Танец 15 сек'] },
-    media: { enabled: false, min: 500, max_sec: 180, volume: 0.6 },
+    media: { enabled: true, min: 100, max_sec: 180, volume: 0.6 },
     info: { lines: ['Донаты через Kaspi — ссылка в описании!'], interval: 8, theme: 'default', label: 'INFO', speed: 'normal', dir: 'right', show_last: true },
     timer: { end_at: 0, paused_left: 0, running: false, sec_per_100: 30, theme: 'default' },
     hotkeys: [], webhooks: [],
@@ -173,7 +173,12 @@ function deepMerge(base, over) {
   }
   return out;
 }
-const getSettings = (u) => deepMerge(defaults(u.nick), JSON.parse(u.settings || '{}'));
+const getSettings = (u) => {
+  const s = deepMerge(defaults(u.nick), JSON.parse(u.settings || '{}'));
+  // разово (ноябрь 2026): включаем «Принимать заказы музыки и видео» всем, у кого не было отметки — дальше стример решает сам
+  if (!s.media.auto_v2) { s.media.enabled = true; if (s.media.min > 100) s.media.min = 100; s.media.auto_v2 = 1; }
+  return s;
+};
 const saveSettings = (u, s) => q('UPDATE users SET settings=? WHERE id=?').run(JSON.stringify(s), u.id);
 
 // ---------- утилиты ----------
