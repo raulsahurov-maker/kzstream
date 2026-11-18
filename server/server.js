@@ -812,6 +812,9 @@ app.post('/api/w/:token/media/done', (req, res) => {
 const pct = r => { const v = Math.round((r - 1) * 100); return (v >= 0 ? '+' : '') + v + '%'; };
 function addPct(a, b) { const v = (parseInt(a) || 0) + (parseInt(b) || 0); return (v >= 0 ? '+' : '') + v + '%'; }
 async function edgeTts(text, voiceId, rate) {
+  try { return await edgeTtsOnce(text, voiceId, rate); } catch { await new Promise(r => setTimeout(r, 400)); return edgeTtsOnce(text, voiceId, rate); }
+}
+async function edgeTtsOnce(text, voiceId, rate) {
   const v = VOICES[voiceId] || VOICES.dmitry;
   const tts = new MsEdgeTTS();
   try {
@@ -834,7 +837,7 @@ async function edgeTts(text, voiceId, rate) {
 // проверка озвучки: какие голоса сейчас работают (без звука)
 let ttsStatus = null;
 app.get('/api/tts/status', async (req, res) => {
-  if (!ttsStatus || now() - ttsStatus.at > 600e3) {
+  if (!ttsStatus || now() - ttsStatus.at > 600e3 || 'fresh' in req.query) {
     const voices = {};
     for (const id of Object.keys(VOICES)) voices[id] = await edgeTts('Проверка связи', id, 1).then(b => b.length).catch(e => 'ошибка: ' + e.message);
     ttsStatus = { at: now(), voices };
