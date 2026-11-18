@@ -785,9 +785,9 @@ app.get('/api/app/me/:token', (req, res) => {
 });
 
 // версия программы для Windows — по ней программа предлагает обновиться
-const WIN_APP_VERSION = '2.1.0';
+const WIN_APP_VERSION = '2.1.1';
 app.get('/api/app/version', (req, res) => res.json({ windows: WIN_APP_VERSION, url: `${baseUrl(req)}/update/KZStream-Setup.exe`, setup: `${baseUrl(req)}/update/KZStream-Setup.exe`,
-  notes: 'Программа теперь ставится обычным установщиком: ярлыки в «Пуске», удаление через «Параметры»' }));
+  notes: 'Исправлен чёрный экран при запуске' }));
 
 // --- приём уведомлений от приложений (Android / Windows / iPhone) ---
 function ingest(req, res) {

@@ -32,7 +32,7 @@ import webbrowser
 import requests
 
 APP_NAME = 'KZStream'
-VERSION = '2.1.0'
+VERSION = '2.1.1'
 DEFAULT_SERVER = 'https://kzstream.onrender.com'
 APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
@@ -186,8 +186,8 @@ class Api:
         for k, v in (('server', DEFAULT_SERVER), ('only_banks', True), ('autostart', True), ('sound', True),
                      ('tray', True), ('method', 'phonelink')):
             self.cfg.setdefault(k, v)
-        self.window = None
-        self.tray = None
+        self._window = None
+        self._tray = None
         self.running = False
         self.quitting = False
         self.hotkeys = []
@@ -201,9 +201,9 @@ class Api:
 
     # --- связь с интерфейсом
     def push(self, kind, data):
-        if self.window:
+        if self._window:
             try:
-                self.window.evaluate_js(f'window.kz && kz.on({json.dumps(kind)}, {json.dumps(data, ensure_ascii=False)})')
+                self._window.evaluate_js(f'window.kz && kz.on({json.dumps(kind)}, {json.dumps(data, ensure_ascii=False)})')
             except Exception:
                 pass
 
@@ -318,19 +318,19 @@ class Api:
             os.startfile('ms-settings:bluetooth')
 
     def hide_to_tray(self):
-        if self.window:
-            self.window.hide()
+        if self._window:
+            self._window.hide()
 
     def quit(self):
         self.quitting = True
         self.running = False
         try:
-            if self.tray:
-                self.tray.stop()
+            if self._tray:
+                self._tray.stop()
         except Exception:
             pass
-        if self.window:
-            self.window.destroy()
+        if self._window:
+            self._window.destroy()
 
     # --- обновления
     def check_update(self, silent=False):
@@ -534,10 +534,10 @@ def make_tray(api):
         img = Image.new('RGB', (64, 64), (255, 59, 92))
 
     def show(icon=None, item=None):
-        if api.window:
-            api.window.show()
+        if api._window:
+            api._window.show()
             try:
-                api.window.restore()
+                api._window.restore()
             except Exception:
                 pass
 
@@ -609,14 +609,13 @@ def smoketest(api, window):
         for _ in range(60):
             time.sleep(0.5)
             try:
-                r = window.evaluate_js("document.querySelector('#login:not(.hide), #app:not(.hide)') ? 'UI_OK ' + document.title + ' ' + !!window.qrcode : 'WAIT'")
+                r = window.evaluate_js("(window.pywebview && window.pywebview.api && typeof window.pywebview.api.state === 'function' && document.querySelector('#login:not(.hide), #app:not(.hide)')) ? 'UI_OK bridge ' + Object.keys(window.pywebview.api).length + ' qr=' + !!window.qrcode : 'WAIT'")
             except Exception:
                 r = 'WAIT'
             if r and str(r).startswith('UI_OK'):
                 res = 'OK ' + str(r)
                 break
-        tray = make_tray(api)
-        res += ' tray=' + ('ok' if tray else 'no')
+        res += ' tray=' + ('ok' if api._tray else 'no')
         time.sleep(2)
         try:
             from PIL import ImageGrab
@@ -626,8 +625,7 @@ def smoketest(api, window):
     finally:
         with open(os.path.join(os.path.dirname(sys.executable), 'smoke.txt'), 'w', encoding='utf-8') as f:
             f.write(res)
-        api.quitting = True
-        window.destroy()
+        api.quit()
 
 
 def main():
@@ -643,18 +641,18 @@ def main():
     start_hidden = '--minimized' in sys.argv
     window = webview.create_window('KZStream', html=html, js_api=api, width=1080, height=700,
                                    min_size=(900, 600), background_color='#07080D', hidden=start_hidden)
-    api.window = window
+    api._window = window
 
     def on_closing():
         # крестик прячет программу в трей, чтобы донаты продолжали ловиться
-        if api.cfg.get('tray') and api.tray and not api.quitting:
+        if api.cfg.get('tray') and api._tray and not api.quitting:
             window.hide()
             return False
         api.quitting = True
         api.running = False
         try:
-            if api.tray:
-                api.tray.stop()
+            if api._tray:
+                api._tray.stop()
         except Exception:
             pass
         return True
@@ -662,11 +660,11 @@ def main():
     window.events.closing += on_closing
 
     def on_ready():
+        api._tray = make_tray(api)
+        if api._tray:
+            api._tray.run_detached()
         if '--smoketest' in sys.argv:
             return smoketest(api, window)
-        api.tray = make_tray(api)
-        if api.tray:
-            api.tray.run_detached()
         if api.cfg.get('token'):
             api.start()
         if '--after-update' in sys.argv:

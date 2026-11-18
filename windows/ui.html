@@ -134,6 +134,7 @@
 </style></head>
 <body>
 
+<div id="boot" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:0"><div class="mark" style="width:60px;height:60px;border-radius:18px;animation:fl 2s ease-in-out infinite"><svg viewBox="0 0 24 24" fill="#fff" style="width:24px;height:24px"><path d="M8 5.5v13l10.5-6.5z"/></svg></div><p class="muted" style="margin-top:14px;font-weight:700">Загрузка KZStream…</p></div>
 <!-- ВХОД -->
 <div id="login" class="hide">
   <div class="brand">
@@ -275,8 +276,9 @@ const METHODS = {
 const WNAMES = { alerts: ['🔔', 'Алерты'], top: ['🏆', 'ТОП донатеров'], goal: ['🎯', 'Цель сбора'], roulette: ['🎰', 'Рулетка'], media: ['🎵', 'Музыка и видео'], info: ['ℹ️', 'Info-виджет'], timer: ['⏱', 'Таймер'] };
 
 // ---------- отрисовка
-function showLogin() { $('#app').classList.add('hide'); $('#login').classList.remove('hide'); $('#srvLine').textContent = 'Сервер: ' + ST.server + ' · версия ' + ST.version; }
+function showLogin() { $('#boot').style.display = 'none'; $('#app').classList.add('hide'); $('#login').classList.remove('hide'); $('#srvLine').textContent = 'Сервер: ' + ST.server + ' · версия ' + ST.version; }
 function showApp() {
+  $('#boot').style.display = 'none';
   $('#login').classList.add('hide'); $('#app').classList.remove('hide');
   $('#nick').textContent = ST.nick; $('#plan').textContent = (ST.plan || 'Free').replace(/^./, c => c.toUpperCase());
   $('#ver').textContent = 'KZStream для Windows · ' + ST.version; $('#vLine').textContent = 'Версия ' + ST.version;
@@ -386,7 +388,11 @@ $('#chkUpd').onclick = async () => { const r = await api('check_update'); if (r.
 $('#updGo').onclick = async () => { $('#updGo').disabled = true; $('#updGo').textContent = 'Загрузка…'; const r = await api('do_update'); if (!r.ok) { toast(r.error, true); $('#updGo').disabled = false; $('#updGo').textContent = 'Обновить'; } else toast('Устанавливаю обновление…'); };
 
 async function boot() { ST = await api('state'); if (ST.logged) { showApp(); setTimeout(emptyFeed, 1500); } else showLogin(); }
-if (window.pywebview && window.pywebview.api) boot(); else window.addEventListener('pywebviewready', boot);
+let booted = false;
+async function safeBoot() { if (booted) return; booted = true; try { await boot(); } catch (e) { booted = false; fail('Ошибка запуска: ' + e); } }
+function fail(t) { if (!$('#login').classList.contains('hide') || !$('#app').classList.contains('hide')) return; document.getElementById('boot').innerHTML = `<div class="mark" style="width:60px;height:60px;border-radius:18px"><svg viewBox="0 0 24 24" fill="#fff" style="width:24px;height:24px"><path d="M8 5.5v13l10.5-6.5z"/></svg></div><h2 style="font-size:20px;margin-top:16px">KZStream не смог загрузиться</h2><p class="muted" style="margin-top:6px;max-width:420px">${esc(t)}<br>Закройте программу через значок в трее и откройте снова. Если не помогло — напишите в Telegram @raulanrip.</p>`; }
+if (window.pywebview && window.pywebview.api && window.pywebview.api.state) safeBoot(); else window.addEventListener('pywebviewready', safeBoot);
+setTimeout(() => { if (!booted) { if (window.pywebview && window.pywebview.api && window.pywebview.api.state) safeBoot(); else fail('Нет связи между окном и программой.'); } }, 12000);
 </script>
 <script>/*QRCODE*/</script>
 </body></html>
