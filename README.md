@@ -64,7 +64,7 @@ sudo systemctl reload caddy
 | Параметр | Что это |
 |---|---|
 | `PUBLIC_URL` | Адрес сайта, напр. `https://kzstream.kz` |
-| `PAY_KASPI`, `PAY_NAME`, `PAY_TELEGRAM` | Kaspi для оплаты подписок (по умолчанию +7 775 884 27 91, Алибек Т.) и Telegram для чеков (@raulanrip) |
+| `PAY_CARD`, `PAY_NAME`, `PAY_TELEGRAM` | Карта Kaspi для оплаты подписок (по умолчанию 4400 4303 5638 4575, Алибек Т.) и Telegram для чеков (@raulanrip) |
 | `ADMIN_EMAILS` | Email админов. **Первый зарегистрированный пользователь автоматически админ** |
 | `APK_URL`, `EXE_URL` | Ссылки на приложения (см. п. 2) |
 | `DATA_DIR` | Где хранить базу и файлы (делайте бэкап этой папки) |

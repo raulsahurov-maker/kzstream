@@ -453,7 +453,7 @@ function renderBilling() {
   $$('[data-pick]').forEach(b => b.onclick = () => { val('payPlan', b.dataset.pick); calcPay(); $('#payBox').scrollIntoView({ behavior: 'smooth' }); });
   $('#payPhone').textContent = ME.pay.kaspi; $('#payName').textContent = 'получатель ' + ME.pay.name;
   $('#payTg').textContent = '@' + ME.pay.telegram; calcPay();
-  $('#copyPayPhone').onclick = () => navigator.clipboard?.writeText(ME.pay.kaspi.replace(/\s/g, '')).then(() => toast('Номер скопирован'));
+  $('#copyPayPhone').onclick = () => navigator.clipboard?.writeText(ME.pay.kaspi.replace(/\s/g, '')).then(() => toast('Номер карты скопирован'));
 }
 function calcPay() {
   const pl = ME.plans.find(x => x.id === val('payPlan')), sum = pl.price * +val('payMonths');

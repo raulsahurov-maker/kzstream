@@ -15,7 +15,8 @@ const { MsEdgeTTS, OUTPUT_FORMAT } = require('msedge-tts');
 const PORT = +process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
-const PAY_KASPI = process.env.PAY_KASPI || '+7 775 884 27 91';
+// оплата тарифов — на карту Kaspi (номер телефона больше не используется)
+const PAY_KASPI = process.env.PAY_CARD || '4400 4303 5638 4575';
 const PAY_NAME = process.env.PAY_NAME || 'Алибек Т.';
 const PAY_TELEGRAM = (process.env.PAY_TELEGRAM || 'raulanrip').replace(/^@/, '');
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);

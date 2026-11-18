@@ -5,8 +5,8 @@ services:
     plan: free
     healthCheckPath: /healthz
     envVars:
-      - key: PAY_KASPI
-        value: "+7 775 884 27 91"
+      - key: PAY_CARD
+        value: "4400 4303 5638 4575"
       - key: PAY_NAME
         value: "Алибек Т."
       - key: PAY_TELEGRAM

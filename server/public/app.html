@@ -524,14 +524,14 @@
     <div class="plans" id="plansBox"></div>
     <div class="card" style="margin-top:18px" id="payBox">
       <h3>Оплата через Kaspi</h3>
-      <ol class="steps-ol" style="margin-bottom:18px"><li>Выберите тариф и срок — сумма посчитается сама.</li><li>Переведите эту сумму через Kaspi на номер ниже.</li><li>Отправьте чек перевода и свой ник в Telegram <a id="payTg" target="_blank" style="color:var(--accent);font-weight:700"></a>.</li><li>Нажмите «Я оплатил». Тариф включится после проверки.</li></ol>
+      <ol class="steps-ol" style="margin-bottom:18px"><li>Выберите тариф и срок — сумма посчитается сама.</li><li>Переведите эту сумму через Kaspi на карту ниже.</li><li>Отправьте чек перевода и свой ник в Telegram <a id="payTg" target="_blank" style="color:var(--accent);font-weight:700"></a>.</li><li>Нажмите «Я оплатил». Тариф включится после проверки.</li></ol>
       <div class="row">
         <div class="field"><label>Тариф</label><select id="payPlan"><option value="lite">Lite</option><option value="pro">Pro</option></select></div>
         <div class="field"><label>Месяцев</label><select id="payMonths"><option>1</option><option>2</option><option>3</option><option>6</option><option>12</option></select></div>
       </div>
-      <div class="card" style="background:var(--bg2);margin-bottom:14px"><div class="muted" style="font-size:13px">Переведите</div><div style="font-family:Unbounded;font-size:26px" id="payAmount"></div><div class="muted" style="font-size:14px">на Kaspi <b id="payPhone" style="color:var(--text)"></b> · <span id="payName"></span></div></div>
+      <div class="card" style="background:var(--bg2);margin-bottom:14px"><div class="muted" style="font-size:13px">Переведите</div><div style="font-family:Unbounded;font-size:26px" id="payAmount"></div><div class="muted" style="font-size:14px">на карту Kaspi <b id="payPhone" style="color:var(--text);letter-spacing:.04em"></b> · <span id="payName"></span></div></div>
       <div class="field"><label>Комментарий (имя отправителя в Kaspi)</label><input id="payComment" placeholder="Например: Аружан А."></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" id="copyPayPhone">Скопировать номер</button><a class="btn btn-ghost" id="payTgBtn" target="_blank">✈️ Отправить чек в Telegram</a><button class="btn btn-primary" id="paySend">Я оплатил — отправить заявку</button></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" id="copyPayPhone">Скопировать номер карты</button><a class="btn btn-ghost" id="payTgBtn" target="_blank">✈️ Отправить чек в Telegram</a><button class="btn btn-primary" id="paySend">Я оплатил — отправить заявку</button></div>
       <h3 style="margin-top:24px">История заявок</h3>
       <table><tbody id="payHist"></tbody></table>
     </div>
