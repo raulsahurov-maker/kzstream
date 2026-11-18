@@ -2,46 +2,86 @@
 <html lang="ru"><head><meta charset="UTF-8"><title>KZStream — музыка и видео</title>
 <link rel="stylesheet" href="/w/w.css">
 <style>
-  #wrap{position:fixed;inset:0;display:none;flex-direction:column}
-  #wrap.on{display:flex}
-  #player{flex:1;width:100%}
-  .cap{padding:10px 16px;font-weight:800;font-size:18px;background:var(--w-bg);display:flex;justify-content:space-between}
-  .cap b{color:var(--w-b)}
+  #wrap{position:fixed;inset:0;display:flex;flex-direction:column;opacity:0;transform:scale(.97);transition:.35s;pointer-events:none}
+  #wrap.on{opacity:1;transform:none;pointer-events:auto}
+  #pbox{flex:1;position:relative;background:#000;border-radius:16px 16px 0 0;overflow:hidden}
+  #player{position:absolute;inset:0;width:100%;height:100%}
+  .cap{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--w-bg);border-radius:0 0 16px 16px;position:relative}
+  .cap::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--w-a),var(--w-b))}
+  .cap .ic{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--w-a),var(--w-b));display:grid;place-items:center;flex:none;font-size:16px}
+  .cap .tx{flex:1;min-width:0}
+  .cap .t1{font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cap .t2{font-size:13px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cap b{font-family:Unbounded;font-weight:800;font-size:17px;background:linear-gradient(120deg,var(--w-a),var(--w-b));-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+  .bar{position:absolute;left:0;bottom:0;height:3px;background:#fff;opacity:.8;width:0}
+  #tap{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.65);color:#fff;font:800 20px Manrope;display:none;place-items:center;cursor:pointer;text-align:center}
+  #msg{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:var(--w-bg);padding:8px 14px;border-radius:10px;font-weight:800;font-size:14px;display:none;z-index:8}
 </style></head><body>
-<div id="tap" style="display:none;position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.6);color:#fff;font:800 20px Manrope;place-items:center;cursor:pointer">▶ Нажмите, чтобы включить звук</div>
-<div id="wrap"><div id="player"></div><div class="cap"><span id="who"></span><b id="amt"></b></div></div>
+<div id="tap">🔊 Нажмите один раз, чтобы видео включались со звуком<br><span style="font-size:14px;opacity:.75">В TikTok Live Studio и OBS это обычно не нужно</span></div>
+<div id="msg"></div>
+<div id="wrap"><div id="pbox"><div id="player"></div></div><div class="cap"><span class="ic">🎵</span><div class="tx"><div class="t1" id="title">Загрузка…</div><div class="t2" id="who"></div></div><b id="amt"></b><span class="bar" id="bar"></span></div></div>
 <script src="/w/widget.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 (() => {
   const { on, start, fmt, token } = KZ;
-  let S = null, queue = [], cur = null, player = null, ready = false, limitT = null;
+  const $ = s => document.getElementById(s);
+  let S = null, queue = [], cur = null, player = null, ready = false, limitT = null, startedAt = 0, gone = new Set(), unlocked = false, tick = null, watchT = null;
   const ytId = u => (String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/) || [])[1];
+  const post = (path, body) => fetch('/api/w/' + token + '/media/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
+  function note(t) { const m = $('msg'); m.textContent = t; m.style.display = 'block'; clearTimeout(note.t); note.t = setTimeout(() => m.style.display = 'none', 3500); }
+
   window.onYouTubeIframeAPIReady = () => {
-    player = new YT.Player('player', { width: '100%', height: '100%', playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1 },
-      events: { onReady: () => { ready = true; next(); }, onStateChange: e => { if (e.data === 0) finish(); }, onError: () => finish() } });
+    player = new YT.Player('player', { width: '100%', height: '100%',
+      playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, disablekb: 1, iv_load_policy: 3, fs: 0 },
+      events: {
+        onReady: () => { ready = true; next(); },
+        onStateChange: e => {
+          if (e.data === YT.PlayerState.PLAYING && cur) {
+            clearTimeout(watchT);
+            if (!startedAt) { startedAt = Date.now(); const t = (player.getVideoData() || {}).title || ''; $('title').textContent = t || 'Видео по донату'; post('playing', { id: cur.id, title: t }); }
+            if (!unlocked) { try { player.unMute(); player.setVolume(vol()); } catch { } setTimeout(() => { try { if (player.isMuted()) showTap(); else unlocked = true; } catch { } }, 600); }
+          }
+          if (e.data === YT.PlayerState.ENDED) finish('played');
+        },
+        // 2/5/100/101/150 — видео удалено, приватное или автор запретил встраивание
+        onError: e => { note([101, 150].includes(e.data) ? 'Автор запретил показ этого видео на других сайтах — пропускаем' : 'Видео недоступно — пропускаем'); finish('played'); },
+      } });
   };
+  const vol = () => Math.round((S?.volume ?? .6) * 100);
+  function showTap() { const t = $('tap'); t.style.display = 'grid'; t.onclick = () => { t.style.display = 'none'; unlocked = true; try { player.unMute(); player.setVolume(vol()); player.playVideo(); } catch { } }; }
   function next() {
-    if (!ready || cur || !queue.length || !S?.enabled) return;
-    cur = queue[0]; const id = ytId(cur.media_url); if (!id) return finish();
-    document.getElementById('who').textContent = '🎵 ' + cur.name; document.getElementById('amt').textContent = fmt(cur.amount);
-    document.getElementById('wrap').classList.add('on');
-    player.setVolume(Math.round((S.volume ?? .6) * 100)); player.loadVideoById(id);
-    clearTimeout(limitT); limitT = setTimeout(finish, (S.max_sec || 180) * 1000);
-    setTimeout(() => { try { if (cur && player.getPlayerState() !== 1) { const t = document.getElementById('tap'); t.style.display = 'grid'; t.onclick = () => { t.style.display = 'none'; player.unMute(); player.playVideo(); }; } } catch { } }, 2500);
+    if (!ready || cur || !S?.enabled) return;
+    const item = queue.find(q => !gone.has(q.id)); if (!item) return;
+    const id = ytId(item.media_url); if (!id) { cur = item; return finish('played'); }
+    cur = item; startedAt = 0;
+    $('title').textContent = 'Загрузка…'; $('who').textContent = `Заказал(а): ${item.name}`; $('amt').textContent = fmt(item.amount);
+    $('wrap').classList.add('on');
+    try { player.setVolume(vol()); player.loadVideoById({ videoId: id, startSeconds: 0 }); player.playVideo(); } catch { }
+    // если браузер не дал включить со звуком — включаем без звука и просим один клик
+    clearTimeout(watchT);
+    watchT = setTimeout(() => { try { if (cur && player.getPlayerState() !== YT.PlayerState.PLAYING) { player.mute(); player.playVideo(); setTimeout(() => { if (cur && player.getPlayerState() === YT.PlayerState.PLAYING) showTap(); }, 1200); } } catch { } }, 2500);
+    clearTimeout(limitT); limitT = setTimeout(() => finish('played'), (S.max_sec || 180) * 1000 + 4000);
+    clearInterval(tick); tick = setInterval(() => { try { const d = Math.min(player.getDuration() || 0, S.max_sec || 180); if (d) $('bar').style.width = Math.min(100, player.getCurrentTime() / d * 100) + '%'; } catch { } }, 500);
   }
-  function finish(skipped) {
-    clearTimeout(limitT); if (!cur) return; const id = cur.id; cur = null;
+  function finish(how) {
+    clearTimeout(limitT); clearTimeout(watchT); clearInterval(tick); $('bar').style.width = 0;
+    if (!cur) return; const id = cur.id; cur = null; gone.add(id);
     try { player.stopVideo(); } catch { }
-    document.getElementById('wrap').classList.remove('on');
     queue = queue.filter(q => q.id !== id);
-    if (!skipped) fetch('/api/w/' + token + '/media/done', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-    setTimeout(next, 1500);
+    if (how === 'played') post('done', { id });
+    if (!queue.some(q => !gone.has(q.id))) $('wrap').classList.remove('on');
+    setTimeout(next, 400); // сразу следующее, если есть
   }
-  on('state', st => { S = st.settings.media; queue = st.media; next(); });
-  on('settings', s => { S = s.media; if (player && ready) player.setVolume(Math.round((S.volume ?? .6) * 100)); });
-  on('stats', d => { queue = d.media; if (cur && !queue.some(q => q.id === cur.id)) finish(true); else next(); });
-  on('media_skip', () => finish(true));
+  function setQueue(list) {
+    queue = (list || []).filter(q => !gone.has(q.id));
+    if (cur && !queue.some(q => q.id === cur.id)) finish('removed'); // убрали из кабинета
+    else next();
+  }
+  on('state', st => { S = st.settings.media; setQueue(st.media); });
+  on('settings', s => { S = s.media; try { if (ready) player.setVolume(vol()); } catch { } if (!S.enabled && cur) finish('removed'); else next(); });
+  on('stats', d => setQueue(d.media));
+  on('media_skip', d => { if (cur && (!d || !d.id || d.id === cur.id)) finish('removed'); else if (d && d.id) { gone.add(d.id); setQueue(queue); } });
   start();
 })();
 </script></body></html>

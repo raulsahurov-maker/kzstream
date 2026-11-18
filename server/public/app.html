@@ -72,6 +72,11 @@
   .vc b{display:block;font-size:13.5px}.vc span{font-size:11.5px;color:var(--muted)}
   .vc .play{position:absolute;right:7px;top:7px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;font-size:11px}
   .vc .play:hover{background:var(--accent)}
+  .now-pl{display:none;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;margin-bottom:10px;background:linear-gradient(120deg,rgba(255,59,92,.18),rgba(255,122,69,.08));border:1px solid rgba(255,59,92,.4)}
+  .now-pl.on{display:flex}.now-pl .eq{display:flex;gap:2px;align-items:flex-end;height:18px}.now-pl .eq i{width:3px;background:#ff7a45;animation:eq .9s infinite ease-in-out}
+  .now-pl .eq i:nth-child(2){animation-delay:.2s}.now-pl .eq i:nth-child(3){animation-delay:.4s}
+  @keyframes eq{0%,100%{height:4px}50%{height:18px}}
+  .mq-x{border:0;background:rgba(255,255,255,.07);color:#fff;border-radius:8px;width:28px;height:28px;cursor:pointer;flex:none}.mq-x:hover{background:#ff3b5c}
   .share-card{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:center;background:linear-gradient(120deg,rgba(255,59,92,.1),rgba(255,122,69,.05) 60%,transparent),var(--card)}
   @media(max-width:760px){.share-card{grid-template-columns:1fr}}
   .share-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -422,7 +427,14 @@
         <div class="copy-row"><input id="mTestUrl" placeholder="https://youtu.be/..." value="https://www.youtube.com/watch?v=dQw4w9WgXcQ"><button class="btn btn-ghost" id="mTest">▶ Тест</button></div>
         <a class="btn btn-ghost btn-sm" id="mOpen" target="_blank" style="margin-top:10px">Открыть плеер ↗</a>
       </div>
-      <div class="card"><h3>Очередь</h3><p class="hint">Сейчас играет первое видео.</p><div class="feed" id="mediaQueue"></div><button class="btn btn-danger" id="mediaSkip" style="margin-top:12px">⏭ Пропустить текущее</button></div>
+      <div class="card"><h3>Очередь</h3><p class="hint">Первое видео играет в плеере. «Пропустить» — видео удаляется и сразу включается следующее. ✕ — убрать любое видео из очереди.</p>
+        <div class="now-pl" id="nowPl"></div>
+        <div class="feed" id="mediaQueue"></div>
+        <button class="btn btn-danger" id="mediaSkip" style="margin-top:12px">⏭ Пропустить текущее</button></div>
+      <div class="card" style="grid-column:1/-1"><h3>Плеер</h3><p class="hint">Добавьте ссылку плеера в TikTok Live Studio («Добавить источник» → «Ссылка») — видео будут включаться сами по очереди. Здесь можно включить тот же плеер для проверки (в эфире он не нужен дважды).</p>
+        <div class="copy-row" style="margin-bottom:10px"><input readonly id="mPlayerUrl"><button class="btn btn-ghost" data-copy="mPlayerUrl">Копировать</button><button class="btn btn-ghost" id="mHere">▶ Включить плеер здесь</button></div>
+        <div id="mHereBox" style="display:none;aspect-ratio:16/9;max-height:460px;border-radius:16px;overflow:hidden;background:#000"><iframe id="mHereFrame" allow="autoplay; encrypted-media" style="width:100%;height:100%;border:0"></iframe></div>
+      </div>
     </div>
   </section>
 

@@ -213,7 +213,7 @@ function render() {
   // превью и тесты
   if (!$('#prevFrame').src) $('#prevFrame').src = ME.urls.widgets.alerts + '&preview';
   if (!$('#rFrame').src) $('#rFrame').src = ME.urls.widgets.roulette + '&preview';
-  $('#rOpen').href = ME.urls.widgets.roulette; $('#mOpen').href = ME.urls.widgets.media;
+  $('#rOpen').href = ME.urls.widgets.roulette; $('#mOpen').href = ME.urls.widgets.media; val('mPlayerUrl', ME.urls.widgets.media);
   themePickers();
   // тариф
   renderBilling();
@@ -380,7 +380,12 @@ function connectEvents() {
 function renderStats(d) {
   $('#goalNow').textContent = `Собрано: ${fmt(d.goal.sum)} из ${fmt(d.goal.target)}`;
   const t = d.timer; $('#timerNow').textContent = t.left ? new Date(t.left).toISOString().substr(11, 8) + (t.running ? ' (идёт)' : ' (пауза)') : '—';
-  $('#mediaQueue').innerHTML = d.media.length ? d.media.map((m, i) => `<div class="it"><span>${i === 0 ? '▶️' : (i + 1) + '.'} ${esc(m.name)} — <a href="${esc(m.media_url)}" target="_blank" style="color:var(--accent)">ссылка</a></span><b>${fmt(m.amount)}</b></div>`).join('') : '<div class="muted">Очередь пуста</div>';
+  const c0 = d.media[0];
+  $('#nowPl').classList.toggle('on', !!c0);
+  if (c0) $('#nowPl').innerHTML = `<span class="eq"><i></i><i></i><i></i></span><div style="flex:1;min-width:0"><div class="muted" style="font-size:12px">Сейчас играет · заказал(а) ${esc(c0.name)} · ${fmt(c0.amount)}</div><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c0.title || c0.media_url)}</b></div>`;
+  const rest = d.media.slice(1);
+  $('#mediaQueue').innerHTML = rest.length ? rest.map((m, i) => `<div class="it" style="align-items:center"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i + 2}. ${esc(m.name)} — <a href="${esc(m.media_url)}" target="_blank" style="color:var(--accent)">${esc(m.title || 'ссылка')}</a></span><span style="display:flex;gap:8px;align-items:center"><b>${fmt(m.amount)}</b><button class="mq-x" data-mrm="${m.id}" title="Убрать из очереди">✕</button></span></div>`).join('') : `<div class="muted">${c0 ? 'Дальше ничего нет' : 'Очередь пуста'}</div>`;
+  $('#mediaSkip').disabled = !c0;
 }
 async function loadState() { try { const st = await api('/api/w/' + ME.token + '/state'); renderStats(st); } catch { } }
 
@@ -400,7 +405,9 @@ $('#donTable').onclick = async e => {
   } catch (er) { toast(er.message, true); }
 };
 $('#skipAlert').onclick = () => api('/api/alerts/skip', { method: 'POST' }).then(() => toast('Алерт пропущен'));
-$('#mediaSkip').onclick = () => api('/api/media/skip', { method: 'POST' }).then(() => toast('Пропущено'));
+$('#mediaSkip').onclick = () => api('/api/media/skip', { method: 'POST', body: {} }).then(r => toast(r.skipped ? 'Пропущено — включается следующее' : 'Очередь пуста')).catch(e => toast(e.message, true));
+document.addEventListener('click', e => { const b = e.target.closest('[data-mrm]'); if (!b) return; api('/api/media/skip', { method: 'POST', body: { id: +b.dataset.mrm } }).then(() => toast('Убрано из очереди')).catch(er => toast(er.message, true)); });
+$('#mHere').onclick = () => { const box = $('#mHereBox'), on = box.style.display === 'none'; box.style.display = on ? '' : 'none'; $('#mHereFrame').src = on ? ME.urls.widgets.media : 'about:blank'; $('#mHere').textContent = on ? '■ Выключить плеер здесь' : '▶ Включить плеер здесь'; };
 
 // ---------- подключение ----------
 async function loadIngest() {

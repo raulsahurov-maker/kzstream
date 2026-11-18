@@ -250,8 +250,9 @@ function widgetState(u) {
     timer: timerState(s), last: lastDon || null, media: mediaQueue(u),
   };
 }
+const mediaTitles = new Map(); // id доната -> название видео (сообщает плеер)
 function mediaQueue(u) {
-  return q(`SELECT id, name, amount, media_url FROM donations WHERE user_id=? AND media_status='queued' ORDER BY done_at ASC LIMIT 20`).all(u.id);
+  return q(`SELECT id, name, amount, media_url FROM donations WHERE user_id=? AND media_status='queued' ORDER BY done_at ASC, id ASC LIMIT 20`).all(u.id).map(m => ({ ...m, title: mediaTitles.get(m.id) || '' }));
 }
 function pushStats(u) {
   const s = getSettings(u);
@@ -674,10 +675,12 @@ app.post('/api/donations/:id/replay', auth, (req, res) => {
 });
 app.delete('/api/donations/:id', auth, (req, res) => { q('UPDATE donations SET hidden=1 WHERE id=? AND user_id=?').run(+req.params.id, req.user.id); pushStats(req.user); res.json({ ok: true }); });
 app.post('/api/alerts/skip', auth, (req, res) => { emit(req.user.id, 'skip', {}); res.json({ ok: true }); });
+// пропустить текущее (или конкретное видео по id) — оно удаляется из очереди, плеер включает следующее
 app.post('/api/media/skip', auth, (req, res) => {
-  const cur = mediaQueue(req.user)[0];
-  if (cur) q(`UPDATE donations SET media_status='skipped' WHERE id=?`).run(cur.id);
-  emit(req.user.id, 'media_skip', { id: cur?.id }); pushStats(req.user); res.json({ ok: true });
+  const list = mediaQueue(req.user);
+  const cur = req.body?.id ? list.find(m => m.id === +req.body.id) : list[0];
+  if (cur) q(`UPDATE donations SET media_status='skipped' WHERE id=? AND user_id=?`).run(cur.id, req.user.id);
+  emit(req.user.id, 'media_skip', { id: cur?.id }); pushStats(req.user); res.json({ ok: true, skipped: cur?.id || null });
 });
 app.post('/api/timer', auth, (req, res) => {
   const u = req.user; if (!effectivePlan(u).timer) return res.status(403).json({ error: 'Таймер доступен с тарифа Lite' });
@@ -817,6 +820,11 @@ app.get('/api/w/:token/stream', (req, res) => {
   sse(res); subscribe(u.id, res);
 });
 app.get('/api/events', auth, (req, res) => { sse(res); subscribe(req.user.id, res); });
+app.post('/api/w/:token/media/playing', (req, res) => {
+  const u = userByToken(req.params.token); if (!u) return res.status(404).end();
+  const id = +req.body.id; if (id) { mediaTitles.set(id, clampStr(req.body.title, 120)); if (mediaTitles.size > 2000) mediaTitles.delete(mediaTitles.keys().next().value); }
+  pushStats(u); res.json({ ok: true });
+});
 app.post('/api/w/:token/media/done', (req, res) => {
   const u = userByToken(req.params.token); if (!u) return res.status(404).end();
   q(`UPDATE donations SET media_status='played' WHERE id=? AND user_id=? AND media_status='queued'`).run(+req.body.id, u.id);
