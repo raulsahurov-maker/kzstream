@@ -90,6 +90,45 @@
   #log{font:12px Consolas,monospace;color:var(--muted);max-height:290px;overflow:auto;white-space:pre-wrap;user-select:text;margin-top:12px;line-height:1.6}
   .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 
+  /* главная как в KaspiDonate */
+  .dash{display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:12px}
+  .col2{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .blk{padding:14px}
+  .bh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .bh b{font-size:13px;letter-spacing:.02em}
+  .startb{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:15px;border-radius:14px;background:var(--grad);font-family:Unbounded,"Segoe UI",sans-serif;font-weight:800;font-size:15px;box-shadow:0 10px 28px rgba(255,59,92,.35);transition:.15s}
+  .startb:hover{transform:translateY(-1px)}
+  .startb.off{background:linear-gradient(120deg,#20c997,#3ee6c4);box-shadow:0 10px 28px rgba(62,230,196,.3);color:#06231d}
+  .stl{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--muted);font-weight:700}
+  .live-c.on{border-color:rgba(255,59,92,.55);background:linear-gradient(160deg,rgba(255,59,92,.12),transparent 60%),var(--card)}
+  .live-c.on .tag{background:#e5213f;color:#fff}
+  .hint2{font-size:11.5px;color:var(--dim);margin-top:8px;text-align:center}
+  .pl-c{border-color:rgba(255,122,69,.35)}
+  .pl-c.ok{border-color:rgba(62,230,196,.4)}
+  .vid{font-size:12px;font-weight:700}
+  .bt-link{display:block;margin-top:9px;font-size:12.5px;color:var(--muted);text-decoration:underline;text-align:center}
+  .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn.q{padding:11px 8px;font-size:13px}
+  .btn.q.y{color:var(--warn);border-color:rgba(255,200,74,.35)}.btn.q.c{color:var(--ok);border-color:rgba(62,230,196,.35)}
+  .tops{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .topc{padding:14px;min-height:150px}.topc.gold{border-color:rgba(255,200,74,.35)}.topc.gold .th b{color:var(--warn)}
+  .th{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .th b{font-size:11.5px;letter-spacing:.1em;color:var(--muted)}
+  .ic{width:26px;height:26px;border-radius:8px;background:var(--card2);font-size:12px}
+  .tr{display:flex;align-items:center;gap:8px;padding:5px 0;font-weight:700;font-size:13px}
+  .tr i{width:20px;height:20px;border-radius:6px;background:var(--card2);display:grid;place-items:center;font-style:normal;font-size:11px;flex:none}
+  .tr:nth-child(1) i{background:var(--grad)}.tr span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tr em{font-style:normal;color:var(--b);font-family:Unbounded;font-size:12px}
+  .topc.gold .tr em{color:var(--warn)}
+  .nodata{color:var(--dim);font-size:12.5px;padding:6px 0}
+  .feedc{padding:14px}.feedc .feed{max-height:250px;margin-top:0}
+  .logc{padding:14px}.logc #log{max-height:110px;margin-top:0}
+  .empty .eic{width:46px;height:46px;border-radius:14px;background:var(--card2);display:grid;place-items:center;margin:0 auto 10px;font-size:20px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;z-index:50}
+  .mbox{width:min(460px,92vw);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
+  .gwname{margin:18px 0;padding:22px;border-radius:16px;background:var(--bg2);border:1px dashed var(--line);text-align:center;font-family:Unbounded,"Segoe UI",sans-serif;font-weight:800;font-size:24px;min-height:84px}
+  .gwname.win{border-style:solid;border-color:var(--warn);color:var(--warn);box-shadow:0 0 30px rgba(255,200,74,.25)}
+  .fbar{display:flex;gap:10px;align-items:center;margin-top:14px;padding:10px 14px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-size:12px;color:var(--dim)}
   /* подключение */
   .methods{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   .m{position:relative;text-align:left;padding:16px;border-radius:16px;background:var(--card);border:2px solid var(--line);transition:.15s}
@@ -180,20 +219,50 @@
 
     <!-- ГЛАВНАЯ -->
     <section class="page on" id="p-home">
-      <div class="ttl"><h2>Главная</h2><div style="display:flex;gap:8px"><button class="btn sm" onclick="api('open_site','/app#home')">Открыть кабинет ↗</button><button class="btn p sm" id="testBtn">▶ Тестовый донат</button></div></div>
-      <div class="hero"><div class="ring wait" id="ring"><b></b></div>
-        <div style="flex:1"><h3 id="hT">Подключаемся…</h3><div class="muted" id="hS">Проверяем доступ к уведомлениям и связь с сервером</div></div>
-        <button class="btn sm" data-go="connect">Настроить подключение</button></div>
-      <div class="stats">
-        <div class="card stat"><span class="muted">Донатов за сегодня</span><div class="v g" id="sSum">0 ₸</div></div>
-        <div class="card stat"><span class="muted">Количество</span><div class="v" id="sCnt">0</div></div>
-        <div class="card stat"><span class="muted">Способ подключения</span><div class="v" style="font-size:16px;margin-top:12px" id="sMeth">—</div></div>
-      </div>
-      <div class="g2">
-        <div class="card"><h3>Донаты в реальном времени</h3><span class="muted" style="font-size:12.5px">Новые донаты появляются здесь и в эфире</span><div class="feed" id="feed"></div></div>
-        <div class="card"><h3>Журнал</h3><span class="muted" style="font-size:12.5px">Что делает программа</span><div id="log"></div></div>
+      <div class="dash">
+        <div class="col">
+          <div class="card blk">
+            <button class="startb" id="startB"><span id="startI">■</span><b id="startT">Остановить</b></button>
+            <div class="stl"><span class="dot ok" id="startDot"></span><span id="startS">Ловлю донаты Kaspi</span></div>
+          </div>
+          <div class="card blk live-c">
+            <div class="bh"><b>Эфир TikTok</b><span class="tag" id="liveTag">не в эфире</span></div>
+            <button class="btn" style="width:100%" id="liveB">▶ Начать эфир</button>
+            <button class="btn" style="width:100%;margin-top:8px" id="clearB">🗑 Очистить данные</button>
+            <p class="hint2">Включайте, когда уже в эфире — ТОП эфира считается с этого момента</p>
+          </div>
+          <div class="card blk pl-c" id="plC">
+            <div class="bh"><b>Связь с телефоном</b><a class="vid" data-go="connect">▶ Инструкция</a></div>
+            <div class="stl" style="margin:2px 0 10px"><span class="dot" id="plDot"></span><span id="plS">проверяем…</span></div>
+            <button class="btn" style="width:100%" onclick="api('open_phone_link')">Открыть «Связь с телефоном»</button>
+            <a class="bt-link" id="btLink">Или подключить iPhone по Bluetooth</a>
+          </div>
+          <div class="qgrid">
+            <button class="btn q" data-skip="media">⏭ Скип видео</button>
+            <button class="btn q" data-skip="voice">🔇 Скип озвучки</button>
+            <button class="btn q y" id="testBtn">🎁 Тестовый донат</button>
+            <button class="btn q c" id="gwB">🏆 Розыгрыш</button>
+          </div>
+        </div>
+        <div class="col2">
+          <div class="tops">
+            <div class="card topc"><div class="th"><b id="tsT">ТОП-5 СЕГОДНЯ</b><button class="ic" id="tsClear" title="Сбросить ТОП эфира">🗑</button></div><div id="topS"></div></div>
+            <div class="card topc gold"><div class="th"><b>ТОП-5 МЕСЯЦА</b></div><div id="topM"></div></div>
+          </div>
+          <div class="card feedc"><div class="th"><b>ЛЕНТА ДОНАТОВ</b><span class="muted" style="font-size:12px" id="sumLine"></span></div><div class="feed" id="feed"></div></div>
+          <div class="card logc"><div class="th"><b>ЖУРНАЛ</b></div><div id="log"></div></div>
+        </div>
       </div>
     </section>
+
+    <!-- РОЗЫГРЫШ -->
+    <div class="modal hide" id="gw"><div class="mbox">
+      <h2 style="font-size:20px">🏆 Розыгрыш среди донатеров</h2>
+      <p class="muted" style="margin:6px 0 12px" id="gwSub"></p>
+      <div style="display:flex;gap:10px;align-items:center"><span class="muted" style="white-space:nowrap">Мин. сумма, ₸</span><input id="gwMin" type="number" value="0" style="max-width:140px"></div>
+      <div class="gwname" id="gwName">?</div>
+      <div style="display:flex;gap:10px"><button class="btn p" style="flex:1" id="gwGo">🎲 Выбрать победителя</button><button class="btn" id="gwClose">Закрыть</button></div>
+    </div></div>
 
     <!-- ПОДКЛЮЧЕНИЕ -->
     <section class="page" id="p-connect">
@@ -242,6 +311,7 @@
         </div>
       </div>
     </section>
+    <div class="fbar"><a onclick="api('open_site','/')">kzstream.onrender.com</a><span>|</span><span id="fNick" style="color:var(--b);font-weight:700"></span><span>|</span><span id="fPlan" style="font-weight:800"></span><span style="margin-left:auto" id="fVer"></span></div>
   </main>
 </div>
 <div class="tst" id="tst"></div>
@@ -282,6 +352,7 @@ function showApp() {
   $('#login').classList.add('hide'); $('#app').classList.remove('hide');
   $('#nick').textContent = ST.nick; $('#plan').textContent = (ST.plan || 'Free').replace(/^./, c => c.toUpperCase());
   $('#ver').textContent = 'KZStream для Windows · ' + ST.version; $('#vLine').textContent = 'Версия ' + ST.version;
+  $('#fNick').textContent = ST.nick; $('#fPlan').textContent = (ST.plan || 'free').toUpperCase(); $('#fVer').textContent = 'Версия: ' + ST.version; liveUi();
   $$('.sw').forEach(s => s.classList.toggle('on', !!ST[s.dataset.o]));
   method(ST.method, true); hero(); if (ST.update) showUpd(ST.update);
   (ST.feed || []).slice().reverse().forEach(d => addDon(d, false));
@@ -294,26 +365,46 @@ async function loadMe() {
   ME = j; sum = j.today || 0; cnt = j.today_count || 0; stats();
   if (j.plan) $('#plan').textContent = j.plan.replace(/^./, c => c.toUpperCase());
   if (!$('#feed').children.length || $('#feed .empty')) { $('#feed').innerHTML = ''; (j.feed || []).slice().reverse().forEach(d => addDon(d, false)); }
-  widgets(); hotkeys(); if (ST.method === 'android') apkQr();
+  widgets(); hotkeys(); tops(); if (ST.method === 'android') apkQr();
 }
-function stats() { $('#sSum').textContent = fmt(sum); $('#sCnt').textContent = cnt; $('#sMeth').textContent = METHODS[ST.method].name; }
+function stats() { $('#sumLine').textContent = cnt ? `сегодня ${fmt(sum)} · ${cnt} шт.` : ''; }
+function tops() {
+  const row = (d, i) => `<div class="tr"><i>${i + 1}</i><span>${esc(d.name || 'Аноним')}</span><em>${fmt(d.total)}</em></div>`;
+  const ts = (ME.top_stream || []).slice(0, 5), tm = ME.top_month || [];
+  $('#tsT').textContent = ST.live_since ? 'ТОП-5 ЭФИРА' : 'ТОП-5 СЕГОДНЯ';
+  $('#topS').innerHTML = ts.length ? ts.map(row).join('') : '<div class="nodata">Нет данных</div>';
+  $('#topM').innerHTML = tm.length ? tm.map(row).join('') : '<div class="nodata">Нет данных</div>';
+}
+function liveUi() {
+  const on = !!ST.live_since; $('.live-c').classList.toggle('on', on);
+  $('#liveB').textContent = on ? '■ Закончить эфир' : '▶ Начать эфир';
+  if (!on) $('#liveTag').textContent = 'не в эфире';
+}
+setInterval(() => { if (ST.live_since) { const t = Math.floor((Date.now() - ST.live_since) / 1000); $('#liveTag').textContent = '● LIVE ' + [Math.floor(t / 3600), Math.floor(t / 60) % 60, t % 60].map(x => String(x).padStart(2, '0')).join(':'); } }, 1000);
 function addDon(d, fresh) {
   if ($('#feed .empty')) $('#feed').innerHTML = '';
   const el = document.createElement('div'); el.className = 'don' + (fresh ? ' new' : '');
   el.innerHTML = `<div class="av">${esc((d.name || '?')[0].toUpperCase())}</div><div class="tx"><b>${esc(d.name || 'Аноним')}</b><span>${esc(d.message || 'без сообщения')}</span></div><div class="am">${fmt(d.amount)}</div>`;
   $('#feed').prepend(el); while ($('#feed').children.length > 40) $('#feed').lastChild.remove();
 }
-function emptyFeed() { if (!$('#feed').children.length) $('#feed').innerHTML = '<div class="empty">Донатов пока нет.<br>Нажмите «Тестовый донат», чтобы проверить.</div>'; }
+function emptyFeed() { if (!$('#feed').children.length) $('#feed').innerHTML = '<div class="empty"><div class="eic">💸</div>Зрители, мы знаем, что вы здесь :)<br><span style="font-size:12px">Нажмите «Тестовый донат», чтобы проверить.</span></div>'; }
 function hero() {
-  const n = ST.notif, s = ST.stream, m = ST.method, r = $('#ring');
-  let cls = 'wait', t = 'Подключаемся…', sub = 'Проверяем доступ к уведомлениям и связь с сервером';
-  if (m === 'android') { cls = s ? '' : 'wait'; t = s ? 'На связи с сервером' : 'Подключаемся к серверу…'; sub = 'Донаты ловит приложение на Android. Здесь — звук, хоткеи и лента донатов.'; }
-  else if (n === 'denied') { cls = 'bad'; t = 'Нет доступа к уведомлениям'; sub = 'Разрешите KZStream читать уведомления Windows — раздел «Подключение».'; }
-  else if (n === 'unsupported' || n === 'error') { cls = 'bad'; t = 'Уведомления Windows недоступны'; sub = 'Нужна Windows 10/11. Или используйте приложение на Android.'; }
-  else if (n === 'ok' && s) { cls = ''; t = 'Ловлю донаты Kaspi'; sub = 'Всё работает. Можно свернуть программу в трей — донаты продолжат приходить.'; }
-  else if (n === 'ok') { t = 'Переподключаемся к серверу…'; sub = 'Уведомления читаются, ждём связь с KZStream'; }
-  r.className = 'ring ' + cls; $('#hT').textContent = t; $('#hS').textContent = sub;
-  $('#navDot').style.background = cls === '' ? 'var(--ok)' : cls === 'bad' ? 'var(--b)' : '#555';
+  const n = ST.notif, st = ST.stream, m = ST.method;
+  let ok = false, t = 'Подключаемся…';
+  if (ST.paused) t = 'Ловля остановлена';
+  else if (m === 'android') { ok = st; t = st ? 'На связи — донаты ловит телефон' : 'Подключаемся к серверу…'; }
+  else if (n === 'denied') t = 'Нет доступа к уведомлениям';
+  else if (n === 'unsupported' || n === 'error') t = 'Уведомления Windows недоступны';
+  else if (n === 'ok' && st) { ok = true; t = 'Ловлю донаты Kaspi'; }
+  else if (n === 'ok') t = 'Ждём связь с сервером…';
+  $('#startB').classList.toggle('off', !!ST.paused);
+  $('#startI').textContent = ST.paused ? '▶' : '■'; $('#startT').textContent = ST.paused ? 'Запустить' : 'Остановить';
+  $('#startDot').className = 'dot ' + (ok ? 'ok' : ST.paused ? 'no' : 'wait'); $('#startS').textContent = t;
+  $('#navDot').style.background = ok ? 'var(--ok)' : ST.paused || n === 'denied' ? 'var(--b)' : '#555';
+}
+function phoneUi(c) {
+  const ok = !!c.phone_link; $('#plC').classList.toggle('ok', ok);
+  $('#plDot').className = 'dot ' + (ok ? 'ok' : 'no'); $('#plS').textContent = ok ? 'Открыта' : 'Не открыта';
 }
 function method(m, silent) {
   ST.method = m; $$('.m').forEach(b => b.classList.toggle('on', b.dataset.m === m));
@@ -323,7 +414,7 @@ function method(m, silent) {
 }
 async function refreshChecks() {
   if ($('#app').classList.contains('hide')) return;
-  const c = await api('checks'); ST.stream = c.stream; ST.notif = c.notif; hero();
+  const c = await api('checks'); ST.stream = c.stream; ST.notif = c.notif; hero(); phoneUi(c);
   const row = (ok, t, sub, wait) => `<div class="chk"><span class="dot ${ok ? 'ok' : wait ? 'wait' : 'no'}"></span><div class="t">${t}${sub ? `<small>${sub}</small>` : ''}</div></div>`;
   const notifOk = c.notif === 'ok';
   let h = row(c.stream, 'Связь с сервером KZStream', c.stream ? 'на связи' : 'подключаемся…', !c.stream);
@@ -355,7 +446,7 @@ function showUpd(u) { $('#upd').classList.remove('hide'); $('#updT').textContent
 // ---------- события из программы
 window.kz = { on(kind, d) {
   if (kind === 'log') { const l = $('#log'); l.textContent = `${d.t}  ${d.m}\n` + l.textContent.slice(0, 6000); }
-  if (kind === 'donation') { addDon(d, true); sum += +d.amount || 0; cnt++; stats(); }
+  if (kind === 'donation') { addDon(d, true); sum += +d.amount || 0; cnt++; stats(); clearTimeout(window._lm); window._lm = setTimeout(loadMe, 1500); }
   if (kind === 'notif') { ST.notif = d; hero(); refreshChecks(); }
   if (kind === 'stream') { ST.stream = d; hero(); }
   if (kind === 'update') showUpd(d);
@@ -374,6 +465,22 @@ document.addEventListener('click', async e => {
   const hk = e.target.closest('[data-hk]'); if (hk) { toast('Нажму ' + hk.dataset.hk + ' через 1,5 сек…'); const r = await api('test_hotkey', hk.dataset.hk); if (!r.ok) toast(r.error, true); }
 });
 $('#testBtn').onclick = doTest;
+$('#startB').onclick = async () => { ST = { ...ST, ...(await api('toggle_catch')) }; hero(); toast(ST.paused ? 'Ловля остановлена' : 'Ловля запущена ✓'); };
+$('#liveB').onclick = async () => { ST = { ...ST, ...(await api(ST.live_since ? 'live_stop' : 'live_start')) }; liveUi(); loadMe(); toast(ST.live_since ? 'Эфир начат — удачного стрима!' : 'Эфир завершён'); };
+$('#clearB').onclick = async () => { if (!confirm('Очистить ТОП эфира и ленту донатов в программе? Донаты на сайте не удаляются.')) return; ST = { ...ST, ...(await api('clear_data')) }; $('#feed').innerHTML = ''; emptyFeed(); loadMe(); toast('Данные эфира очищены'); };
+$('#tsClear').onclick = () => $('#clearB').click();
+$('#btLink').onclick = () => { $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.p === 'connect')); $$('.page').forEach(x => x.classList.toggle('on', x.id === 'p-connect')); method('iphone'); };
+document.addEventListener('click', async e => { const b = e.target.closest('[data-skip]'); if (!b) return; const r = await api('skip', b.dataset.skip); toast(r.ok ? (b.dataset.skip === 'media' ? (r.skipped ? 'Видео пропущено — включается следующее' : 'Видео в очереди нет') : 'Озвучка пропущена') : 'Ошибка: ' + (r.error || 'нет связи'), !r.ok); });
+// розыгрыш среди донатеров эфира (или сегодняшних)
+$('#gwB').onclick = () => { $('#gw').classList.remove('hide'); $('#gwName').className = 'gwname'; $('#gwName').textContent = '?'; $('#gwSub').textContent = (ST.live_since ? 'Участвуют донатеры этого эфира' : 'Участвуют донатеры за сегодня') + ` — ${(ME.top_stream || []).length} чел.`; };
+$('#gwClose').onclick = () => $('#gw').classList.add('hide');
+$('#gwGo').onclick = async () => {
+  await loadMe(); const min = +$('#gwMin').value || 0; const L = (ME.top_stream || []).filter(d => d.total >= min);
+  if (!L.length) { $('#gwName').textContent = 'Нет участников'; return; }
+  const el = $('#gwName'); el.className = 'gwname'; let i = 0, n = 26 + Math.floor(Math.random() * 10);
+  const tick = () => { el.textContent = L[Math.floor(Math.random() * L.length)].name; if (++i < n) setTimeout(tick, 40 + i * 9); else { const w = L[Math.floor(Math.random() * L.length)]; el.textContent = '🎉 ' + w.name; el.className = 'gwname win'; api('log', `🏆 Победитель розыгрыша: ${w.name} (${w.total} ₸)`); } };
+  tick();
+};
 $('#go').onclick = async () => {
   const b = $('#go'); b.disabled = true; b.textContent = 'Входим… (сервер может просыпаться до минуты)'; $('#err').textContent = '';
   const r = await api('login', $('#email').value.trim(), $('#pass').value);

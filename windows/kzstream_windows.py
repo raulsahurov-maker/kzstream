@@ -32,7 +32,7 @@ import webbrowser
 import requests
 
 APP_NAME = 'KZStream'
-VERSION = '2.1.1'
+VERSION = '2.2.0'
 DEFAULT_SERVER = 'https://kzstream.onrender.com'
 APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
@@ -198,6 +198,7 @@ class Api:
         self.stream_ok = False
         self.feed = []
         self.update_info = None
+        self.paused = False
 
     # --- связь с интерфейсом
     def push(self, kind, data):
@@ -216,7 +217,8 @@ class Api:
         return {'logged': bool(c.get('token')), 'nick': c.get('nick', ''), 'plan': c.get('plan', ''),
                 'server': c['server'], 'only_banks': c['only_banks'], 'autostart': c['autostart'], 'sound': c['sound'],
                 'tray': c['tray'], 'method': c['method'], 'notif': self.notif_status, 'winsdk': HAS_WINSDK,
-                'version': VERSION, 'stream': self.stream_ok, 'update': self.update_info, 'feed': self.feed[:30]}
+                'version': VERSION, 'stream': self.stream_ok, 'update': self.update_info, 'feed': self.feed[:30],
+                'paused': self.paused, 'live_since': c.get('live_since', 0)}
 
     def login(self, email, password, server=None):
         srv = (server or self.cfg['server']).strip().rstrip('/')
@@ -255,7 +257,8 @@ class Api:
 
     def me(self):
         try:
-            r = requests.get(f"{self.cfg['server']}/api/app/me/{self.cfg.get('token', '')}", timeout=75)
+            since = self.cfg.get('live_since') or int(time.mktime(time.localtime()[:3] + (0, 0, 0, 0, 0, -1)) * 1000)
+            r = requests.get(f"{self.cfg['server']}/api/app/me/{self.cfg.get('token', '')}", params={'since': since}, timeout=75)
             if r.status_code == 404:
                 return {'expired': True}
             j = r.json()
@@ -268,6 +271,40 @@ class Api:
             return j
         except Exception as e:
             return {'error': str(e)}
+
+    # --- кнопки главной (как в KaspiDonate)
+    def toggle_catch(self):
+        self.paused = not self.paused
+        self.log('⏸ Ловля донатов остановлена' if self.paused else '▶ Ловля донатов запущена')
+        return self.state()
+
+    def live_start(self):
+        self.cfg['live_since'] = int(time.time() * 1000)
+        save_cfg(self.cfg)
+        self.log('🔴 Эфир начат — ТОП эфира считается с этого момента')
+        return self.state()
+
+    def live_stop(self):
+        self.cfg['live_since'] = 0
+        save_cfg(self.cfg)
+        self.log('Эфир завершён')
+        return self.state()
+
+    def clear_data(self):
+        if self.cfg.get('live_since'):
+            self.cfg['live_since'] = int(time.time() * 1000)
+            save_cfg(self.cfg)
+        self.feed = []
+        self.log('🗑 Данные эфира очищены')
+        return self.state()
+
+    def skip(self, what):
+        try:
+            r = requests.post(f"{self.cfg['server']}/api/app/{self.cfg.get('token', '')}/skip", json={'what': what}, timeout=40)
+            j = r.json()
+            return {'ok': r.status_code == 200, **j}
+        except Exception as e:
+            return {'ok': False, 'error': str(e)}
 
     def checks(self):
         """Проверки для раздела «Подключение»."""
@@ -452,6 +489,8 @@ class Api:
             return
         if any(p in app.lower() for p in PHONE_LINK_APPS):
             self.last_phone_notif = time.time()
+        if self.paused:
+            return
         title, text = texts[0], '\n'.join(texts[1:])
         full = f'{app}\n{title}\n{text}'
         if not MONEY.search(full):

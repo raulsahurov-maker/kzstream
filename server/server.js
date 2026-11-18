@@ -773,21 +773,36 @@ app.post('/api/app/login', (req, res) => {
   res.json({ ok: true, nick: u.nick, token: u.token, ingest: `${b}/api/ingest/${u.token}`, plan: effectivePlan(u).name,
     widgets: { alerts: `${b}/w/alerts.html?t=${u.token}` } });
 });
+// команды из программы для Windows: пропустить озвучку / весь алерт / видео
+app.post('/api/app/:token/skip', (req, res) => {
+  const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'Сессия устарела' });
+  const what = req.body?.what;
+  if (what === 'media') {
+    const cur = mediaQueue(u)[0];
+    if (cur) q(`UPDATE donations SET media_status='skipped' WHERE id=? AND user_id=?`).run(cur.id, u.id);
+    emit(u.id, 'media_skip', { id: cur?.id }); pushStats(u); return res.json({ ok: true, skipped: !!cur });
+  }
+  emit(u.id, 'skip', { all: what === 'alert' }); res.json({ ok: true });
+});
 app.get('/api/app/me/:token', (req, res) => {
   const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'Сессия устарела, войдите снова' });
   const s = getSettings(u);
+  const since = Math.max(0, +req.query.since || 0);
+  const topSince = from => q(`SELECT name, SUM(amount) total, COUNT(*) cnt FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=?
+    GROUP BY lower(name) ORDER BY total DESC LIMIT 100`).all(u.id, from);
   const today = q(`SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=?`).get(u.id, periodStart('day'));
   const b = baseUrl(req);
   res.json({ nick: u.nick, plan: effectivePlan(u).name, today: today.s, today_count: today.c, hotkeys: effectivePlan(u).hotkeys ? s.hotkeys : [],
+    top_month: topSince(periodStart('month')).slice(0, 5), top_stream: since ? topSince(since) : [],
     hotkeys_allowed: !!effectivePlan(u).hotkeys, page: `${b}/d/${encodeURIComponent(u.nick)}`, ingest: `${b}/api/ingest/${u.token}`,
     widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
     last: q(`SELECT name, amount, message, done_at FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 10`).all(u.id) });
 });
 
 // версия программы для Windows — по ней программа предлагает обновиться
-const WIN_APP_VERSION = '2.1.1';
+const WIN_APP_VERSION = '2.2.0';
 app.get('/api/app/version', (req, res) => res.json({ windows: WIN_APP_VERSION, url: `${baseUrl(req)}/update/KZStream-Setup.exe`, setup: `${baseUrl(req)}/update/KZStream-Setup.exe`,
-  notes: 'Исправлен чёрный экран при запуске' }));
+  notes: 'Новая главная: старт/стоп, эфир TikTok, ТОП-5 эфира и месяца, скип видео и озвучки, розыгрыш' }));
 
 // --- приём уведомлений от приложений (Android / Windows / iPhone) ---
 function ingest(req, res) {
