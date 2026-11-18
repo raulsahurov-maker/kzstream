@@ -122,9 +122,11 @@ const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud'], TOP_F
 // стили цели сбора: первые три — бесплатно, остальные с тарифа Lite
 const GOAL_STYLES = ['classic', 'neon', 'battery', 'water', 'ring', 'thermo', 'gold', 'minimal'], GOAL_FREE = ['classic', 'neon', 'battery'];
 const GOAL_MAX = 2000000;
+// стили алертов: classic и meme (свои видео/гифки) — бесплатно, денежный дождь и монетка — с Lite
+const ALERT_LAYOUTS = ['classic', 'meme', 'money', 'coin'], ALERT_FREE = ['classic', 'meme'];
 // голоса озвучки (Microsoft Neural — те же, что на FreeTTS). [голос, название, высота, скорость, язык для запасного варианта]
 const VOICES = {
-  dmitry: ['ru-RU-DmitryNeural', 'Дмитрий', '-2%', '', 'ru'],
+  dmitry: ['ru-RU-DmitryNeural', 'Дмитрий', '', '', 'ru'],
   svetlana: ['ru-RU-SvetlanaNeural', 'Светлана', '', '', 'ru'],
   bass: ['ru-RU-DmitryNeural', 'Бас', '-22%', '-8%', 'ru'],
   chipmunk: ['ru-RU-SvetlanaNeural', 'Бурундук', '+45%', '+18%', 'ru'],
@@ -142,7 +144,7 @@ function defaults(nick) {
     page: { title: nick, description: 'Спасибо за поддержку стрима!', kaspi: '', receiver: '', min_amount: 100, cards: '', avatar: '', banner: '', color: '#ff3b5c',
       socials: { twitch: '', youtube: '', tiktok: '', instagram: '', telegram: '' } },
     alerts: { duration: 6, gif: '', sound: '', volume: 0.8, min_alert: 0, show_msg: true, theme: 'default',
-      tts: true, min_tts: 0, tts_lang: 'ru', tts_voice: 'dmitry', tts_rate: 1, tts_read_name: false, variations: [] },
+      tts: true, min_tts: 0, tts_lang: 'ru', tts_voice: 'dmitry', tts_rate: 1, tts_read_name: false, variations: [], layout: 'classic', pool: [], pool_min: 0 },
     censor: { words: '', strip_links: true },
     nicks: {},
     goal: { title: 'Цель сбора', target: 100000, base: 0, start_at: Date.now(), theme: 'default', style: 'classic' },
@@ -150,7 +152,7 @@ function defaults(nick) {
     roulette: { enabled: false, min: 1000, style: 'wheel',
       tasks: ['Спеть песню', 'Катка без прицела', '10 отжиманий', 'Говорить с акцентом', 'Ответить на 3 вопроса', 'Танец 15 сек'] },
     media: { enabled: false, min: 500, max_sec: 180, volume: 0.6 },
-    info: { lines: ['Донаты через Kaspi — ссылка в описании!'], interval: 8, theme: 'default' },
+    info: { lines: ['Донаты через Kaspi — ссылка в описании!'], interval: 8, theme: 'default', label: 'INFO', speed: 'normal', dir: 'right', show_last: true },
     timer: { end_at: 0, paused_left: 0, running: false, sec_per_100: 30, theme: 'default' },
     hotkeys: [], webhooks: [],
   };
@@ -243,7 +245,7 @@ function widgetState(u) {
   const p = effectivePlan(u);
   const lastDon = q(`SELECT name, amount, message FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 1`).get(u.id);
   return {
-    nick: u.nick, plan: publicPlan(u), settings: { alerts: s.alerts, goal: { ...s.goal, style: p.shop || GOAL_FREE.includes(s.goal.style || 'classic') ? (s.goal.style || 'classic') : 'classic' }, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, hotkeys: p.hotkeys ? s.hotkeys : [] },
+    nick: u.nick, plan: publicPlan(u), settings: { alerts: { ...s.alerts, layout: p.shop || ALERT_FREE.includes(s.alerts.layout || 'classic') ? (s.alerts.layout || 'classic') : 'classic' }, goal: { ...s.goal, style: p.shop || GOAL_FREE.includes(s.goal.style || 'classic') ? (s.goal.style || 'classic') : 'classic' }, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, hotkeys: p.hotkeys ? s.hotkeys : [] },
     top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title },
     timer: timerState(s), last: lastDon || null, media: mediaQueue(u),
   };
@@ -261,7 +263,7 @@ function ytId(url) {
   const m = String(url || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/);
   return m ? m[1] : '';
 }
-function finalizeDonation(u, d) {
+function finalizeDonation(u, d, opts = {}) {
   const s = getSettings(u);
   const p = effectivePlan(u);
   // ник донатеру (Lite+): сопоставление имени отправителя Kaspi -> ник
@@ -295,8 +297,12 @@ function finalizeDonation(u, d) {
     const idx = crypto.randomInt(s.roulette.tasks.length);
     roulette = { index: idx, task: s.roulette.tasks[idx], tasks: s.roulette.tasks, style: s.roulette.style };
   }
+  // случайная мем-гифка из своего набора (Lite) — если нет мем-алерта на точную сумму
+  let meme = '';
+  const pool = (s.alerts.pool || []).filter(Boolean).slice(0, p.shop ? 30 : 1);
+  if (!variation && (s.alerts.layout === 'meme') && pool.length && d.amount >= (s.alerts.pool_min || 0)) meme = pool[crypto.randomInt(pool.length)];
   const event = {
-    id: d.id, name, amount: d.amount, message: s.alerts.show_msg ? message : '',
+    id: d.id, name, amount: d.amount, message: s.alerts.show_msg ? message : '', meme, tts_voice: VOICES[opts.voice] ? opts.voice : '',
     voice_url: p.voice ? d.voice_url : '', variation, roulette,
     tts: p.tts && s.alerts.tts && d.amount >= (s.alerts.min_tts || 0),
     show: d.amount >= (s.alerts.min_alert || 0), at: now(),
@@ -511,6 +517,13 @@ app.put('/api/settings', auth, (req, res) => {
     if (a.tts_voice !== undefined) { if (!VOICES[a.tts_voice]) errors.push('Неизвестный голос'); else if (!p.tts && a.tts_voice !== 'dmitry') errors.push('Выбор голоса — с тарифа Lite'); else { A.tts_voice = a.tts_voice; A.tts_lang = VOICES[a.tts_voice][4]; } }
     if (a.tts_lang !== undefined && a.tts_voice === undefined) { if (!p.ttsAdvanced && a.tts_lang !== 'ru') errors.push('Выбор языка озвучки — тариф Pro'); else if (['ru', 'kk', 'en', 'tr', 'uk'].includes(a.tts_lang)) A.tts_lang = a.tts_lang; }
     if (a.tts_rate !== undefined) A.tts_rate = p.ttsAdvanced ? Math.min(2, Math.max(0.5, +a.tts_rate || 1)) : 1;
+    if (a.layout !== undefined) { if (!ALERT_LAYOUTS.includes(a.layout)) errors.push('Неизвестный стиль алерта'); else if (!p.shop && !ALERT_FREE.includes(a.layout)) errors.push('Этот стиль алерта доступен с тарифа Lite'); else A.layout = a.layout; }
+    if (Array.isArray(a.pool)) {
+      const pool = a.pool.map(x => clampStr(x, 300)).filter(x => /^\/u\/\d+\//.test(x) || /^https?:\/\//.test(x));
+      if (!p.shop && pool.length > 1) errors.push('На Free — 1 свой алерт, на Lite — до 30. Оставлен первый');
+      A.pool = pool.slice(0, p.shop ? 30 : 1);
+    }
+    if (a.pool_min !== undefined) A.pool_min = int(a.pool_min, 0, 1e7, 0);
     if (Array.isArray(a.variations)) {
       if (!p.memes && a.variations.length) errors.push('Мем-алерты доступны на тарифе Pro');
       else A.variations = a.variations.slice(0, 30).map(v => ({ amount: int(v.amount, 1, 1e7, 0), gif: clampStr(v.gif, 300), sound: clampStr(v.sound, 300), text: clampStr(v.text, 80) })).filter(v => v.amount);
@@ -558,8 +571,12 @@ app.put('/api/settings', auth, (req, res) => {
   }
   if (b.info) {
     if (!p.info) errors.push('Info-виджет доступен с тарифа Lite');
-    else { s.info.lines = (b.info.lines || []).map(l => clampStr(l, 140)).filter(Boolean).slice(0, 10); s.info.interval = int(b.info.interval, 3, 120, 8);
-      if (b.info.theme && THEMES.includes(b.info.theme)) s.info.theme = b.info.theme; }
+    else { s.info.lines = (b.info.lines || []).map(l => clampStr(l, 300)).filter(Boolean).slice(0, 10); s.info.interval = int(b.info.interval, 3, 120, 8);
+      if (b.info.theme && THEMES.includes(b.info.theme)) s.info.theme = b.info.theme;
+      if (b.info.label !== undefined) s.info.label = clampStr(b.info.label, 20);
+      if (['slow', 'normal', 'fast'].includes(b.info.speed)) s.info.speed = b.info.speed;
+      if (['right', 'left'].includes(b.info.dir)) s.info.dir = b.info.dir;
+      if (b.info.show_last !== undefined) s.info.show_last = !!b.info.show_last; }
   }
   if (b.timer) {
     if (!p.timer) errors.push('Таймер доступен с тарифа Lite');
@@ -619,7 +636,7 @@ app.post('/api/donations/test', auth, (req, res) => {
   const r = q(`INSERT INTO donations(user_id,name,amount,message,media_url,source,status,created_at) VALUES(?,?,?,?,?,?,?,?)`)
     .run(u.id, clampStr(req.body.name || 'Тестовый донатер', 32), int(req.body.amount, 1, 1e7, 1000), clampStr(req.body.message ?? 'Это тестовый донат от KZStream!', 300), clampStr(req.body.media_url, 300), 'test', 'pending', now());
   const d = q('SELECT * FROM donations WHERE id=?').get(Number(r.lastInsertRowid));
-  res.json({ ok: true, event: finalizeDonation(u, d) });
+  res.json({ ok: true, event: finalizeDonation(u, d, { voice: req.body.voice }) });
 });
 // сброс статистики: удаляются ТОЛЬКО тестовые донаты, настоящие (из Kaspi) не трогаются
 app.post('/api/donations/reset-tests', auth, (req, res) => {
@@ -811,15 +828,18 @@ app.post('/api/w/:token/media/done', (req, res) => {
 const pct = r => { const v = Math.round((r - 1) * 100); return (v >= 0 ? '+' : '') + v + '%'; };
 function addPct(a, b) { const v = (parseInt(a) || 0) + (parseInt(b) || 0); return (v >= 0 ? '+' : '') + v + '%'; }
 async function edgeTts(text, voiceId, rate) {
-  try { return await edgeTtsOnce(text, voiceId, rate); } catch { await new Promise(r => setTimeout(r, 400)); return edgeTtsOnce(text, voiceId, rate); }
+  try { return await edgeTtsOnce(text, voiceId, rate); } catch { }
+  await new Promise(r => setTimeout(r, 300));
+  try { return await edgeTtsOnce(text, voiceId, rate); } catch { }
+  return edgeTtsOnce(text, voiceId, rate, '-10%'); // запасной вариант: чуть другая высота голоса
 }
-async function edgeTtsOnce(text, voiceId, rate) {
+async function edgeTtsOnce(text, voiceId, rate, pitchOverride) {
   const v = VOICES[voiceId] || VOICES.dmitry;
   const tts = new MsEdgeTTS();
   try {
     await tts.setMetadata(v[0], OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
     const opts = { rate: addPct(pct(rate), v[3]) };
-    if (v[2]) opts.pitch = v[2];
+    if (pitchOverride || v[2]) opts.pitch = pitchOverride || v[2];
     const { audioStream } = tts.toStream(text, opts);
     const chunks = [];
     await new Promise((resolve, reject) => {

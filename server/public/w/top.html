@@ -23,7 +23,16 @@
   .row.first{font-weight:900;transform:scale(1.02);margin:2px 0;animation:in .5s both,glow 2.8s infinite ease-in-out}
   @keyframes in{from{opacity:0;transform:translateX(-14px)}}
   @keyframes glow{0%,100%{box-shadow:0 0 18px var(--glow)}50%{box-shadow:0 0 32px var(--glow)}}
-  .empty{opacity:.7;font-size:calc(var(--fs)*.85);padding:.4em 0;text-align:center}
+  .empty{font-size:calc(var(--fs)*.9);padding:.5em 0;text-align:center;min-height:3.6em;display:flex;align-items:center;justify-content:center}
+  .empty .e1{opacity:.75;animation:fadeIn .6s both}
+  .promo{display:flex;flex-direction:column;align-items:center;gap:.25em;animation:promoIn .7s cubic-bezier(.2,1.3,.4,1) both}
+  .promo .pl{display:flex;align-items:center;gap:.45em;font-family:Unbounded,sans-serif;font-weight:800;font-size:1.15em;letter-spacing:.01em}
+  .promo .pm{width:1.5em;height:1.5em;border-radius:.45em;background:linear-gradient(135deg,#ff3b5c,#ff7a45);display:grid;place-items:center;box-shadow:0 0 16px rgba(255,59,92,.6)}
+  .promo .pm svg{width:.8em;height:.8em}
+  .promo .pt{background:linear-gradient(120deg,#ff3b5c,#ff7a45,#ffc84a);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:900}
+  .promo .ps{font-size:.78em;opacity:.85;font-weight:800}
+  @keyframes promoIn{from{opacity:0;transform:scale(.7) translateY(8px)}}
+  @keyframes fadeIn{from{opacity:0}}
 
   /* 1. Классика KZStream — цвета берутся из выбранной цветовой темы */
   .st-classic .box{background:var(--bg,var(--w-bg));border:1px solid rgba(255,255,255,.08);border-radius:var(--r);box-shadow:0 10px 40px rgba(0,0,0,.35);padding:14px 18px;color:var(--w-fg)}
@@ -83,8 +92,12 @@
     const rows = demo ? DEMO.slice(0, Math.min(10, Math.max(1, +set.count || 5))) : top;
     document.getElementById('list').innerHTML = rows.length
       ? rows.map((t, i) => `<div class="row ${i === 0 ? 'first' : ''}" style="animation-delay:${i * .06}s"><div class="l"><span class="pos">${i + 1}</span><span class="nm">${esc(t.name)}</span></div><span class="sm">${fmt(t.total)}</span></div>`).join('')
-      : '<div class="empty">Станьте первым донатером!</div>';
+      : `<div class="empty">${promo ? PROMO : '<span class="e1">Пока донатов нет — станьте первым!</span>'}</div>`;
   }
+  // пока донатов нет: каждые 30 сек на 7 сек показываем рекламу KZStream
+  const PROMO = `<div class="promo"><div class="pl"><span class="pm"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span><span class="pt">KZStream</span></div><div class="ps">Лучший донат-сервис для TikTok Live</div></div>`;
+  let promo = false;
+  setInterval(() => { if (demo || top.length) return; promo = true; draw(); setTimeout(() => { promo = false; if (!top.length) draw(); }, 7000); }, 30000);
   function apply() {
     theme(set.theme);
     root.className = `st-${pick(set.style, STYLES)} f-${pick(set.font, FONTS)} sz-${pick(set.size, ['md', ...SIZES])}`;

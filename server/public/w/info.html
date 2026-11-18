@@ -2,25 +2,64 @@
 <html lang="ru"><head><meta charset="UTF-8"><title>KZStream — info</title>
 <link rel="stylesheet" href="/w/w.css">
 <style>
-  .panel{display:flex;align-items:center;gap:16px;margin:10px;width:min(900px,96vw);font-weight:800;font-size:20px}
-  .badge{font-family:Unbounded;font-size:12px;padding:6px 10px;border-radius:8px;background:linear-gradient(120deg,var(--w-a),var(--w-b));color:#fff;white-space:nowrap}
-  #line{flex:1;transition:.4s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #line.out{opacity:0;transform:translateY(-10px)}
+  body{padding:10px}
+  .bar{position:relative;display:flex;align-items:stretch;width:calc(100vw - 20px);height:58px;border-radius:16px;background:var(--w-bg);box-shadow:0 10px 34px rgba(0,0,0,.4),0 0 26px color-mix(in srgb,var(--w-a) 30%,transparent);overflow:hidden}
+  .bar::before{content:"";position:absolute;inset:0;border-radius:16px;padding:2px;background:linear-gradient(120deg,var(--w-a),var(--w-b));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;z-index:3;pointer-events:none}
+  .badge{position:relative;z-index:2;flex:none;display:flex;align-items:center;gap:9px;padding:0 18px 0 14px;background:linear-gradient(120deg,var(--w-a),var(--w-b));color:#fff;font-family:Unbounded;font-weight:800;font-size:15px;letter-spacing:.04em;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%)}
+  .badge i{width:26px;height:26px;border-radius:8px;background:rgba(0,0,0,.22);display:grid;place-items:center;font-style:normal}
+  .badge i svg{width:13px;height:13px}
+  .lane{position:relative;flex:1;overflow:hidden;-webkit-mask:linear-gradient(90deg,transparent,#000 40px,#000 calc(100% - 40px),transparent);mask:linear-gradient(90deg,transparent,#000 40px,#000 calc(100% - 40px),transparent)}
+  .track{position:absolute;top:0;bottom:0;display:flex;align-items:center;white-space:nowrap;font-weight:800;font-size:22px;will-change:transform}
+  .it{display:inline-flex;align-items:center}
+  .sep{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 26px;background:linear-gradient(120deg,var(--w-a),var(--w-b));box-shadow:0 0 10px var(--w-a)}
+  .last b{background:linear-gradient(120deg,var(--w-a),var(--w-b));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:900}
 </style></head><body>
-<div class="panel" id="panel" style="display:none"><span class="badge" id="badge">INFO</span><span id="line"></span></div>
+<div class="bar" id="bar" style="display:none">
+  <div class="badge"><i><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></i><span id="label">INFO</span></div>
+  <div class="lane" id="lane"><div class="track" id="track"></div></div>
+</div>
 <script src="/w/widget.js"></script>
 <script>
 (() => {
-  const { on, start, theme, fmt } = KZ; let lines = [], last = null, i = 0, timer = null, interval = 8;
-  function items() { const a = [...lines]; if (last) a.push(`Последний донат: ${last.name} — ${fmt(last.amount)}`); return a; }
-  function show() {
-    const a = items(); if (!a.length) return; const el = document.getElementById('line');
-    el.classList.add('out'); setTimeout(() => { el.textContent = a[i++ % a.length]; el.classList.remove('out'); }, 400);
+  const { on, start, theme, fmt, esc } = KZ;
+  const demo = new URLSearchParams(location.search).has('demo');
+  let S = { lines: ['Донаты через Kaspi — ссылка в описании!'], label: 'INFO', speed: 'normal', dir: 'right', show_last: true }, last = null;
+  const track = document.getElementById('track'), lane = document.getElementById('lane');
+  const SPEED = { slow: 55, normal: 95, fast: 150 }; // пикселей в секунду
+  let x = 0, w = 0, prev = 0, sig = '';
+  function build() {
+    const items = (S.lines || []).filter(Boolean).map(l => `<span class="it">${esc(l)}</span>`);
+    if (S.show_last !== false && last) items.push(`<span class="it last">Последний донат: ${esc(last.name)} — <b>&nbsp;${fmt(last.amount)}</b></span>`);
+    const html = items.join('<span class="sep"></span>');
+    const ns = html + '|' + S.dir; if (ns === sig) return; sig = ns;
+    track.innerHTML = html + '<span class="sep"></span>';
+    document.getElementById('label').textContent = S.label || 'INFO';
+    w = track.scrollWidth;
+    // текст целиком выходит за край и заново входит с другой стороны
+    x = S.dir === 'left' ? lane.clientWidth : -w;
   }
-  function apply(s) { lines = s.info.lines || []; interval = s.info.interval || 8; theme(s.info.theme); clearInterval(timer); timer = setInterval(show, interval * 1000); show(); }
-  on('state', st => { if (!st.plan.info) { document.body.innerHTML = '<p style="font:15px sans-serif;padding:14px">Info-виджет доступен с тарифа Lite</p>'; return; } document.getElementById('panel').style.display = ''; last = st.last; apply(st.settings); });
+  function frame(t) {
+    const dt = prev ? Math.min(0.05, (t - prev) / 1000) : 0; prev = t;
+    const v = SPEED[S.speed] || SPEED.normal, L = lane.clientWidth;
+    if (S.dir === 'left') { x -= v * dt; if (x < -w) x = L; }
+    else { x += v * dt; if (x > L) x = -w; }
+    track.style.transform = `translateX(${x}px)`;
+    requestAnimationFrame(frame);
+  }
+  function apply(s) { S = { ...S, ...s.info }; theme(S.theme); build(); }
+  if (demo) {
+    document.getElementById('bar').style.display = ''; last = { name: 'Әлихан', amount: 5000 };
+    addEventListener('message', e => { if (e.origin === location.origin && e.data && e.data.kzInfo) { S = { ...S, ...e.data.kzInfo }; theme(S.theme); sig = ''; build(); } });
+    theme('default'); build(); requestAnimationFrame(frame); return;
+  }
+  on('state', st => {
+    if (!st.plan.info) { document.body.innerHTML = '<p style="font:15px sans-serif;padding:14px;color:#fff">Info-виджет доступен с тарифа Lite</p>'; return; }
+    document.getElementById('bar').style.display = ''; last = st.last; apply(st.settings);
+  });
   on('settings', apply);
-  on('donation', d => { last = d; });
+  on('donation', d => { last = d; build(); });
+  addEventListener('resize', () => { sig = ''; build(); });
+  requestAnimationFrame(frame);
   start();
 })();
 </script></body></html>

@@ -64,6 +64,48 @@ function voicePicker() {
   $('#a_voices').innerHTML = VOICE_LIST.map(([id, nm, ds]) => `<div class="vc ${VOICESEL === id ? 'on' : ''}" data-v="${id}"><button type="button" class="play" data-play="${id}" title="Прослушать">▶</button><b>${nm}</b><span>${ds}</span></div>`).join('');
 }
 
+// ---------- стиль алерта и «Мои алерты» (главная) ----------
+const ALERT_STYLES = [
+  { id: 'classic', name: 'Классика KZStream', desc: 'Гифка + карточка с именем', free: true, pv: `<div style="padding:6px 10px;border-radius:8px;border:1.5px solid #ff3b5c;background:#0e0f1a;font:800 9px Unbounded;color:#fff">Әлихан — <span style="color:#ff7a45">1 000 ₸</span></div>` },
+  { id: 'meme', name: 'Мем-алерт', desc: 'Ваше видео, снизу имя и текст', free: true, pv: `<div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:62px;height:34px;border-radius:5px;background:linear-gradient(135deg,#333,#111);display:grid;place-items:center;font-size:14px">🎬</div><div style="font:800 7px Unbounded;color:#fff;padding:2px 6px;border-radius:4px;border:1px solid #ff3b5c">Әлихан — 1 000 ₸</div></div>` },
+  { id: 'money', name: 'Денежный дождь', desc: 'Сыплются купюры тенге', free: false, pv: `<div style="position:absolute;inset:0">${[[8, 6, -20, '#2f8fd6'], [40, 30, 15, '#c79a2d'], [70, 4, 30, '#3a9c6a'], [20, 40, 50, '#c06a3a'], [86, 38, -10, '#2f8fd6'], [56, 50, -35, '#3a9c6a']].map(([x, y, r, c]) => `<i style="position:absolute;left:${x}%;top:${y}%;width:30px;height:15px;border-radius:2px;background:${c};transform:rotate(${r}deg);font:800 8px Unbounded;color:#fff;display:grid;place-items:center;font-style:normal">₸</i>`).join('')}</div><b style="position:relative;font:800 15px Unbounded;color:#ffc84a;text-shadow:0 2px 0 #7a4a00">+1 000 ₸</b>` },
+  { id: 'coin', name: 'Монетка — Орёл!', desc: 'Монета летит и падает орлом', free: false, pv: `<div style="width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff7c2,#ffc84a 40%,#d48a00 75%,#9a5c00);display:grid;place-items:center;font:800 9px Unbounded;color:#7a4300;box-shadow:inset 0 0 0 4px rgba(154,92,0,.5)">ОРЁЛ</div>` },
+];
+function alertStyles() {
+  const a = ME.settings.alerts, L = a.layout || 'classic', pool = a.pool || [];
+  const mine = FILES.filter(f => /^(video|image)\//.test(f.mime));
+  $('#myAlerts').innerHTML = mine.map(f => `<div class="ma ${pool.includes(f.url) ? 'on' : ''}" data-ma="${f.url}">${f.mime.startsWith('video') ? `<video src="${f.url}#t=0.5" muted preload="metadata"></video>` : `<img src="${f.url}">`}<span class="ck">${pool.includes(f.url) ? '✓' : ''}</span><span class="nmm">${esc(f.name)}</span></div>`).join('') || '<div class="muted" style="font-size:13px;grid-column:1/-1">Загрузите своё видео или гифку — например, мем. При донате оно появится, снизу будет имя донатера и его текст, а голос прочитает сообщение.</div>';
+  $('#asGrid').innerHTML = ALERT_STYLES.map(st => `<div class="as ${L === st.id ? 'on' : ''}" data-as="${st.id}"><div class="ap">${st.pv}</div>${!st.free && !ME.plan.shop ? '<span class="tg">🔒 Lite</span>' : ''}<b>${st.name}</b><span>${st.desc}</span></div>`).join('');
+}
+async function saveAlerts(part, msg) {
+  try { const r = await api('/api/settings', { method: 'PUT', body: { alerts: part } }); ME.settings = r.settings; if (r.warnings?.length) toast(r.warnings.join('. '), true); else toast(msg || 'Сохранено ✓'); alertStyles(); }
+  catch (e) { toast(e.message, true); }
+}
+
+// ---------- страница доната: картинки и «Поделиться» ----------
+function pagePreviews() {
+  const a = val('pg_avatar'), b = val('pg_banner');
+  $('#avPrev').style.backgroundImage = a ? `url("${a}")` : ''; $('#avPrev').classList.toggle('has', !!a);
+  $('#bnPrev').style.backgroundImage = b ? `url("${b}")` : ''; $('#bnPrev').classList.toggle('has', !!b);
+}
+function shareBlock() {
+  const url = ME.urls.page, text = `Поддержать меня донатом через Kaspi: ${url}`;
+  val('shareUrl', url); $('#shareOpen').href = url;
+  $('#shareTg').href = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent('Поддержать меня донатом через Kaspi');
+  $('#shareWa').href = 'https://wa.me/?text=' + encodeURIComponent(text);
+  try {
+    const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+    const n = qr.getModuleCount(), cv = $('#shareQr'), c = cv.getContext('2d'), sz = 180, cell = sz / (n + 2);
+    c.fillStyle = '#fff'; c.fillRect(0, 0, sz, sz); c.fillStyle = '#0e0f1a';
+    for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (qr.isDark(r, k)) c.fillRect(Math.floor((k + 1) * cell), Math.floor((r + 1) * cell), Math.ceil(cell), Math.ceil(cell));
+    // логотип KZStream в центре
+    const m = sz / 2, lw = 34; c.fillStyle = '#fff'; c.fillRect(m - lw / 2 - 3, m - lw / 2 - 3, lw + 6, lw + 6);
+    const g = c.createLinearGradient(m - lw / 2, m - lw / 2, m + lw / 2, m + lw / 2); g.addColorStop(0, '#ff3b5c'); g.addColorStop(1, '#ff7a45');
+    c.fillStyle = g; c.beginPath(); c.roundRect(m - lw / 2, m - lw / 2, lw, lw, 8); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.moveTo(m - 6, m - 9); c.lineTo(m - 6, m + 9); c.lineTo(m + 9, m); c.closePath(); c.fill();
+  } catch { }
+}
+
 function themePickers() {
   $$('select[data-themes]').forEach(sel => {
     sel.style.display = 'none';
@@ -133,6 +175,8 @@ function render() {
   val('a_gif', a.gif); val('a_sound', a.sound);
   ['show_msg', 'tts'].forEach(k => val('a_' + k, a[k]));
   VOICESEL = a.tts_voice || 'dmitry'; voicePicker();
+  if (!$('#tVoice').options.length) $('#tVoice').innerHTML = VOICE_LIST.map(([id, nm, ds]) => `<option value="${id}">${nm} — ${ds}</option>`).join('');
+  val('tVoice', VOICESEL); alertStyles();
   val('c_words', s.censor.words); val('c_strip_links', s.censor.strip_links);
   listEdit('#nicksList', Object.entries(s.nicks || {}).map(([k, v]) => ({ k, v })), [['k', 'Имя в Kaspi'], ['v', 'Ник']]);
   listEdit('#varList', a.variations || [], [['amount', 'Сумма', 'number'], ['gif', 'Гифка (URL)', 'file:image,video'], ['sound', 'Звук (URL)', 'file:audio'], ['text', 'Подпись']]);
@@ -150,7 +194,8 @@ function render() {
   GOALSEL = s.goal.style || 'classic'; goalPickers();
   if (!$('#goalFrame').src) { $('#goalFrame').onload = () => setTimeout(postGoal, 400); $('#goalFrame').src = ME.urls.widgets.goal + '&demo'; } else postGoal();
   listEdit('#infoList', (s.info.lines || []).map(v => ({ v })), [['v', 'Текст строки']]);
-  val('i_interval', s.info.interval); val('i_theme', s.info.theme);
+  val('i_label', s.info.label || 'INFO'); val('i_dir', s.info.dir || 'right'); val('i_speed', s.info.speed || 'normal'); val('i_show_last', s.info.show_last !== false); val('i_theme', s.info.theme);
+  if (!$('#infoFrame').src) { $('#infoFrame').onload = () => setTimeout(postInfo, 300); $('#infoFrame').src = ME.urls.widgets.info + '&demo'; } else postInfo();
   val('tm_sec', s.timer.sec_per_100); val('tm_theme', s.timer.theme);
   // рулетка
   val('r_enabled', s.roulette.enabled); val('r_min', s.roulette.min); val('r_style', s.roulette.style);
@@ -160,6 +205,7 @@ function render() {
   // страница
   const pg = s.page;
   val('pg_title', pg.title); val('pg_description', pg.description); val('pg_kaspi', pg.kaspi); val('pg_receiver', pg.receiver); val('pg_min', pg.min_amount); val('pg_cards', pg.cards); val('pg_avatar', pg.avatar); val('pg_banner', pg.banner); val('pg_color', pg.color || '#ff3b5c');
+  pagePreviews(); shareBlock();
   Object.keys(pg.socials).forEach(k => val('s_' + k, pg.socials[k]));
   // pro
   listEdit('#hkList', s.hotkeys, [['min', 'От, ₸', 'number'], ['max', 'До, ₸ (0 = ∞)', 'number'], ['keys', 'Клавиши, напр. ctrl+shift+1']]);
@@ -218,7 +264,7 @@ const collectors = {
     if (!ME.plan.shop && !goalFree(GOALSEL)) throw new Error('Стиль «' + GOAL_DESIGNS.find(d => d.id === GOALSEL).name + '» доступен с тарифа Lite. Бесплатно: Классика, Неон, Батарейка');
     return { goal: { title: val('g_title'), target: t, base: val('g_base'), theme: val('g_theme'), style: GOALSEL } };
   },
-  info: () => ({ info: { lines: readList('#infoList').map(r => r.v), interval: val('i_interval'), theme: val('i_theme') } }),
+  info: () => ({ info: { lines: readList('#infoList').map(r => r.v), interval: 8, label: val('i_label') || 'INFO', dir: val('i_dir'), speed: val('i_speed'), show_last: val('i_show_last'), theme: val('i_theme') } }),
   timer: () => ({ timer: { sec_per_100: val('tm_sec'), theme: val('tm_theme') } }),
   roulette: () => ({ roulette: { enabled: val('r_enabled'), min: val('r_min'), style: val('r_style'), tasks: readList('#taskList').map(r => r.v) } }),
   media: () => ({ media: { enabled: val('m_enabled'), min: val('m_min'), max_sec: val('m_max'), volume: +val('m_volume') } }),
@@ -247,6 +293,42 @@ document.addEventListener('click', e => {
 $('#t_styles').onclick = e => { const d = e.target.closest('.dz'); if (!d) return; TOPSEL.style = d.dataset.s; topPickers(); postTop(); if (d.classList.contains('locked')) toast('Это предпросмотр. Чтобы включить дизайн в эфире, подключите Lite', true); };
 $('#t_fonts').onclick = e => { const b = e.target.closest('button'); if (!b) return; TOPSEL.font = b.dataset.f; topPickers(); postTop(); if (!ME.plan.shop && b.dataset.f !== 'manrope') toast('Это предпросмотр. Шрифты доступны с тарифа Lite', true); };
 ['input', 'change'].forEach(ev => $('.topcfg').addEventListener(ev, postTop));
+function postInfo() { try { $('#infoFrame').contentWindow.postMessage({ kzInfo: collectors.info().info }, location.origin); } catch { } }
+['input', 'change', 'click'].forEach(ev => $('.infocfg').addEventListener(ev, () => setTimeout(postInfo, 50)));
+$('#tVoicePlay').onclick = () => { try { voiceAudio?.pause(); } catch { } voiceAudio = new Audio('/api/tts/sample?voice=' + val('tVoice')); voiceAudio.play().catch(() => toast('Не удалось воспроизвести', true)); };
+$('#asGrid').onclick = e => { const c = e.target.closest('.as'); if (!c) return; const st = ALERT_STYLES.find(x => x.id === c.dataset.as);
+  if (!st.free && !ME.plan.shop) return toast('«' + st.name + '» — с тарифа Lite. Раздел «Тариф»', true);
+  if (st.id === 'meme' && !(ME.settings.alerts.pool || []).length) toast('Выберите или загрузите своё видео в «Мои алерты»', true);
+  saveAlerts({ layout: st.id }, 'Стиль «' + st.name + '» включён — отправьте тестовый донат'); };
+$('#myAlerts').onclick = e => { const m = e.target.closest('.ma'); if (!m) return; let pool = [...(ME.settings.alerts.pool || [])];
+  pool = pool.includes(m.dataset.ma) ? pool.filter(x => x !== m.dataset.ma) : (ME.plan.shop ? [...pool, m.dataset.ma] : [m.dataset.ma]);
+  saveAlerts({ pool, layout: pool.length ? 'meme' : (ME.settings.alerts.layout === 'meme' ? 'classic' : ME.settings.alerts.layout) }, pool.length ? (pool.length > 1 ? `Мем-алерт: ${pool.length} видео, при донате выпадет случайное` : 'Мем-алерт включён') : 'Убрано'); };
+$('#myAlertUp').onchange = async e => { const added = [];
+  for (const f of e.target.files) { if (f.size > 8 * 1048576) { toast(f.name + ': больше 8 МБ', true); continue; }
+    try { const r = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': f.type, 'X-Filename': encodeURIComponent(f.name) }, body: f }).then(r => r.json()); if (r.error) throw new Error(r.error); added.push(r.url); } catch (er) { toast(er.message, true); } }
+  e.target.value = ''; if (!added.length) return;
+  FILES = await api('/api/files'); fillFileSelects();
+  const pool = ME.plan.shop ? [...(ME.settings.alerts.pool || []), ...added].slice(0, 30) : [added[0]];
+  saveAlerts({ pool, layout: 'meme' }, 'Загружено и включено как мем-алерт ✓'); };
+$('#shareNative').onclick = async () => { const url = ME.urls.page;
+  if (navigator.share) { try { await navigator.share({ title: 'Донат через Kaspi', text: 'Поддержать меня донатом через Kaspi', url }); } catch { } }
+  else { navigator.clipboard?.writeText(url); toast('Ссылка скопирована — вставьте её куда нужно'); } };
+$('#shareQrDl').onclick = () => { const a = document.createElement('a'); a.download = `KZStream-QR-${ME.nick}.png`; a.href = $('#shareQr').toDataURL('image/png'); a.click(); };
+document.addEventListener('change', async e => {
+  const inp = e.target.closest('[data-up]'); if (!inp || !inp.files[0]) return;
+  const f = inp.files[0]; inp.value = '';
+  if (!/^image\//.test(f.type)) return toast('Нужна картинка: JPG, PNG, GIF или WEBP', true);
+  if (f.size > 8 * 1048576) return toast('Картинка больше 8 МБ', true);
+  try {
+    toast('Загружаем…');
+    const r = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': f.type, 'X-Filename': encodeURIComponent(f.name) }, body: f }).then(r => r.json());
+    if (r.error) throw new Error(r.error);
+    FILES = await api('/api/files'); fillFileSelects();
+    const keep = { pg_avatar: val('pg_avatar'), pg_banner: val('pg_banner') }; keep[inp.dataset.up] = r.url;
+    Object.entries(keep).forEach(([k, v]) => val(k, v)); pagePreviews(); save('page');
+  } catch (er) { toast(er.message, true); }
+});
+document.addEventListener('click', e => { const u = e.target.closest('[data-unset]'); if (!u) return; val(u.dataset.unset, ''); pagePreviews(); save('page'); });
 $('#goalReset').onclick = () => { if (!confirm('Сбросить прогресс цели? Собранная сумма начнётся с нуля (донаты не удаляются).')) return; save('goal', { reset: true }); postGoal({ kzGoalReset: 1 }); };
 $('#g_styles').onclick = e => { const d = e.target.closest('.gs'); if (!d) return; GOALSEL = d.dataset.g; goalPickers(); postGoal(); if (!ME.plan.shop && !goalFree(GOALSEL)) toast('Это предпросмотр. Стиль включится в эфире с тарифом Lite', true); };
 ['g_title', 'g_target', 'g_base', 'g_theme'].forEach(id => ['input', 'change'].forEach(ev => $('#' + id).addEventListener(ev, () => { postGoal(); goalDirty(); })));
@@ -262,7 +344,7 @@ $('#a_voices').onclick = e => {
 
 // ---------- тестовый донат ----------
 $('#tSend').onclick = async () => {
-  try { await api('/api/donations/test', { method: 'POST', body: { name: val('tName'), amount: +val('tAmount'), message: val('tMsg') } }); toast('Тестовый донат отправлен в эфир'); }
+  try { await api('/api/donations/test', { method: 'POST', body: { name: val('tName'), amount: +val('tAmount'), message: val('tMsg'), voice: val('tVoice') } }); toast('Тестовый донат отправлен в эфир'); }
   catch (e) { toast(e.message, true); }
 };
 

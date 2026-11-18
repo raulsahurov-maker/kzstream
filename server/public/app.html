@@ -72,6 +72,30 @@
   .vc b{display:block;font-size:13.5px}.vc span{font-size:11.5px;color:var(--muted)}
   .vc .play{position:absolute;right:7px;top:7px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;font-size:11px}
   .vc .play:hover{background:var(--accent)}
+  .share-card{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:center;background:linear-gradient(120deg,rgba(255,59,92,.1),rgba(255,122,69,.05) 60%,transparent),var(--card)}
+  @media(max-width:760px){.share-card{grid-template-columns:1fr}}
+  .share-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .qr-box{background:#fff;border-radius:16px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px;justify-self:center}
+  .qr-box span{color:#111;font-size:12px;font-weight:800}
+  .up-banner{height:110px;border-radius:12px;border:2px dashed var(--line);background:var(--bg2) center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+  .up-banner.has span{display:none}.up-banner.has{border-style:solid}
+  .up-ava{width:76px;height:76px;border-radius:50%;border:2px dashed var(--line);background:var(--bg2) center/cover no-repeat;display:grid;place-items:center;font-size:28px;flex:none}
+  .up-ava.has{border:3px solid var(--accent);font-size:0}
+  .up-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .as-sec{font-size:13px;font-weight:800;margin:4px 0 8px}
+  .my-alerts{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+  .ma{position:relative;border-radius:12px;overflow:hidden;border:2px solid var(--line);cursor:pointer;aspect-ratio:16/11;background:#000}
+  .ma video,.ma img{width:100%;height:100%;object-fit:cover;display:block}
+  .ma.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,59,92,.18)}
+  .ma .ck{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.6);border:2px solid #fff;display:grid;place-items:center;font-size:12px;font-weight:900}
+  .ma.on .ck{background:var(--accent)}
+  .ma .nmm{position:absolute;left:0;right:0;bottom:0;font-size:10.5px;font-weight:700;padding:3px 6px;background:linear-gradient(transparent,rgba(0,0,0,.85));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .as-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .as{position:relative;border:2px solid var(--line);border-radius:14px;padding:10px;cursor:pointer;background:var(--bg2);transition:.15s}
+  .as:hover{border-color:#3a4060}.as.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,59,92,.16)}
+  .as .ap{height:70px;border-radius:9px;background:#0b0c16;display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden;position:relative}
+  .as b{display:block;font-size:13.5px;margin-top:7px}.as span{font-size:11.5px;color:var(--muted)}
+  .as .tg{position:absolute;top:8px;right:8px;font-size:10px;font-weight:800;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.7)}
   .designs{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
   .dz{position:relative;border-radius:14px;border:2px solid var(--line);padding:8px;cursor:pointer;background:var(--bg2);transition:.15s}
   .dz:hover{border-color:#3a4060}.dz.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,59,92,.16)}
@@ -162,7 +186,17 @@
         <p class="hint">Проверьте, как алерт выглядит в эфире.</p>
         <div class="row"><div class="field"><input id="tName" placeholder="Имя" value="Тестовый донатер"></div><div class="field"><input id="tAmount" type="number" value="1000"></div></div>
         <div class="field"><input id="tMsg" placeholder="Сообщение" value="Привет! Это тестовый донат 🔥"></div>
+        <div class="field"><label>Голос озвучки для теста</label><div style="display:flex;gap:8px"><select id="tVoice" style="flex:1"></select><button class="btn btn-ghost" id="tVoicePlay" type="button" title="Прослушать">▶</button></div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="tSend">Отправить тестовый донат</button><button class="btn btn-ghost" id="tSound">🔊 Включить звук в превью</button></div>
+      </div>
+      <div class="card" id="alertStyles">
+        <h3>Стиль алерта</h3>
+        <p class="hint">Выберите, как донат появится в эфире. Нажмите и сразу отправьте тестовый донат.</p>
+        <div class="as-sec">Мои алерты <span class="muted" style="font-weight:600">— свои видео и гифки: снизу имя донатера, текст и озвучка</span></div>
+        <div class="my-alerts" id="myAlerts"></div>
+        <label class="btn btn-ghost btn-sm" style="margin:8px 0 14px;display:inline-flex;cursor:pointer">+ Загрузить видео или гифку<input type="file" id="myAlertUp" accept="video/mp4,video/webm,image/gif,image/webp,image/png,image/jpeg" hidden multiple></label>
+        <div class="as-sec">Стили KZStream</div>
+        <div class="as-grid" id="asGrid"></div>
       </div>
       <div class="card" style="grid-column:1/-1">
         <h3>Превью — так алерт выглядит в TikTok Live</h3><p class="hint">Отправьте тестовый донат и смотрите. Чтобы слышать звук и озвучку здесь, нажмите «Включить звук в превью».</p>
@@ -330,11 +364,18 @@
         </div>
         <p class="muted" style="font-size:12.5px;margin-top:10px">Виджет в эфире переключится сам — ссылку в TikTok Live Studio менять не нужно. Цель — до 2 000 000 ₸. Классика, Неон и Батарейка — бесплатно, остальные стили — с тарифа Lite.</p>
       </div>
-      <div class="card">
-        <h3>Info-виджет <span class="lock" data-need="info">Lite</span></h3><p class="hint">Бегущие строки + последний донат.</p>
+      <div class="card infocfg" style="grid-column:1/-1">
+        <h3>Info-виджет <span class="lock" data-need="info">Lite</span></h3><p class="hint">Бегущая строка: впишите подробности (правила, ссылки, акции) — текст плавно уходит в сторону и заходит с другой, чтобы всё было видно.</p>
+        <div class="gl-prev" style="margin-bottom:14px"><div class="gl-cap">ПРЕВЬЮ · ТАК В ЭФИРЕ</div><iframe id="infoFrame" title="Превью info" style="height:82px"></iframe></div>
         <div class="list-edit" id="infoList"></div>
         <button class="btn btn-ghost btn-sm" id="addInfo" style="margin-bottom:12px">+ Строка</button>
-        <div class="row"><div class="field"><label>Смена каждые, сек</label><input type="number" id="i_interval"></div><div class="field"><label>Тема</label><select id="i_theme" data-themes></select></div></div>
+        <div class="row">
+          <div class="field"><label>Надпись слева</label><input id="i_label" maxlength="20" placeholder="INFO"></div>
+          <div class="field"><label>Направление</label><select id="i_dir"><option value="right">Уходит вправо, приходит слева</option><option value="left">Уходит влево, приходит справа</option></select></div>
+          <div class="field"><label>Скорость</label><select id="i_speed"><option value="slow">Медленно</option><option value="normal">Обычно</option><option value="fast">Быстро</option></select></div>
+        </div>
+        <label class="check"><input type="checkbox" id="i_show_last"> Показывать последний донат в строке</label>
+        <div class="field"><label>Цвета</label><select id="i_theme" data-themes></select></div>
         <button class="btn btn-primary" data-save="info">Сохранить</button>
       </div>
       <div class="card">
@@ -388,6 +429,22 @@
   <!-- СТРАНИЦА -->
   <section class="page" id="p-page">
     <div class="top"><h1>Страница доната</h1><button class="btn btn-primary" data-save="page">Сохранить</button></div>
+    <div class="card share-card" style="margin-bottom:18px">
+      <div class="share-l">
+        <h3>Поделитесь своей страницей доната</h3>
+        <p class="hint">Готовая ссылка — вставьте её в описание профиля TikTok, в закреп эфира или отправьте друзьям. Зритель откроет её и увидит, как отправить донат через Kaspi.</p>
+        <div class="copy-row"><input readonly id="shareUrl"><button class="btn btn-primary" data-copy="shareUrl">Копировать</button></div>
+        <div class="share-btns">
+          <button class="btn btn-ghost btn-sm" id="shareNative">📤 Поделиться</button>
+          <a class="btn btn-ghost btn-sm" id="shareTg" target="_blank" rel="noopener">✈️ Telegram</a>
+          <a class="btn btn-ghost btn-sm" id="shareWa" target="_blank" rel="noopener">💬 WhatsApp</a>
+          <a class="btn btn-ghost btn-sm" id="shareOpen" target="_blank">👁 Открыть страницу</a>
+          <button class="btn btn-ghost btn-sm" id="shareQrDl">⬇ Скачать QR-код</button>
+        </div>
+        <p class="muted" style="font-size:12.5px;margin-top:10px">Для TikTok: Профиль → «Изменить профиль» → «Био» → вставьте ссылку. QR-код можно поставить в кадр эфира.</p>
+      </div>
+      <div class="qr-box"><canvas id="shareQr" width="180" height="180"></canvas><span>Наведите камеру</span></div>
+    </div>
     <div class="grid g2">
       <div class="card">
         <div class="field"><label>Заголовок</label><input id="pg_title"></div>
@@ -398,9 +455,15 @@
         <div class="field"><label>Карты других банков (необязательно)</label><input id="pg_cards" placeholder="Halyk 4400 **** **** 1234"></div>
       </div>
       <div class="card">
-        <h3>Оформление</h3><p class="hint">Картинки сначала загрузите в «Хранилище».</p>
-        <div class="field"><label>Аватар</label><select id="pg_avatar" data-files="image"></select></div>
-        <div class="field"><label>Баннер</label><select id="pg_banner" data-files="image"></select></div>
+        <h3>Оформление</h3><p class="hint">Загрузите аватарку и баннер прямо с телефона или компьютера (JPG, PNG, GIF, WEBP до 8 МБ).</p>
+        <div class="field"><label>Баннер (шапка страницы)</label>
+          <div class="up-banner" id="bnPrev"><span>Баннер не загружен · лучше 1500×500</span></div>
+          <div class="up-btns"><label class="btn btn-ghost btn-sm">📁 Загрузить баннер<input type="file" accept="image/*" hidden data-up="pg_banner"></label><button class="btn btn-ghost btn-sm" type="button" data-unset="pg_banner">Убрать</button></div>
+          <select id="pg_banner" data-files="image" hidden></select></div>
+        <div class="field"><label>Аватарка</label>
+          <div style="display:flex;align-items:center;gap:14px"><div class="up-ava" id="avPrev">👤</div>
+          <div class="up-btns" style="margin:0"><label class="btn btn-ghost btn-sm">📁 Загрузить аватарку<input type="file" accept="image/*" hidden data-up="pg_avatar"></label><button class="btn btn-ghost btn-sm" type="button" data-unset="pg_avatar">Убрать</button></div></div>
+          <select id="pg_avatar" data-files="image" hidden></select></div>
         <div class="field"><label>Цвет страницы</label><input type="color" id="pg_color" style="height:46px;padding:4px"></div>
       </div>
       <div class="card">
@@ -477,6 +540,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="/js/qrcode.js"></script>
 <script src="/js/dashboard.js"></script>
 </body>
 </html>

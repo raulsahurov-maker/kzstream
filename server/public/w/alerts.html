@@ -17,9 +17,35 @@
   @keyframes b{50%{transform:translateY(-12px) rotate(-6deg)}}
   .spark{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--w-b);animation:sp 1.2s ease-out forwards}
   @keyframes sp{from{opacity:1;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+
+  /* МЕМ: своё видео/гифка, снизу имя и текст */
+  .meme{display:flex;flex-direction:column;align-items:center;opacity:0;transform:scale(.8);transition:.5s cubic-bezier(.2,1.35,.4,1)}
+  .meme.show{opacity:1;transform:none}.meme.hide{opacity:0;transform:scale(.92);transition:.35s}
+  .meme .mv{max-width:min(620px,80vw);max-height:56vh;border-radius:18px;display:block;box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 0 3px rgba(255,255,255,.08)}
+  .cap{margin-top:14px;text-align:center;max-width:min(760px,90vw);padding:12px 26px 14px;border-radius:18px;background:var(--w-bg);position:relative;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+  .cap::before{content:"";position:absolute;inset:0;border-radius:18px;padding:2px;background:linear-gradient(120deg,var(--w-a),var(--w-b));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+  .cap .nm{font-family:Unbounded;font-weight:800;font-size:28px;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+  .cap .nm .sum{background:linear-gradient(120deg,var(--w-a),var(--w-b));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cap .tx{margin-top:6px;font-size:22px;font-weight:700;line-height:1.35;word-wrap:break-word}
+  /* ДЕНЕЖНЫЙ ДОЖДЬ */
+  #rain{position:fixed;inset:0;pointer-events:none;z-index:0}
+  .money-card{z-index:2}
+  .money-card .big{font-family:Unbounded;font-weight:800;font-size:64px;line-height:1;background:linear-gradient(180deg,#fff6c8,#ffc84a 45%,#e08a00);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 #7a4a00) drop-shadow(0 10px 24px rgba(0,0,0,.6));animation:pulse .9s ease-in-out infinite alternate}
+  @keyframes pulse{to{transform:scale(1.06)}}
+  /* МОНЕТКА */
+  .coin-wrap{perspective:900px;height:230px;display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+  .coin{width:190px;height:190px;position:relative;transform-style:preserve-3d;animation:flip 2.4s cubic-bezier(.25,.8,.3,1) forwards}
+  .coin .face{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;flex-direction:column;
+    background:radial-gradient(circle at 35% 30%,#fff7c2,#ffc84a 40%,#d48a00 75%,#9a5c00);box-shadow:inset 0 0 0 9px rgba(255,255,255,.25),inset 0 0 0 14px rgba(154,92,0,.55),0 16px 40px rgba(0,0,0,.6)}
+  .coin .face b{font-family:Unbounded;font-weight:800;color:#7a4300;text-shadow:0 1px 0 rgba(255,255,255,.6)}
+  .coin .front b{font-size:90px}.coin .back{transform:rotateY(180deg)}
+  .coin .back svg{width:120px;height:90px}.coin .back b{font-size:15px;letter-spacing:.12em;margin-top:2px}
+  @keyframes flip{0%{transform:translateY(160px) rotateY(0) scale(.6)}35%{transform:translateY(-120px) rotateY(1440deg) scale(1.05)}75%{transform:translateY(10px) rotateY(2340deg) scale(1)}88%{transform:translateY(-14px) rotateY(2340deg)}100%{transform:translateY(0) rotateY(2340deg)}}
+  .verdict{font-family:Unbounded;font-weight:800;font-size:40px;letter-spacing:.06em;background:linear-gradient(180deg,#fff6c8,#ffc84a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #7a4a00);opacity:0;transform:scale(.4);transition:.45s cubic-bezier(.2,1.6,.4,1);margin-bottom:10px}
+  .verdict.on{opacity:1;transform:none}
 </style></head>
 <body>
-<div id="stage"></div>
+<canvas id="rain"></canvas><div id="stage"></div>
 <div class="unmute" id="unmute">🔊 Нажмите, чтобы включить звук (в OBS не нужно)</div>
 <script src="/w/widget.js"></script>
 <script>
@@ -58,9 +84,9 @@
       speechSynthesis.speak(u);
     });
   }
-  async function speak(text) {
+  async function speak(text, voice) {
     for (const c of chunks(text)) {
-      const r = await playAudio(`/api/tts?t=${encodeURIComponent(token)}&voice=${S.tts_voice || 'dmitry'}&rate=${S.tts_rate || 1}&text=${encodeURIComponent(c)}`);
+      const r = await playAudio(`/api/tts?t=${encodeURIComponent(token)}&voice=${voice || S.tts_voice || 'dmitry'}&rate=${S.tts_rate || 1}&text=${encodeURIComponent(c)}`);
       if (r === 'error') { await speakBrowser(c); }
       if (r === 'blocked') return;
     }
@@ -70,27 +96,87 @@
     if (/\.(mp4|webm)$/i.test(src)) return `<video class="media" src="${esc(src)}" autoplay muted loop playsinline></video>`;
     return `<img class="media" src="${esc(src)}">`;
   }
+  const cleanTts = m => String(m || '').replace(/(https?:\/\/|www\.)\S+/gi, ' ').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}️]/gu, ' ').replace(/\s+/g, ' ').trim();
+  const isVid = u => /\.(mp4|webm)(\?|$)/i.test(u || '');
+  function sparks(box) { for (let i = 0; i < 18; i++) { const sp = document.createElement('i'); sp.className = 'spark'; const a = Math.random() * 6.28, r = 120 + Math.random() * 160; sp.style.cssText = `left:50%;top:50%;--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r}px;animation-delay:${.3 + Math.random() * .3}s;opacity:0`; box.appendChild(sp); } }
+  const capHtml = d => `<div class="nm">${esc(d.name)} — <span class="sum">${fmt(d.amount)}</span></div>${d.message ? `<div class="tx">${esc(d.message)}</div>` : ''}`;
+  // проигрывание видео с его звуком (мем-алерт); гифка просто висит указанное время
+  function playVideo(el) {
+    return new Promise(res => {
+      const cap = setTimeout(done, 20000);
+      function done() { clearTimeout(cap); skipFn = null; res(); }
+      el.volume = S.volume; el.muted = false; el.onended = done; el.onerror = done;
+      skipFn = () => { el.pause(); done(); };
+      el.play().catch(() => { el.muted = true; el.play().catch(() => {}); document.getElementById('unmute').style.display = 'block'; setTimeout(done, 6000); });
+    });
+  }
+  // --- денежный дождь: купюры тенге рисуются кодом ---
+  const cv = document.getElementById('rain'), cx = cv.getContext('2d'); let bills = [], rainOn = false;
+  function bill(c, v, w, h) {
+    const g = c.createLinearGradient(0, 0, w, h); g.addColorStop(0, v.c1); g.addColorStop(1, v.c2);
+    c.fillStyle = g; c.beginPath(); c.roundRect(-w / 2, -h / 2, w, h, 5); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 2; c.strokeRect(-w / 2 + 5, -h / 2 + 5, w - 10, h - 10);
+    c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.arc(-w / 4, 0, h / 3.2, 0, 7); c.fill();
+    c.fillStyle = '#fff'; c.font = `800 ${h * .42}px Unbounded, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('₸', -w / 4, 1); c.font = `800 ${h * .26}px Unbounded, sans-serif`; c.fillText(v.t, w / 5, 0);
+  }
+  const NOTES = [{ t: '20 000', c1: '#c06a3a', c2: '#6b2f1a' }, { t: '10 000', c1: '#2f8fd6', c2: '#164e86' }, { t: '5 000', c1: '#c79a2d', c2: '#7d5a12' }, { t: '2 000', c1: '#3a9c6a', c2: '#195b3c' }];
+  function rain(ms) {
+    cv.width = innerWidth; cv.height = innerHeight; rainOn = true;
+    const end = Date.now() + ms;
+    const spawn = () => { for (let i = 0; i < 3; i++) bills.push({ x: Math.random() * cv.width, y: -60 - Math.random() * 200, vy: 2.2 + Math.random() * 3, vx: -1 + Math.random() * 2, r: Math.random() * 6, vr: -.06 + Math.random() * .12, f: Math.random() * 6, n: NOTES[Math.floor(Math.random() * NOTES.length)], s: .7 + Math.random() * .6 }); };
+    (function loop() {
+      if (Date.now() < end && bills.length < 140) spawn();
+      cx.clearRect(0, 0, cv.width, cv.height);
+      bills = bills.filter(b => b.y < cv.height + 80);
+      for (const b of bills) { b.y += b.vy; b.x += b.vx + Math.sin(b.f += .05) * 1.2; b.r += b.vr;
+        cx.save(); cx.translate(b.x, b.y); cx.rotate(b.r); cx.scale(b.s * Math.cos(b.f * .7), b.s); bill(cx, b.n, 120, 58); cx.restore(); }
+      if (bills.length || Date.now() < end) requestAnimationFrame(loop); else { rainOn = false; cx.clearRect(0, 0, cv.width, cv.height); }
+    })();
+  }
+  // звуки, созданные кодом (без чужих файлов)
+  let AC = null; const ac = () => AC || (AC = new (window.AudioContext || window.webkitAudioContext)());
+  function tone(f, t0, dur, type = 'sine', vol = .25) { try { const c = ac(), o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, c.currentTime + t0); g.gain.setValueAtTime(vol * S.volume, c.currentTime + t0); g.gain.exponentialRampToValueAtTime(.001, c.currentTime + t0 + dur); o.connect(g).connect(c.destination); o.start(c.currentTime + t0); o.stop(c.currentTime + t0 + dur + .05); } catch { } }
+  const cashSound = () => { tone(1320, 0, .12, 'square', .12); tone(1760, .1, .5, 'triangle', .22); tone(2640, .12, .6, 'sine', .12); for (let i = 0; i < 8; i++) tone(3000 + Math.random() * 2000, .3 + i * .06, .08, 'triangle', .05); };
+  const coinSound = () => { for (let i = 0; i < 10; i++) tone(2200 + i * 80, i * .2, .07, 'triangle', .08); tone(3520, 2.3, .9, 'sine', .25); tone(4186, 2.35, .9, 'sine', .15); };
+  const EAGLE = `<svg viewBox="0 0 120 90"><g fill="#7a4300"><path d="M60 22c-4 0-7 3-7 7 0 2 1 4 2 5l-6 3c-12-14-30-20-46-18 10 6 18 13 23 22-8-2-15-1-21 2 11 2 20 6 27 12l-6 6h8l2-3c4 2 8 3 12 3l-2 10 6-6 6 6-2-10c4 0 8-1 12-3l2 3h8l-6-6c7-6 16-10 27-12-6-3-13-4-21-2 5-9 13-16 23-22-16-2-34 4-46 18l-6-3c1-1 2-3 2-5 0-4-3-7-7-7z"/><circle cx="57" cy="27" r="1.6" fill="#ffd36a"/><path d="M53 29l-5 2 5 1z"/></g><g fill="none" stroke="#7a4300" stroke-width="2.4"><path d="M18 14c8-9 18-12 26-12M102 14c-8-9-18-12-26-12" opacity=".55"/></g></svg>`;
+
   async function next() {
     if (busy || !queue.length || !S) return; busy = true;
-    const d = queue.shift(), v = d.variation;
-    const stage = document.getElementById('stage');
-    stage.innerHTML = `<div class="alert">${mediaEl(v?.gif || S.gif)}<div class="box">
-      <div class="title">${esc(d.name)} — <span class="sum">${fmt(d.amount)}</span></div>
-      ${v?.text ? `<div class="vtext">${esc(v.text)}</div>` : ''}
-      ${d.message ? `<div class="msg">${esc(d.message)}</div>` : ''}</div></div>`;
-    const el = stage.firstElementChild; requestAnimationFrame(() => el.classList.add('show'));
-    const box = el.querySelector('.box');
-    for (let i = 0; i < 18; i++) { const sp = document.createElement('i'); sp.className = 'spark'; const a = Math.random() * 6.28, r = 120 + Math.random() * 160; sp.style.cssText = `left:50%;top:50%;--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r}px;animation-delay:${.3 + Math.random() * .3}s;opacity:0`; box.appendChild(sp); }
-    const t0 = Date.now();
-    await playAudio(v?.sound || S.sound || DEF_SOUND);
-    if (d.voice_url) await playAudio(d.voice_url, 1);
-    if (d.tts) {
-      const txt = String(d.message || '').replace(/(https?:\/\/|www\.)\S+/gi, ' ').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\uFE0F]/gu, ' ').replace(/\s+/g, ' ').trim(); // озвучиваем только сообщение доната
-      if (txt && txt.trim()) await speak(txt);
+    const d = queue.shift(), v = d.variation, stage = document.getElementById('stage');
+    const L = v ? 'classic' : (S.layout || 'classic');
+    const mediaSrc = v?.gif || (L === 'meme' ? (d.meme || S.gif) : S.gif);
+    const t0 = Date.now(); let el;
+    const say = async () => { if (d.voice_url) await playAudio(d.voice_url, 1); if (d.tts) { const txt = cleanTts(d.message); if (txt) await speak(txt, d.tts_voice); } };
+
+    if (L === 'meme' && mediaSrc) {
+      stage.innerHTML = `<div class="meme">${isVid(mediaSrc) ? `<video class="mv" src="${esc(mediaSrc)}" playsinline preload="auto"></video>` : `<img class="mv" src="${esc(mediaSrc)}">`}<div class="cap">${capHtml(d)}</div></div>`;
+      el = stage.firstElementChild; requestAnimationFrame(() => el.classList.add('show'));
+      const vid = el.querySelector('video');
+      if (vid) { await playVideo(vid); await say(); }
+      else { await playAudio(v?.sound || S.sound || DEF_SOUND); await say(); }
+    } else if (L === 'money') {
+      stage.innerHTML = `<div class="alert money-card"><div class="big">+${fmt(d.amount)}</div><div class="box" style="margin-top:18px">${capHtml(d).replace('class="nm"', 'class="title"').replace('class="tx"', 'class="msg"')}</div></div>`;
+      el = stage.firstElementChild; requestAnimationFrame(() => el.classList.add('show'));
+      rain(Math.max(4000, S.duration * 1000 - 1500)); cashSound(); await wait(900); await say();
+    } else if (L === 'coin') {
+      stage.innerHTML = `<div class="alert" style="opacity:1;transform:none"><div class="coin-wrap"><div class="coin"><div class="face front"><b>₸</b></div><div class="face back">${EAGLE}<b>ОРЁЛ</b></div></div></div><div class="verdict" id="vd">ОРЁЛ!</div><div class="box" id="cb" style="opacity:0;transform:translateY(20px);transition:.5s">${capHtml(d).replace('class="nm"', 'class="title"').replace('class="tx"', 'class="msg"')}</div></div>`;
+      el = stage.firstElementChild; coinSound();
+      await wait(2400); document.getElementById('vd').classList.add('on');
+      await wait(450); const cb = document.getElementById('cb'); cb.style.opacity = 1; cb.style.transform = 'none'; sparks(cb);
+      await say();
+    } else {
+      stage.innerHTML = `<div class="alert">${mediaEl(mediaSrc)}<div class="box">
+        <div class="title">${esc(d.name)} — <span class="sum">${fmt(d.amount)}</span></div>
+        ${v?.text ? `<div class="vtext">${esc(v.text)}</div>` : ''}
+        ${d.message ? `<div class="msg">${esc(d.message)}</div>` : ''}</div></div>`;
+      el = stage.firstElementChild; requestAnimationFrame(() => el.classList.add('show'));
+      sparks(el.querySelector('.box'));
+      await playAudio(v?.sound || S.sound || DEF_SOUND); await say();
     }
     const left = S.duration * 1000 - (Date.now() - t0);
     if (left > 0) await wait(left);
-    el.classList.add('hide'); await new Promise(r => setTimeout(r, 450));
+    el.classList.add('hide'); el.style.transition = '.4s'; el.style.opacity = 0; await new Promise(r => setTimeout(r, 450));
     stage.innerHTML = ''; skipFn = null; busy = false;
     setTimeout(next, 400);
   }
