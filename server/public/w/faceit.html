@@ -36,8 +36,9 @@
     if (!P) { el.classList.remove('on'); el.innerHTML = ''; return; }
     const S = { level: true, elo: true, kd: true, wr: true, hs: true, adr: false, matches: true, streak: false, last: true, flag: true, ...SH };
     const c = COL(P.level), pct = Math.max(.1, Math.min(1, P.level / 10)), L = 2 * Math.PI * 30 * .75;
-    const stats = [S.kd && [n(P.kd, 2).replace(/0$/, ''), 'K/D'], S.wr && [n(P.wr, 0) + '%', 'WINRATE'], S.hs && [n(P.hs, 0) + '%', 'HS'], S.adr && [n(P.adr, 1), 'ADR'],
-      S.matches && [n(P.matches, 0), 'МАТЧЕЙ'], S.streak && [n(P.streak, 0), 'СЕРИЯ']].filter(Boolean);
+    // показываем только то, что есть (если FACEIT не отдал цифру — плитку прячем)
+    const stats = [S.kd && P.kd != null && [n(P.kd, 2).replace(/0$/, ''), 'K/D'], S.wr && P.wr != null && [n(P.wr, 0) + '%', 'WINRATE'], S.hs && P.hs != null && [n(P.hs, 0) + '%', 'HS'], S.adr && P.adr != null && [n(P.adr, 1), 'ADR'],
+      S.matches && P.matches != null && [n(P.matches, 0), 'МАТЧЕЙ'], S.streak && P.streak != null && [n(P.streak, 0), 'СЕРИЯ']].filter(Boolean);
     el.innerHTML = (S.level ? `<div class="lvl"><svg viewBox="0 0 74 74"><circle cx="37" cy="37" r="30" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="7" stroke-dasharray="${L} 999" stroke-linecap="round"/><circle cx="37" cy="37" r="30" fill="none" stroke="${c}" stroke-width="7" stroke-dasharray="${L * pct} 999" stroke-linecap="round"/></svg><b style="color:${P.level >= 10 ? '#fff' : c}">${P.level}</b></div>` : '')
       + `<div class="who"><div class="nm">${S.flag && P.country ? `<img src="https://flagcdn.com/48x36/${esc(P.country)}.png" alt="">` : ''}${esc(P.nick)}</div>${S.elo ? `<div class="elo">${P.elo}<small>ELO</small></div>` : ''}</div>`
       + (stats.length ? `<div class="sep"></div><div class="st">${stats.map(([v, l]) => `<div class="s"><b>${v}</b><span>${l}</span></div>`).join('')}</div>` : '')
