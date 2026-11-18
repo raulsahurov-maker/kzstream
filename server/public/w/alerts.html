@@ -103,6 +103,16 @@
     return `<img class="media" src="${esc(src)}">`;
   }
   const cleanTts = m => String(m || '').replace(/(https?:\/\/|www\.)\S+/gi, ' ').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}️]/gu, ' ').replace(/\s+/g, ' ').trim();
+  // имя донатера никогда не озвучиваем: убираем его из текста (вместе с инициалом), остаётся только сообщение
+  function noName(txt, name) {
+    if (!txt) return '';
+    const norm = x => String(x || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    if (name && norm(txt) === norm(name)) return '';
+    let t = txt;
+    for (const part of String(name || '').split(/\s+/).filter(w => w.replace(/\./g, '').length > 1)) t = t.split(part).join(' ');
+    t = t.replace(/(^|\s)[A-ZА-ЯЁӘҒҚҢӨҰҮҺІ]\.(?=\s|$)/gu, ' ').replace(/\s{2,}/g, ' ').trim();
+    return /[\p{L}\p{N}]/u.test(t) ? t : '';
+  }
   const isVid = u => /\.(mp4|webm)(\?|$)/i.test(u || '');
   function sparks(box) { for (let i = 0; i < 18; i++) { const sp = document.createElement('i'); sp.className = 'spark'; const a = Math.random() * 6.28, r = 120 + Math.random() * 160; sp.style.cssText = `left:50%;top:50%;--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r}px;animation-delay:${.3 + Math.random() * .3}s;opacity:0`; box.appendChild(sp); } }
   const capHtml = d => `<div class="nm">${esc(d.name)} — <span class="sum">${fmt(d.amount)}</span></div>${d.message ? `<div class="tx">${esc(d.message)}</div>` : ''}`;
@@ -154,7 +164,7 @@
     const L = v ? 'classic' : (S.layout || 'classic');
     const mediaSrc = v?.gif || (L === 'meme' ? (d.meme || S.gif) : S.gif);
     const t0 = Date.now(); let el;
-    const say = async () => { if (d.voice_url) await playAudio(d.voice_url, 1); if (d.tts) { const txt = cleanTts(d.message); if (txt) await speak(txt, d.tts_voice); } };
+    const say = async () => { if (d.voice_url) await playAudio(d.voice_url, 1); if (d.tts) { const txt = noName(cleanTts(d.message), d.name); if (txt) await speak(txt, d.tts_voice); } };
 
     if (L === 'meme' && mediaSrc) {
       stage.innerHTML = `<div class="meme">${isVid(mediaSrc) ? `<video class="mv" src="${esc(mediaSrc)}" playsinline preload="auto"></video>` : `<img class="mv" src="${esc(mediaSrc)}">`}<div class="cap">${capHtml(d)}</div></div>`;

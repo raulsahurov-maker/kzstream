@@ -275,6 +275,8 @@ function finalizeDonation(u, d, opts = {}) {
     if (alias && !d.name) name = alias[1];
   }
   name = clampStr(name, 32) || 'Аноним';
+  // если в «сообщении» оказалось только имя отправителя — это не сообщение (не показываем и не озвучиваем)
+  { const nm = x => String(x || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ''); if (d.message && (nm(d.message) === nm(d.sender) || nm(d.message) === nm(name))) d.message = ''; }
   const message = censor(String(d.message || '').replace(/(https?:\/\/)?(www\.|m\.|music\.)?(youtube\.com|youtu\.be)\S*/gi, '🎵').trim(), s);
   // медиа
   let media_status = '';
