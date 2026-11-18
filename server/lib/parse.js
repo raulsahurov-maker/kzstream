@@ -12,14 +12,19 @@ const AMOUNT_RES = [
 ];
 const L = 'A-ZА-ЯЁӘҒҚҢӨҰҮҺІ', l = 'a-zа-яёәғқңөұүһі';
 const NAME = `([${L}][${l}\\-]+(?:\\s+[${L}][${l}\\-]*\\.?)?)`;
+const CUR = '(?:₸|тг\\.?|тенге|kzt)';
 const SENDER_RES = [
-  new RegExp(`(?:от|from|[Оо]тправитель:?|[Жж]іберуші:?)\\s+${NAME}`, 'u'),
-  new RegExp(`${NAME}\\s+(?:перевел|перевела|перевёл|отправил|отправила|аударды)`, 'u'),
-  new RegExp(`^${NAME}\\s*$`, 'mu'),
+  new RegExp(`(?:от|from|[Оо]тправитель:?|[Жж]іберуші:?)\\s+${NAME}`, 'gu'),
+  // Kaspi: «Пополнение: 100 ₸ Арысланбек Т.» — имя сразу после суммы (в одну строку)
+  new RegExp(`\\d\\s*${CUR}\\s+${NAME}\\s*$`, 'gimu'),
+  new RegExp(`${NAME}\\s+(?:перевел|перевела|перевёл|отправил|отправила|аударды)`, 'gu'),
+  // Kaspi: имя отправителя отдельной строкой («Арысланбек Т.»)
+  new RegExp(`^${NAME}\\s*$`, 'gmu'),
 ];
+const NOT_NAME = /^(Kaspi|Перевод|Пополнение|Вам|Поступление|Каспи|Сообщение|Комментарий|Зачисление|Подтвердить|Halyk|Jusan|Freedom|Сейчас|Gold)/i;
 const MSG_LABEL = /(?:сообщение|комментарий|коммент|назначение|хабарлама|пікір|message)\s*[:\-—]\s*([\s\S]+)/i;
 const SERVICE_LINE = /^(kaspi(\.kz)?|kaspi\s*gold|kaspi\s*bank|каспи|halyk|homebank|jusan|freedom|bcc|forte|перевод|переводы|пополнение|поступление|зачисление|входящий\s+перевод|аударым)\.?$/i;
-const JUNK_LINE = /(баланс|доступно|остаток|қалдық|карта\s*\*|\*{2,}\d{2,}|\d{2}:\d{2}|подробнее|нажмите)/i;
+const JUNK_LINE = /(баланс|доступно|остаток|қалдық|карта\s*\*|\*{2,}\d{2,}|\d{2}:\d{2}|подробнее|нажмите|подтвердить\s+получение|^сейчас$)/i;
 const W = (list) => new RegExp(`(?<!\\p{L})(?:${list})(?!\\p{L})`, 'giu');
 const SERVICE_WORDS = W('вам\\s+перевели|перевел\\(а\\)|перевела|перевёл|перевел|отправила|отправил|входящий\\s+перевод|перевод|пополнение|поступление|зачисление|на\\s+kaspi\\s*gold|kaspi\\s*gold|на\\s+карту|отправитель:?|от|from|вам');
 const YT = /(https?:\/\/)?(www\.|m\.|music\.)?(youtube\.com\/(watch\?[^\s]*v=|shorts\/|live\/|embed\/)|youtu\.be\/)[\w\-]{11}[^\s]*/i;
@@ -38,8 +43,10 @@ function parseAmount(text) {
 function parseSender(title, text) {
   const all = [text, title].filter(Boolean).join('\n');
   for (const re of SENDER_RES) {
-    const m = all.match(re);
-    if (m && !/^(Kaspi|Перевод|Пополнение|Вам|Поступление|Каспи|Сообщение|Комментарий|Зачисление)/i.test(m[1])) return m[1].trim();
+    for (const m of all.matchAll(re)) {
+      const n = m[1].trim();
+      if (!NOT_NAME.test(n) && !SERVICE_LINE.test(n)) return n;
+    }
   }
   return '';
 }
@@ -54,6 +61,7 @@ function parseMessage(title, text, sender) {
     msg = text.split(/\n+/).map(line => {
       let s = line.trim();
       if (!s || SERVICE_LINE.test(s) || JUNK_LINE.test(s)) return '';
+      if (sender && s.replace(/[.\s]/g, '') === sender.replace(/[.\s]/g, '')) return '';
       const bankLine = AMOUNT_RES[0].test(s) || AMOUNT_RES[1].test(s) || (sender && s.includes(sender));
       if (!bankLine) return s; // отдельная строка — это комментарий зрителя, оставляем как есть
       s = s.replace(AMOUNT_RES[0], ' ').replace(AMOUNT_RES[1], ' ');
