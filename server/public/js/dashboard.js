@@ -71,10 +71,15 @@ const ALERT_STYLES = [
   { id: 'money', name: 'Денежный дождь', desc: 'Сыплются купюры тенге', free: false, pv: `<div style="position:absolute;inset:0">${[[8, 6, -20, '#2f8fd6'], [40, 30, 15, '#c79a2d'], [70, 4, 30, '#3a9c6a'], [20, 40, 50, '#c06a3a'], [86, 38, -10, '#2f8fd6'], [56, 50, -35, '#3a9c6a']].map(([x, y, r, c]) => `<i style="position:absolute;left:${x}%;top:${y}%;width:30px;height:15px;border-radius:2px;background:${c};transform:rotate(${r}deg);font:800 8px Unbounded;color:#fff;display:grid;place-items:center;font-style:normal">₸</i>`).join('')}</div><b style="position:relative;font:800 15px Unbounded;color:#ffc84a;text-shadow:0 2px 0 #7a4a00">+1 000 ₸</b>` },
   { id: 'coin', name: 'Монетка — Орёл!', desc: 'Монета летит и падает орлом', free: false, pv: `<div style="width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff7c2,#ffc84a 40%,#d48a00 75%,#9a5c00);display:grid;place-items:center;font:800 9px Unbounded;color:#7a4300;box-shadow:inset 0 0 0 4px rgba(154,92,0,.5)">ОРЁЛ</div>` },
 ];
+const ALERT_LIB = [
+  ['money-rain', 'Дождь из денег'], ['champion', 'Чемпион'], ['psycho', 'Психопат'], ['mentalist', 'Ментал'],
+];
 function alertStyles() {
   const a = ME.settings.alerts, L = a.layout || 'classic', pool = a.pool || [];
   const mine = FILES.filter(f => /^(video|image)\//.test(f.mime));
   $('#myAlerts').innerHTML = mine.map(f => `<div class="ma ${pool.includes(f.url) ? 'on' : ''}" data-ma="${f.url}">${f.mime.startsWith('video') ? `<video src="${f.url}#t=0.5" muted preload="metadata"></video>` : `<img src="${f.url}">`}<span class="ck">${pool.includes(f.url) ? '✓' : ''}</span><span class="nmm">${esc(f.name)}</span></div>`).join('') || '<div class="muted" style="font-size:13px;grid-column:1/-1">Загрузите своё видео или гифку — например, мем. При донате оно появится, снизу будет имя донатера и его текст, а голос прочитает сообщение.</div>';
+  $('#libAlerts').innerHTML = ALERT_LIB.map(([id, nm]) => { const url = `/alerts-lib/${id}.mp4`, on = pool.includes(url);
+    return `<div class="ma ${on ? 'on' : ''}" data-ma="${url}"><video src="${url}" poster="/alerts-lib/${id}.jpg" muted loop playsinline preload="none"></video><span class="ck">${on ? '✓' : ''}</span><span class="nmm">${nm}</span></div>`; }).join('');
   $('#asGrid').innerHTML = ALERT_STYLES.map(st => `<div class="as ${L === st.id ? 'on' : ''}" data-as="${st.id}"><div class="ap">${st.pv}</div>${!st.free && !ME.plan.shop ? '<span class="tg">🔒 Lite</span>' : ''}<b>${st.name}</b><span>${st.desc}</span></div>`).join('');
 }
 async function saveAlerts(part, msg) {
@@ -323,6 +328,10 @@ $('#asGrid').onclick = e => { const c = e.target.closest('.as'); if (!c) return;
   if (!st.free && !ME.plan.shop) return toast('«' + st.name + '» — с тарифа Lite. Раздел «Тариф»', true);
   if (st.id === 'meme' && !(ME.settings.alerts.pool || []).length) toast('Выберите или загрузите своё видео в «Мои алерты»', true);
   saveAlerts({ layout: st.id }, 'Стиль «' + st.name + '» включён — отправьте тестовый донат'); };
+// готовые алерты: при наведении проигрываются без звука
+$('#libAlerts').addEventListener('mouseover', e => { const v = e.target.closest('.ma')?.querySelector('video'); if (v) v.play().catch(() => {}); });
+$('#libAlerts').addEventListener('mouseout', e => { const v = e.target.closest('.ma')?.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } });
+$('#libAlerts').onclick = e => $('#myAlerts').onclick(e);
 $('#myAlerts').onclick = e => { const m = e.target.closest('.ma'); if (!m) return; let pool = [...(ME.settings.alerts.pool || [])];
   pool = pool.includes(m.dataset.ma) ? pool.filter(x => x !== m.dataset.ma) : (ME.plan.shop ? [...pool, m.dataset.ma] : [m.dataset.ma]);
   saveAlerts({ pool, layout: pool.length ? 'meme' : (ME.settings.alerts.layout === 'meme' ? 'classic' : ME.settings.alerts.layout) }, pool.length ? (pool.length > 1 ? `Мем-алерт: ${pool.length} видео, при донате выпадет случайное` : 'Мем-алерт включён') : 'Убрано'); };

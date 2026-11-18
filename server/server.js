@@ -521,7 +521,7 @@ app.put('/api/settings', auth, (req, res) => {
     if (a.tts_rate !== undefined) A.tts_rate = p.ttsAdvanced ? Math.min(2, Math.max(0.5, +a.tts_rate || 1)) : 1;
     if (a.layout !== undefined) { if (!ALERT_LAYOUTS.includes(a.layout)) errors.push('Неизвестный стиль алерта'); else if (!p.shop && !ALERT_FREE.includes(a.layout)) errors.push('Этот стиль алерта доступен с тарифа Lite'); else A.layout = a.layout; }
     if (Array.isArray(a.pool)) {
-      const pool = a.pool.map(x => clampStr(x, 300)).filter(x => /^\/u\/\d+\//.test(x) || /^https?:\/\//.test(x));
+      const pool = a.pool.map(x => clampStr(x, 300)).filter(x => /^\/u\/\d+\//.test(x) || /^\/alerts-lib\/[\w-]+\.mp4$/.test(x) || /^https?:\/\//.test(x));
       if (!p.shop && pool.length > 1) errors.push('На Free — 1 свой алерт, на Lite — до 30. Оставлен первый');
       A.pool = pool.slice(0, p.shop ? 30 : 1);
     }
