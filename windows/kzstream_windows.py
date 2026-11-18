@@ -600,13 +600,43 @@ def selftest():
     return 0 if not problems else 1
 
 
+def smoketest(api, window):
+    """Пробный запуск при сборке: окно открылось, интерфейс загрузился, трей создаётся. Снимок экрана — для проверки."""
+    res = 'FAIL'
+    try:
+        for _ in range(60):
+            time.sleep(0.5)
+            try:
+                r = window.evaluate_js("document.querySelector('#login:not(.hide), #app:not(.hide)') ? 'UI_OK ' + document.title + ' ' + !!window.qrcode : 'WAIT'")
+            except Exception:
+                r = 'WAIT'
+            if r and str(r).startswith('UI_OK'):
+                res = 'OK ' + str(r)
+                break
+        tray = make_tray(api)
+        res += ' tray=' + ('ok' if tray else 'no')
+        time.sleep(2)
+        try:
+            from PIL import ImageGrab
+            ImageGrab.grab().save(os.path.join(os.path.dirname(sys.executable), 'smoke.png'))
+        except Exception as e:
+            res += f' (снимок: {e})'
+    finally:
+        with open(os.path.join(os.path.dirname(sys.executable), 'smoke.txt'), 'w', encoding='utf-8') as f:
+            f.write(res)
+        api.quitting = True
+        window.destroy()
+
+
 def main():
     if '--selftest' in sys.argv:
         sys.exit(selftest())
-    if not single_instance():
+    if '--smoketest' not in sys.argv and not single_instance():
         return
     import webview
     api = Api()
+    if '--smoketest' in sys.argv:
+        api.cfg = {'server': DEFAULT_SERVER, 'only_banks': True, 'autostart': False, 'sound': True, 'tray': True, 'method': 'phonelink'}
     html = build_html()
     start_hidden = '--minimized' in sys.argv
     window = webview.create_window('KZStream', html=html, js_api=api, width=1080, height=700,
@@ -630,6 +660,8 @@ def main():
     window.events.closing += on_closing
 
     def on_ready():
+        if '--smoketest' in sys.argv:
+            return smoketest(api, window)
         api.tray = make_tray(api)
         if api.tray:
             api.tray.run_detached()
