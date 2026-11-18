@@ -6,3 +6,6 @@ html,body{background:transparent;overflow:hidden;color:var(--w-fg);font-family:M
 .panel{background:var(--w-bg);border-radius:16px;padding:14px 18px;border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 40px rgba(0,0,0,.35)}
 .ad{position:fixed;right:8px;bottom:6px;font-size:11px;opacity:.75;font-weight:700;letter-spacing:.04em}
 .unmute{position:fixed;left:10px;bottom:10px;background:#ff3b5c;color:#fff;font:700 13px Manrope;padding:8px 12px;border-radius:9px;cursor:pointer;display:none}
+/* все виджеты — по центру окна источника (TikTok Live Studio / OBS) */
+html,body{height:100%}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
