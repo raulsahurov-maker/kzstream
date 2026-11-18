@@ -855,7 +855,7 @@ app.get('/api/w/:token/faceit', async (req, res) => {
   try { res.json({ player: await faceit.getPlayer(s.faceit.nick), show: s.faceit.show }); } catch (e) { res.status(502).json({ error: e.message, show: s.faceit.show }); }
 });
 // диагностика доступа к FACEIT (без личных данных)
-app.get('/api/faceit/check', async (req, res) => { try { const d = await faceit.getPlayer(req.query.nick || 'donk', true); res.json({ ok: true, key: faceit.hasKey(), nick: d.nick, elo: d.elo, kd: d.kd, last: d.last }); } catch (e) { res.json({ ok: false, key: faceit.hasKey(), error: e.message }); } });
+app.get('/api/faceit/check', async (req, res) => { try { const d = await faceit.getPlayer(req.query.nick || 'donk', true); res.json({ ok: true, key: faceit.hasKey(), ...d, id: undefined, avatar: undefined }); } catch (e) { res.json({ ok: false, key: faceit.hasKey(), error: e.message }); } });
 
 // версия программы для Windows — по ней программа предлагает обновиться
 const WIN_APP_VERSION = '2.2.1';
