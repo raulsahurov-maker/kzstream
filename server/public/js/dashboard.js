@@ -71,19 +71,31 @@ const ALERT_STYLES = [
   { id: 'money', name: 'Денежный дождь', desc: 'Сыплются купюры тенге', free: false, pv: `<div style="position:absolute;inset:0">${[[8, 6, -20, '#2f8fd6'], [40, 30, 15, '#c79a2d'], [70, 4, 30, '#3a9c6a'], [20, 40, 50, '#c06a3a'], [86, 38, -10, '#2f8fd6'], [56, 50, -35, '#3a9c6a']].map(([x, y, r, c]) => `<i style="position:absolute;left:${x}%;top:${y}%;width:30px;height:15px;border-radius:2px;background:${c};transform:rotate(${r}deg);font:800 8px Unbounded;color:#fff;display:grid;place-items:center;font-style:normal">₸</i>`).join('')}</div><b style="position:relative;font:800 15px Unbounded;color:#ffc84a;text-shadow:0 2px 0 #7a4a00">+1 000 ₸</b>` },
   { id: 'coin', name: 'Монетка — Орёл!', desc: 'Монета летит и падает орлом', free: false, pv: `<div style="width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff7c2,#ffc84a 40%,#d48a00 75%,#9a5c00);display:grid;place-items:center;font:800 9px Unbounded;color:#7a4300;box-shadow:inset 0 0 0 4px rgba(154,92,0,.5)">ОРЁЛ</div>` },
 ];
+const poolObjs = () => (ME.settings.alerts.pool || []).map(x => typeof x === 'string' ? { url: x, min: 0 } : x);
+const poolUrls = () => poolObjs().map(x => x.url);
 const ALERT_LIB = [
   ['money-rain', 'Дождь из денег'], ['champion', 'Чемпион'], ['psycho', 'Психопат'], ['mentalist', 'Ментал'],
 ];
 function alertStyles() {
-  const a = ME.settings.alerts, L = a.layout || 'classic', pool = a.pool || [];
+  const a = ME.settings.alerts, L = a.layout || 'classic', pool = poolUrls();
   const mine = FILES.filter(f => /^(video|image)\//.test(f.mime));
   $('#myAlerts').innerHTML = mine.map(f => `<div class="ma ${pool.includes(f.url) ? 'on' : ''}" data-ma="${f.url}">${f.mime.startsWith('video') ? `<video src="${f.url}#t=0.5" muted preload="metadata"></video>` : `<img src="${f.url}">`}<span class="ck">${pool.includes(f.url) ? '✓' : ''}</span><span class="nmm">${esc(f.name)}</span></div>`).join('') || '<div class="muted" style="font-size:13px;grid-column:1/-1">Загрузите своё видео или гифку — например, мем. При донате оно появится, снизу будет имя донатера и его текст, а голос прочитает сообщение.</div>';
   $('#libAlerts').innerHTML = ALERT_LIB.map(([id, nm]) => { const url = `/alerts-lib/${id}.mp4`, on = pool.includes(url);
     return `<div class="ma ${on ? 'on' : ''}" data-ma="${url}"><video src="${url}" poster="/alerts-lib/${id}.jpg" muted loop playsinline preload="none"></video><span class="ck">${on ? '✓' : ''}</span><span class="nmm">${nm}</span></div>`; }).join('');
   $('#asGrid').innerHTML = ALERT_STYLES.map(st => `<div class="as ${L === st.id ? 'on' : ''}" data-as="${st.id}"><div class="ap">${st.pv}</div>${!st.free && !ME.plan.shop ? '<span class="tg">🔒 Lite</span>' : ''}<b>${st.name}</b><span>${st.desc}</span></div>`).join('');
 }
+function vidAmounts() {
+  const P = poolObjs(), byUrl = Object.fromEntries(P.map(x => [x.url, x]));
+  const items = [...ALERT_LIB.map(([id, nm]) => ({ url: `/alerts-lib/${id}.mp4`, poster: `/alerts-lib/${id}.jpg`, nm, lib: true })),
+    ...FILES.filter(f => /^(video|image)\//.test(f.mime)).map(f => ({ url: f.url, nm: f.name, img: !f.mime.startsWith('video') }))];
+  $('#vaList').innerHTML = items.map(it => { const on = !!byUrl[it.url], min = on ? byUrl[it.url].min || 0 : '';
+    return `<div class="va ${on ? 'on' : ''}" data-va="${esc(it.url)}"><div class="vth">${it.img ? `<img src="${esc(it.url)}">` : `<video src="${esc(it.url)}" ${it.poster ? `poster="${it.poster}"` : ''} muted loop playsinline preload="${it.poster ? 'none' : 'metadata'}"></video>`}</div>
+      <div class="vnm"><b>${esc(it.nm)}</b><span>${it.lib ? 'Готовый алерт KZStream' : 'Ваш файл'}</span></div>
+      <label class="vmin">от <input type="number" min="0" step="100" value="${min}" placeholder="0"> ₸</label>
+      <label class="sw2"><input type="checkbox" ${on ? 'checked' : ''}><i></i></label></div>`; }).join('');
+}
 async function saveAlerts(part, msg) {
-  try { const r = await api('/api/settings', { method: 'PUT', body: { alerts: part } }); ME.settings = r.settings; if (r.warnings?.length) toast(r.warnings.join('. '), true); else toast(msg || 'Сохранено ✓'); alertStyles(); }
+  try { const r = await api('/api/settings', { method: 'PUT', body: { alerts: part } }); ME.settings = r.settings; if (r.warnings?.length) toast(r.warnings.join('. '), true); else toast(msg || 'Сохранено ✓'); alertStyles(); vidAmounts(); }
   catch (e) { toast(e.message, true); }
 }
 
@@ -202,7 +214,7 @@ function render() {
   ['duration', 'volume', 'min_alert', 'min_tts', 'tts_rate', 'theme'].forEach(k => val('a_' + k, a[k]));
   val('a_gif', a.gif); val('a_sound', a.sound);
   ['show_msg', 'tts'].forEach(k => val('a_' + k, a[k]));
-  VOICESEL = a.tts_voice || 'dmitry'; voicePicker();
+  VOICESEL = a.tts_voice || 'dmitry'; voicePicker(); vidAmounts();
   if (!$('#tVoice').options.length) $('#tVoice').innerHTML = VOICE_LIST.map(([id, nm, ds]) => `<option value="${id}">${nm} — ${ds}</option>`).join('');
   val('tVoice', VOICESEL); alertStyles();
   val('c_words', s.censor.words); val('c_strip_links', s.censor.strip_links);
@@ -326,21 +338,29 @@ function postInfo() { try { $('#infoFrame').contentWindow.postMessage({ kzInfo: 
 $('#tVoicePlay').onclick = () => { try { voiceAudio?.pause(); } catch { } voiceAudio = new Audio('/api/tts/sample?voice=' + val('tVoice')); voiceAudio.play().catch(() => toast('Не удалось воспроизвести', true)); };
 $('#asGrid').onclick = e => { const c = e.target.closest('.as'); if (!c) return; const st = ALERT_STYLES.find(x => x.id === c.dataset.as);
   if (!st.free && !ME.plan.shop) return toast('«' + st.name + '» — с тарифа Lite. Раздел «Тариф»', true);
-  if (st.id === 'meme' && !(ME.settings.alerts.pool || []).length) toast('Выберите или загрузите своё видео в «Мои алерты»', true);
+  if (st.id === 'meme' && !poolUrls().length) toast('Выберите или загрузите своё видео в «Мои алерты»', true);
   saveAlerts({ layout: st.id }, 'Стиль «' + st.name + '» включён — отправьте тестовый донат'); };
 // готовые алерты: при наведении проигрываются без звука
 $('#libAlerts').addEventListener('mouseover', e => { const v = e.target.closest('.ma')?.querySelector('video'); if (v) v.play().catch(() => {}); });
 $('#libAlerts').addEventListener('mouseout', e => { const v = e.target.closest('.ma')?.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } });
 $('#libAlerts').onclick = e => $('#myAlerts').onclick(e);
-$('#myAlerts').onclick = e => { const m = e.target.closest('.ma'); if (!m) return; let pool = [...(ME.settings.alerts.pool || [])];
-  pool = pool.includes(m.dataset.ma) ? pool.filter(x => x !== m.dataset.ma) : (ME.plan.shop ? [...pool, m.dataset.ma] : [m.dataset.ma]);
+$('#vaList').addEventListener('mouseover', e => { const v = e.target.closest('.va')?.querySelector('video'); if (v) v.play().catch(() => {}); });
+$('#vaList').addEventListener('mouseout', e => { const v = e.target.closest('.va')?.querySelector('video'); if (v) { v.pause(); } });
+$('#vaList').addEventListener('change', e => { const r = e.target.closest('.va'); if (!r) return; if (e.target.type === 'number' && e.target.value !== '') r.querySelector('[type=checkbox]').checked = true; r.classList.toggle('on', r.querySelector('[type=checkbox]').checked); });
+$('#vaSave').onclick = () => {
+  const pool = [...document.querySelectorAll('#vaList .va')].filter(r => r.querySelector('[type=checkbox]').checked).map(r => ({ url: r.dataset.va, min: +r.querySelector('[type=number]').value || 0 }));
+  if (!ME.plan.shop && pool.length > 1) return toast('На Free можно включить 1 видео-алерт. На Lite — сколько угодно, каждое со своей суммой', true);
+  saveAlerts({ pool, layout: pool.length ? 'meme' : (ME.settings.alerts.layout === 'meme' ? 'classic' : ME.settings.alerts.layout) }, pool.length ? `Видео-алерты сохранены: ${pool.length} шт.` : 'Видео-алерты выключены');
+};
+$('#myAlerts').onclick = e => { const m = e.target.closest('.ma'); if (!m) return; let pool = poolObjs();
+  pool = pool.some(x => x.url === m.dataset.ma) ? pool.filter(x => x.url !== m.dataset.ma) : (ME.plan.shop ? [...pool, { url: m.dataset.ma, min: 0 }] : [{ url: m.dataset.ma, min: 0 }]);
   saveAlerts({ pool, layout: pool.length ? 'meme' : (ME.settings.alerts.layout === 'meme' ? 'classic' : ME.settings.alerts.layout) }, pool.length ? (pool.length > 1 ? `Мем-алерт: ${pool.length} видео, при донате выпадет случайное` : 'Мем-алерт включён') : 'Убрано'); };
 $('#myAlertUp').onchange = async e => { const added = [];
   for (const f of e.target.files) { if (f.size > 8 * 1048576) { toast(f.name + ': больше 8 МБ', true); continue; }
     try { const r = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': f.type, 'X-Filename': encodeURIComponent(f.name) }, body: f }).then(r => r.json()); if (r.error) throw new Error(r.error); added.push(r.url); } catch (er) { toast(er.message, true); } }
   e.target.value = ''; if (!added.length) return;
   FILES = await api('/api/files'); fillFileSelects();
-  const pool = ME.plan.shop ? [...(ME.settings.alerts.pool || []), ...added].slice(0, 30) : [added[0]];
+  const pool = ME.plan.shop ? [...poolObjs(), ...added.map(url => ({ url, min: 0 }))].slice(0, 30) : [{ url: added[0], min: 0 }];
   saveAlerts({ pool, layout: 'meme' }, 'Загружено и включено как мем-алерт ✓'); };
 $('#shareNative').onclick = async () => { const url = ME.urls.page;
   if (navigator.share) { try { await navigator.share({ title: 'Донат через Kaspi', text: 'Поддержать меня донатом через Kaspi', url }); } catch { } }

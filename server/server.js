@@ -309,8 +309,13 @@ function finalizeDonation(u, d, opts = {}) {
   }
   // случайная мем-гифка из своего набора (Lite) — если нет мем-алерта на точную сумму
   let meme = '';
-  const pool = (s.alerts.pool || []).filter(Boolean).slice(0, p.shop ? 30 : 1);
-  if (!variation && (s.alerts.layout === 'meme') && pool.length && d.amount >= (s.alerts.pool_min || 0)) meme = pool[crypto.randomInt(pool.length)];
+  // видео-алерты по сумме: подходят те, у кого «от N ₸» ≤ суммы; берём самый «дорогой» уровень, среди равных — случайное
+  const pool = (s.alerts.pool || []).filter(Boolean).map(x => typeof x === 'string' ? { url: x, min: 0 } : x).slice(0, p.shop ? 30 : 1);
+  const fit = pool.filter(x => d.amount >= (+x.min || 0));
+  if (!variation && s.alerts.layout === 'meme' && fit.length && d.amount >= (s.alerts.pool_min || 0)) {
+    const top = Math.max(...fit.map(x => +x.min || 0)), best = fit.filter(x => (+x.min || 0) === top);
+    meme = best[crypto.randomInt(best.length)].url;
+  }
   const event = {
     id: d.id, name, amount: d.amount, message: s.alerts.show_msg ? message : '', meme, tts_voice: VOICES[opts.voice] ? opts.voice : '',
     voice_url: p.voice ? d.voice_url : '', variation, roulette,
@@ -529,8 +534,11 @@ app.put('/api/settings', auth, (req, res) => {
     if (a.tts_rate !== undefined) A.tts_rate = p.ttsAdvanced ? Math.min(2, Math.max(0.5, +a.tts_rate || 1)) : 1;
     if (a.layout !== undefined) { if (!ALERT_LAYOUTS.includes(a.layout)) errors.push('Неизвестный стиль алерта'); else if (!p.shop && !ALERT_FREE.includes(a.layout)) errors.push('Этот стиль алерта доступен с тарифа Lite'); else A.layout = a.layout; }
     if (Array.isArray(a.pool)) {
-      const pool = a.pool.map(x => clampStr(x, 300)).filter(x => /^\/u\/\d+\//.test(x) || /^\/alerts-lib\/[\w-]+\.mp4$/.test(x) || /^https?:\/\//.test(x));
-      if (!p.shop && pool.length > 1) errors.push('На Free — 1 свой алерт, на Lite — до 30. Оставлен первый');
+      // каждое видео: { url, min } — «от скольки тенге» показывать
+      const okUrl = x => /^\/u\/\d+\//.test(x) || /^\/alerts-lib\/[\w-]+\.mp4$/.test(x) || /^https?:\/\//.test(x);
+      const pool = a.pool.map(x => typeof x === 'string' ? { url: x, min: 0 } : { url: clampStr(x && x.url, 300), min: int(x && x.min, 0, 1e7, 0) })
+        .map(x => ({ ...x, url: clampStr(x.url, 300) })).filter(x => okUrl(x.url));
+      if (!p.shop && pool.length > 1) errors.push('На Free — 1 видео-алерт, на Lite — до 30. Оставлен первый');
       A.pool = pool.slice(0, p.shop ? 30 : 1);
     }
     if (a.pool_min !== undefined) A.pool_min = int(a.pool_min, 0, 1e7, 0);
