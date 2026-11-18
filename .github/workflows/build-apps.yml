@@ -78,6 +78,17 @@ jobs:
           $r = Get-Content "$env:LOCALAPPDATA\Programs\KZStream\selftest.txt" -Raw
           Write-Host "Установлено, проверка: $r"
           if (-not $r.StartsWith('OK')) { exit 1 }
+      - name: Проверка обновления поверх запущенной программы
+        working-directory: windows
+        shell: pwsh
+        run: |
+          $exe = "$env:LOCALAPPDATA\Programs\KZStream\KZStream.exe"
+          $app = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 8
+          $p = Start-Process -FilePath output\KZStream-Setup.exe -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          Write-Host "Код установщика при запущенной программе: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { exit 1 }
+          Get-Process KZStream -ErrorAction SilentlyContinue | Stop-Process -Force
       - name: Файлы для скачивания
         shell: pwsh
         run: |

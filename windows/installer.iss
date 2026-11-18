@@ -1,5 +1,5 @@
 ; Установщик KZStream для Windows (Inno Setup)
-#define AppVer "2.2.0"
+#define AppVer "2.2.1"
 [Setup]
 AppId={{6F2B7C1E-4D2A-4E8B-9C55-0A1B2C3D4E5F}
 AppName=KZStream
@@ -26,7 +26,7 @@ UninstallDisplayName=KZStream
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
-CloseApplications=yes
+CloseApplications=no
 RestartApplications=no
 
 [Languages]
@@ -47,3 +47,25 @@ Filename: "{app}\KZStream.exe"; Description: "Запустить KZStream"; Flag
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
+
+[Code]
+// Перед установкой закрываем запущенную программу KZStream (она может быть свёрнута в трей),
+// иначе файл занят и установщик пишет «Отказано в доступе».
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM KZStream.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(800);
+  Result := '';
+end;
+
+// То же при удалении программы.
+function InitializeUninstall(): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM KZStream.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(500);
+  Result := True;
+end;

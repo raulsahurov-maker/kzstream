@@ -800,7 +800,7 @@ app.get('/api/app/me/:token', (req, res) => {
 });
 
 // версия программы для Windows — по ней программа предлагает обновиться
-const WIN_APP_VERSION = '2.2.0';
+const WIN_APP_VERSION = '2.2.1';
 app.get('/api/app/version', (req, res) => res.json({ windows: WIN_APP_VERSION, url: `${baseUrl(req)}/update/KZStream-Setup.exe`, setup: `${baseUrl(req)}/update/KZStream-Setup.exe`,
   notes: 'Новая главная: старт/стоп, эфир TikTok, ТОП-5 эфира и месяца, скип видео и озвучки, розыгрыш' }));
 
