@@ -161,6 +161,7 @@ function defaults(nick) {
     media: { enabled: true, min: 100, max_sec: 180, volume: 0.6 },
     info: { lines: ['Донаты через Kaspi — ссылка в описании!'], interval: 8, theme: 'default', label: 'INFO', speed: 'normal', dir: 'right', show_last: true },
     timer: { end_at: 0, paused_left: 0, running: false, sec_per_100: 30, theme: 'default' },
+    faceit: { nick: '', show: { level: true, elo: true, kd: true, wr: true, hs: true, adr: false, matches: true, streak: false, last: true, flag: true } },
     hotkeys: [], webhooks: [],
   };
 }
@@ -257,7 +258,7 @@ function widgetState(u) {
   const p = effectivePlan(u);
   const lastDon = q(`SELECT name, amount, message FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 1`).get(u.id);
   return {
-    nick: u.nick, plan: publicPlan(u), settings: { alerts: { ...s.alerts, layout: p.shop || ALERT_FREE.includes(s.alerts.layout || 'classic') ? (s.alerts.layout || 'classic') : 'classic' }, goal: { ...s.goal, style: p.shop || GOAL_FREE.includes(s.goal.style || 'classic') ? (s.goal.style || 'classic') : 'classic' }, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, hotkeys: p.hotkeys ? s.hotkeys : [] },
+    nick: u.nick, plan: publicPlan(u), settings: { alerts: { ...s.alerts, layout: p.shop || ALERT_FREE.includes(s.alerts.layout || 'classic') ? (s.alerts.layout || 'classic') : 'classic' }, goal: { ...s.goal, style: p.shop || GOAL_FREE.includes(s.goal.style || 'classic') ? (s.goal.style || 'classic') : 'classic' }, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, faceit: s.faceit, hotkeys: p.hotkeys ? s.hotkeys : [] },
     top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title },
     timer: timerState(s), last: lastDon || null, media: mediaQueue(u),
   };
@@ -501,7 +502,7 @@ app.get('/api/me', auth, (req, res) => {
     stats: { ...stats, today, month, year, tests: tests.c, tests_sum: tests.s },
     urls: {
       page: `${b}/d/${u.nick}`, ingest: `${b}/api/ingest/${u.token}`,
-      widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
+      widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
     },
     pay: { kaspi: PAY_KASPI, name: PAY_NAME, telegram: PAY_TELEGRAM },
   });
@@ -600,6 +601,10 @@ app.put('/api/settings', auth, (req, res) => {
       if (['slow', 'normal', 'fast'].includes(b.info.speed)) s.info.speed = b.info.speed;
       if (['right', 'left'].includes(b.info.dir)) s.info.dir = b.info.dir;
       if (b.info.show_last !== undefined) s.info.show_last = !!b.info.show_last; }
+  }
+  if (b.faceit && b.faceit.show) {
+    const F = s.faceit.show;
+    for (const k of Object.keys(F)) if (b.faceit.show[k] !== undefined) F[k] = !!b.faceit.show[k];
   }
   if (b.timer) {
     if (!p.timer) errors.push('Таймер доступен с тарифа Lite');
@@ -824,9 +829,33 @@ app.get('/api/app/me/:token', (req, res) => {
   res.json({ nick: u.nick, plan: effectivePlan(u).name, today: today.s, today_count: today.c, hotkeys: effectivePlan(u).hotkeys ? s.hotkeys : [],
     top_month: topSince(periodStart('month')).slice(0, 5), top_stream: since ? topSince(since) : [],
     hotkeys_allowed: !!effectivePlan(u).hotkeys, page: `${b}/d/${encodeURIComponent(u.nick)}`, ingest: `${b}/api/ingest/${u.token}`,
-    widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
+    widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
     last: q(`SELECT name, amount, message, done_at FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 10`).all(u.id) });
 });
+
+// ---------- FACEIT CS2 ----------
+const faceit = require('./lib/faceit');
+app.post('/api/faceit/link', auth, async (req, res) => {
+  try {
+    const d = await faceit.getPlayer(req.body?.nick, true);
+    const s = getSettings(req.user); s.faceit.nick = d.nick; saveSettings(req.user, s);
+    emit(req.user.id, 'faceit', d);
+    res.json({ ok: true, player: d });
+  } catch (e) { res.status(e.code === 404 || e.code === 400 ? 400 : 502).json({ error: e.message }); }
+});
+app.post('/api/faceit/unlink', auth, (req, res) => { const s = getSettings(req.user); s.faceit.nick = ''; saveSettings(req.user, s); emit(req.user.id, 'faceit', null); res.json({ ok: true }); });
+app.get('/api/faceit/me', auth, async (req, res) => {
+  const s = getSettings(req.user); if (!s.faceit.nick) return res.json({ player: null });
+  try { res.json({ player: await faceit.getPlayer(s.faceit.nick, req.query.fresh === '1') }); } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get('/api/w/:token/faceit', async (req, res) => {
+  const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'Неверная ссылка' });
+  const s = getSettings(u);
+  if (!s.faceit.nick) return res.json({ player: null, show: s.faceit.show });
+  try { res.json({ player: await faceit.getPlayer(s.faceit.nick), show: s.faceit.show }); } catch (e) { res.status(502).json({ error: e.message, show: s.faceit.show }); }
+});
+// диагностика доступа к FACEIT (без личных данных)
+app.get('/api/faceit/check', async (req, res) => { try { const d = await faceit.getPlayer(req.query.nick || 'donk', true); res.json({ ok: true, key: faceit.hasKey(), nick: d.nick, elo: d.elo, kd: d.kd, last: d.last }); } catch (e) { res.json({ ok: false, key: faceit.hasKey(), error: e.message }); } });
 
 // версия программы для Windows — по ней программа предлагает обновиться
 const WIN_APP_VERSION = '2.2.1';

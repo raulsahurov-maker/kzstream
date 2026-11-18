@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — FACEIT</title>
+<link rel="stylesheet" href="/w/w.css">
+<style>
+  .fc{display:flex;align-items:center;gap:18px;padding:14px 22px 14px 16px;border-radius:22px;background:rgba(8,8,12,.92);border:1px solid rgba(255,255,255,.07);box-shadow:0 12px 40px rgba(0,0,0,.45);color:#fff;font-family:Manrope,sans-serif;width:max-content;max-width:calc(100vw - 20px);opacity:0;transform:translateY(8px);transition:.4s}
+  .fc.on{opacity:1;transform:none}
+  .lvl{position:relative;width:74px;height:74px;flex:none}
+  .lvl svg{width:74px;height:74px;transform:rotate(135deg)}
+  .lvl b{position:absolute;inset:0;display:grid;place-items:center;font-family:Unbounded,sans-serif;font-weight:800;font-size:28px}
+  .who{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .nm{display:flex;align-items:center;gap:8px;font-weight:800;font-size:21px;white-space:nowrap}
+  .nm img{width:24px;height:17px;border-radius:3px;object-fit:cover}
+  .elo{font-family:Unbounded,sans-serif;font-weight:800;font-size:27px;color:#ff5500;line-height:1}
+  .elo small{font-family:Manrope;font-size:12px;color:#9aa0b0;margin-left:6px;font-weight:800;letter-spacing:.05em}
+  .sep{width:1px;align-self:stretch;background:rgba(255,255,255,.12);margin:4px 0}
+  .st{display:flex;gap:22px}
+  .s{display:flex;flex-direction:column;align-items:center;min-width:44px}
+  .s b{font-family:Unbounded,sans-serif;font-weight:800;font-size:20px}
+  .s span{font-size:11px;font-weight:800;color:#b5bccb;letter-spacing:.07em;margin-top:3px}
+  .last{display:flex;gap:6px}
+  .last i{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-style:normal;font-weight:900;font-size:12px}
+  .last .W{background:#2ecc40;color:#062b0b}.last .L{background:#ff3b3b;color:#fff}
+  .err{color:#fff;font:700 15px Manrope;background:rgba(0,0,0,.7);padding:10px 14px;border-radius:12px}
+</style></head><body>
+<div class="fc" id="fc"></div>
+<script src="/w/widget.js"></script>
+<script>
+(() => {
+  const { on, start, token, esc } = KZ;
+  const demo = new URLSearchParams(location.search).has('demo');
+  const COL = l => l >= 10 ? '#fe1f00' : l >= 8 ? '#ff6309' : l >= 4 ? '#ffc800' : l >= 2 ? '#1ce400' : '#eeeeee';
+  let P = null, SH = {};
+  const n = (v, d = 1) => v == null ? '—' : (Math.round(v * 10 ** d) / 10 ** d).toLocaleString('ru-RU').replace(/,/g, '.').replace(/ /g, ' ');
+  function draw() {
+    const el = document.getElementById('fc');
+    if (!P) { el.classList.remove('on'); el.innerHTML = ''; return; }
+    const S = { level: true, elo: true, kd: true, wr: true, hs: true, adr: false, matches: true, streak: false, last: true, flag: true, ...SH };
+    const c = COL(P.level), pct = Math.max(.1, Math.min(1, P.level / 10)), L = 2 * Math.PI * 30 * .75;
+    const stats = [S.kd && [n(P.kd, 2).replace(/0$/, ''), 'K/D'], S.wr && [n(P.wr, 0) + '%', 'WINRATE'], S.hs && [n(P.hs, 0) + '%', 'HS'], S.adr && [n(P.adr, 1), 'ADR'],
+      S.matches && [n(P.matches, 0), 'МАТЧЕЙ'], S.streak && [n(P.streak, 0), 'СЕРИЯ']].filter(Boolean);
+    el.innerHTML = (S.level ? `<div class="lvl"><svg viewBox="0 0 74 74"><circle cx="37" cy="37" r="30" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="7" stroke-dasharray="${L} 999" stroke-linecap="round"/><circle cx="37" cy="37" r="30" fill="none" stroke="${c}" stroke-width="7" stroke-dasharray="${L * pct} 999" stroke-linecap="round"/></svg><b style="color:${P.level >= 10 ? '#fff' : c}">${P.level}</b></div>` : '')
+      + `<div class="who"><div class="nm">${S.flag && P.country ? `<img src="https://flagcdn.com/48x36/${esc(P.country)}.png" alt="">` : ''}${esc(P.nick)}</div>${S.elo ? `<div class="elo">${P.elo}<small>ELO</small></div>` : ''}</div>`
+      + (stats.length ? `<div class="sep"></div><div class="st">${stats.map(([v, l]) => `<div class="s"><b>${v}</b><span>${l}</span></div>`).join('')}</div>` : '')
+      + (S.last && P.last && P.last.length ? `<div class="sep"></div><div class="last">${P.last.map(r => `<i class="${r}">${r}</i>`).join('')}</div>` : '');
+    requestAnimationFrame(() => el.classList.add('on'));
+  }
+  async function load() {
+    try { const r = await fetch(`/api/w/${encodeURIComponent(token)}/faceit`).then(r => r.json()); SH = r.show || SH; if (r.player) P = r.player; else if (!r.error) P = null; draw(); } catch { }
+  }
+  if (demo) {
+    P = { nick: 'donk', country: 'ru', level: 10, elo: 3030, kd: 1.1, wr: 52, hs: 60, matches: 4422, adr: 92.4, streak: 3, last: ['L', 'W', 'W', 'W', 'W'] };
+    addEventListener('message', e => { if (e.origin !== location.origin || !e.data) return; if (e.data.kzFaceitShow) SH = e.data.kzFaceitShow; if ('kzFaceit' in e.data) P = e.data.kzFaceit || P; draw(); });
+    draw(); return;
+  }
+  on('state', st => { SH = (st.settings.faceit || {}).show || SH; load(); });
+  on('settings', s => { if (s.faceit) { SH = s.faceit.show; draw(); } });
+  on('faceit', d => { P = d; draw(); });
+  setInterval(load, 5 * 60e3);
+  start();
+})();
+</script></body></html>

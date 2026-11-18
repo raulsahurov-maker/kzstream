@@ -127,7 +127,7 @@ function shareBlock() {
 // ---------- телефон: превью виджетов показываем уменьшенной копией «как на компьютере» ----------
 // На компьютере ничего не меняется: функция работает только на узких экранах.
 const MOB = matchMedia('(max-width:760px)');
-const PREVIEW_W = { prevFrame: [760, 428], rFrame: [760, 428], mHereFrame: [760, 428], goalFrame: [680, 0], infoFrame: [560, 0] };
+const PREVIEW_W = { prevFrame: [760, 428], rFrame: [760, 428], mHereFrame: [760, 428], goalFrame: [680, 0], infoFrame: [560, 0], faceitFrame: [860, 0] };
 function fitPreviews() {
   Object.entries(PREVIEW_W).forEach(([id, [vw0, vh]]) => { let vw = vw0;
     const f = document.getElementById(id); if (!f) return;
@@ -146,6 +146,26 @@ addEventListener('resize', () => requestAnimationFrame(fitPreviews));
 MOB.addEventListener?.('change', fitPreviews);
 addEventListener('hashchange', () => setTimeout(fitPreviews, 60));
 setInterval(() => { if (MOB.matches) fitPreviews(); }, 1500);
+
+// ---------- FACEIT ----------
+const FC_OPTS = [['level', 'Уровень FACEIT'], ['elo', 'ELO'], ['kd', 'K/D'], ['wr', 'Winrate'], ['hs', 'HS %'], ['adr', 'ADR'], ['matches', 'Матчей'], ['streak', 'Серия побед'], ['last', 'Последние 5 матчей'], ['flag', 'Флаг страны']];
+const FC_COL = l => l >= 10 ? '#fe1f00' : l >= 8 ? '#ff6309' : l >= 4 ? '#ffc800' : l >= 2 ? '#1ce400' : '#9aa0b0';
+let FCP = null;
+function fcShow() { const o = {}; document.querySelectorAll('#fcOpts input').forEach(i => o[i.dataset.k] = i.checked); return o; }
+function fcPost() { try { $('#faceitFrame').contentWindow.postMessage({ kzFaceitShow: fcShow(), kzFaceit: FCP }, location.origin); } catch { } }
+function fcAccount(p) {
+  FCP = p; $('#fcLink').classList.toggle('hide', !!p); $('#fcAcc').classList.toggle('hide', !p);
+  if (p) { $('#fcAva').src = p.avatar || '/favicon.svg'; $('#fcName').textContent = p.nick; $('#fcSub').textContent = `CS2 · ELO ${p.elo}`; $('#fcLv').textContent = p.level; $('#fcLv').style.background = FC_COL(p.level); }
+  fcPost();
+}
+function fcInit() {
+  const F = (ME.settings.faceit || {}).show || {};
+  $('#fcOpts').innerHTML = FC_OPTS.map(([k, nm]) => `<label class="fc-opt">${nm}<span class="sw2"><input type="checkbox" data-k="${k}" ${F[k] ? 'checked' : ''}><i></i></span></label>`).join('');
+  val('fcUrl', ME.urls.widgets.faceit || '');
+  if (!$('#faceitFrame').src) { $('#faceitFrame').onload = () => setTimeout(fcPost, 300); $('#faceitFrame').src = (ME.urls.widgets.faceit || '') + '&demo'; }
+  if ((ME.settings.faceit || {}).nick) api('/api/faceit/me').then(r => fcAccount(r.player)).catch(() => { fcAccount(null); val('fcNick', ME.settings.faceit.nick); });
+  else fcAccount(null);
+}
 
 function themePickers() {
   $$('select[data-themes]').forEach(sel => {
@@ -215,7 +235,7 @@ function render() {
   ['duration', 'volume', 'min_alert', 'min_tts', 'tts_rate', 'theme'].forEach(k => val('a_' + k, a[k]));
   val('a_gif', a.gif); val('a_sound', a.sound);
   ['show_msg', 'tts'].forEach(k => val('a_' + k, a[k]));
-  VOICESEL = a.tts_voice || 'dmitry'; voicePicker(); vidAmounts();
+  VOICESEL = a.tts_voice || 'dmitry'; voicePicker(); vidAmounts(); fcInit();
   if (!$('#tVoice').options.length) $('#tVoice').innerHTML = VOICE_LIST.map(([id, nm, ds]) => `<option value="${id}">${nm} — ${ds}</option>`).join('');
   val('tVoice', VOICESEL); alertStyles();
   val('c_words', s.censor.words); val('c_strip_links', s.censor.strip_links);
@@ -345,6 +365,18 @@ $('#asGrid').onclick = e => { const c = e.target.closest('.as'); if (!c) return;
 $('#libAlerts').addEventListener('mouseover', e => { const v = e.target.closest('.ma')?.querySelector('video'); if (v) v.play().catch(() => {}); });
 $('#libAlerts').addEventListener('mouseout', e => { const v = e.target.closest('.ma')?.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } });
 $('#libAlerts').onclick = e => $('#myAlerts').onclick(e);
+$('#fcCheck').onclick = async () => {
+  const nick = val('fcNick').trim(); if (!nick) return toast('Введите ник FACEIT', true);
+  const b = $('#fcCheck'); b.disabled = true; b.textContent = 'Ищем…';
+  try { const r = await api('/api/faceit/link', { method: 'POST', body: { nick } }); ME.settings.faceit.nick = r.player.nick; fcAccount(r.player); toast(`Найден ${r.player.nick} — ELO ${r.player.elo} ✓`); }
+  catch (e) { toast(e.message, true); }
+  b.disabled = false; b.textContent = 'Проверить';
+};
+$('#fcNick').addEventListener('keydown', e => { if (e.key === 'Enter') $('#fcCheck').click(); });
+$('#fcRefresh').onclick = async () => { try { const r = await api('/api/faceit/me?fresh=1'); fcAccount(r.player); toast('Статистика обновлена ✓'); } catch (e) { toast(e.message, true); } };
+$('#fcUnlink').onclick = async () => { if (!confirm('Отвязать аккаунт FACEIT? Виджет перестанет показывать статистику.')) return; await api('/api/faceit/unlink', { method: 'POST', body: {} }); ME.settings.faceit.nick = ''; val('fcNick', ''); fcAccount(null); toast('Отвязано'); };
+$('#fcOpts').addEventListener('change', fcPost);
+$('#fcSave').onclick = async () => { try { const r = await api('/api/settings', { method: 'PUT', body: { faceit: { show: fcShow() } } }); ME.settings = r.settings; toast('Сохранено — виджет обновится сам ✓'); } catch (e) { toast(e.message, true); } };
 $('#vaList').addEventListener('mouseover', e => { const v = e.target.closest('.va')?.querySelector('video'); if (v) v.play().catch(() => {}); });
 $('#vaList').addEventListener('mouseout', e => { const v = e.target.closest('.va')?.querySelector('video'); if (v) { v.pause(); } });
 $('#vaList').addEventListener('change', e => { const r = e.target.closest('.va'); if (!r) return; if (e.target.type === 'number' && e.target.value !== '') r.querySelector('[type=checkbox]').checked = true; r.classList.toggle('on', r.querySelector('[type=checkbox]').checked); });

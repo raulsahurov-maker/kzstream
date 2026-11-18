@@ -99,6 +99,14 @@
   .sw2 i::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
   .sw2 input:checked+i{background:linear-gradient(120deg,#ff3b5c,#ff7a45)}.sw2 input:checked+i::after{left:21px}
   @media(max-width:760px){.va-list{grid-template-columns:1fr}.va{grid-template-columns:72px 1fr auto}.va .vth{width:72px;height:46px}.va .vmin{grid-column:2}.va .sw2{grid-row:1;grid-column:3}}
+  .fc-acc{display:flex;align-items:center;gap:14px;padding:14px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);margin-top:10px}
+  .fc-acc img{width:48px;height:48px;border-radius:12px;object-fit:cover;background:#222}
+  .fc-acc b{display:block;font-size:16px}.fc-acc .muted{font-size:12.5px}
+  .fc-lv{min-width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-weight:900;font-size:17px;color:#fff}
+  .fc-prev{border-radius:14px;border:1px solid var(--line);background:repeating-conic-gradient(#1a1c26 0 25%,#13151e 0 50%) 0 0/22px 22px;padding:10px;overflow:hidden}
+  .fc-prev iframe{width:100%;height:130px;border:0;display:block}
+  .fc-opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
+  .fc-opt{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-weight:700;font-size:14px;cursor:pointer}
   .as-sec{font-size:13px;font-weight:800;margin:4px 0 8px}
   .my-alerts{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
   .ma{position:relative;border-radius:12px;overflow:hidden;border:2px solid var(--line);cursor:pointer;aspect-ratio:16/11;background:#000}
@@ -189,6 +197,7 @@
     <a href="#widgets"><span>📊</span>Виджеты</a>
     <a href="#roulette"><span>🎰</span>Рулетка<i class="mb">Lite</i></a>
     <a href="#media"><span>🎵</span>Музыка и видео<i class="mb">Lite</i></a>
+    <a href="#faceit"><span>🎮</span>FACEIT<i class="mb" style="background:#ff5500;color:#fff">NEW</i></a>
     <a href="#page"><span>🌐</span>Страница доната</a>
     <a href="#donations"><span>💸</span>Донаты</a>
     <a href="#files"><span>📁</span>Хранилище</a>
@@ -447,6 +456,32 @@
   </section>
 
   <!-- МЕДИА -->
+  <!-- FACEIT -->
+  <section class="page" id="p-faceit">
+    <div class="top"><h1>FACEIT — виджет статистики</h1></div>
+    <div class="card" style="margin-bottom:18px">
+      <h3>Аккаунт FACEIT</h3>
+      <div id="fcLink">
+        <div class="copy-row" style="margin-top:10px"><input id="fcNick" placeholder="Ник на FACEIT" maxlength="32" autocomplete="off"><button class="btn btn-primary" id="fcCheck">Проверить</button></div>
+        <p class="muted" style="font-size:12.5px;margin-top:8px">Ник именно на FACEIT, а не в Steam. Нужен аккаунт с сыгранными матчами в CS2.</p>
+      </div>
+      <div id="fcAcc" class="hide">
+        <div class="fc-acc"><img id="fcAva" alt=""><div style="flex:1;min-width:0"><b id="fcName"></b><span class="muted" id="fcSub"></span></div><span class="fc-lv" id="fcLv"></span></div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="btn btn-ghost" id="fcRefresh">Обновить статистику</button><button class="btn btn-danger-ghost" id="fcUnlink">Отвязать</button></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <h3>Ссылка для TikTok Live Studio</h3>
+      <div class="copy-row" style="margin-top:10px"><input readonly id="fcUrl"><button class="btn btn-primary" data-copy="fcUrl">Копировать</button></div>
+      <p class="muted" style="font-size:12.5px;margin:8px 0 12px">TikTok Live Studio → «Добавить источник» → «Ссылка». Статистика обновляется примерно раз в 5 минут.</p>
+      <div class="fc-prev"><iframe id="faceitFrame" title="Превью FACEIT"></iframe></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>Что показывать</h3><button class="btn btn-primary btn-sm" id="fcSave">Сохранить</button></div>
+      <div class="fc-opts" id="fcOpts"></div>
+    </div>
+  </section>
+
   <section class="page" id="p-media">
     <div class="top"><h1>Музыка и видео по ссылке</h1><button class="btn btn-primary" data-save="media">Сохранить</button></div>
     <div class="grid g2">
