@@ -124,7 +124,7 @@ const GOAL_STYLES = ['classic', 'neon', 'battery', 'water', 'ring', 'thermo', 'g
 const GOAL_MAX = 2000000;
 // голоса озвучки (Microsoft Neural — те же, что на FreeTTS). [голос, название, высота, скорость, язык для запасного варианта]
 const VOICES = {
-  dmitry: ['ru-RU-DmitryNeural', 'Дмитрий', '', '', 'ru'],
+  dmitry: ['ru-RU-DmitryNeural', 'Дмитрий', '-2%', '', 'ru'],
   svetlana: ['ru-RU-SvetlanaNeural', 'Светлана', '', '', 'ru'],
   bass: ['ru-RU-DmitryNeural', 'Бас', '-22%', '-8%', 'ru'],
   chipmunk: ['ru-RU-SvetlanaNeural', 'Бурундук', '+45%', '+18%', 'ru'],
@@ -133,7 +133,6 @@ const VOICES = {
   andrew: ['en-US-AndrewMultilingualNeural', 'Эндрю', '', '', 'ru'],
   emma: ['en-US-EmmaMultilingualNeural', 'Эмма', '', '', 'ru'],
   remy: ['fr-FR-RemyMultilingualNeural', 'Реми', '', '', 'ru'],
-  florian: ['de-DE-FlorianMultilingualNeural', 'Флориан', '', '', 'ru'],
   giuseppe: ['it-IT-GiuseppeMultilingualNeural', 'Джузеппе', '', '', 'ru'],
   ava: ['en-US-AvaMultilingualNeural', 'Ава', '', '', 'ru'],
 };
