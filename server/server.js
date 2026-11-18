@@ -119,16 +119,34 @@ process.on('SIGTERM', flushAndExit); process.on('SIGINT', flushAndExit);
 
 // ---------- настройки по умолчанию ----------
 const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
+// стили цели сбора: первые три — бесплатно, остальные с тарифа Lite
+const GOAL_STYLES = ['classic', 'neon', 'battery', 'water', 'ring', 'thermo', 'gold', 'minimal'], GOAL_FREE = ['classic', 'neon', 'battery'];
+const GOAL_MAX = 2000000;
+// голоса озвучки (Microsoft Neural — те же, что на FreeTTS). [голос, название, высота, скорость, язык для запасного варианта]
+const VOICES = {
+  dmitry: ['ru-RU-DmitryNeural', 'Дмитрий', '', '', 'ru'],
+  svetlana: ['ru-RU-SvetlanaNeural', 'Светлана', '', '', 'ru'],
+  bass: ['ru-RU-DmitryNeural', 'Бас', '-22%', '-8%', 'ru'],
+  chipmunk: ['ru-RU-SvetlanaNeural', 'Бурундук', '+45%', '+18%', 'ru'],
+  daulet: ['kk-KZ-DauletNeural', 'Дәулет', '', '', 'kk'],
+  aigul: ['kk-KZ-AigulNeural', 'Айгүл', '', '', 'kk'],
+  andrew: ['en-US-AndrewMultilingualNeural', 'Эндрю', '', '', 'ru'],
+  emma: ['en-US-EmmaMultilingualNeural', 'Эмма', '', '', 'ru'],
+  remy: ['fr-FR-RemyMultilingualNeural', 'Реми', '', '', 'ru'],
+  florian: ['de-DE-FlorianMultilingualNeural', 'Флориан', '', '', 'ru'],
+  giuseppe: ['it-IT-GiuseppeMultilingualNeural', 'Джузеппе', '', '', 'ru'],
+  ava: ['en-US-AvaMultilingualNeural', 'Ава', '', '', 'ru'],
+};
 const THEMES = ['default', 'neon', 'sunset', 'mint', 'royal', 'mono', 'candy', 'steppe', 'ice', 'gold'];
 function defaults(nick) {
   return {
     page: { title: nick, description: 'Спасибо за поддержку стрима!', kaspi: '', receiver: '', min_amount: 100, cards: '', avatar: '', banner: '', color: '#ff3b5c',
       socials: { twitch: '', youtube: '', tiktok: '', instagram: '', telegram: '' } },
     alerts: { duration: 6, gif: '', sound: '', volume: 0.8, min_alert: 0, show_msg: true, theme: 'default',
-      tts: true, min_tts: 0, tts_lang: 'ru', tts_rate: 1, tts_read_name: false, variations: [] },
+      tts: true, min_tts: 0, tts_lang: 'ru', tts_voice: 'dmitry', tts_rate: 1, tts_read_name: false, variations: [] },
     censor: { words: '', strip_links: true },
     nicks: {},
-    goal: { title: 'Цель сбора', target: 100000, base: 0, start_at: Date.now(), theme: 'default' },
+    goal: { title: 'Цель сбора', target: 100000, base: 0, start_at: Date.now(), theme: 'default', style: 'classic' },
     top: { period: 'month', count: 5, theme: 'default', style: 'classic', font: 'manrope', title: '', size: 'md', radius: 16, opacity: 0.9 },
     roulette: { enabled: false, min: 1000, style: 'wheel',
       tasks: ['Спеть песню', 'Катка без прицела', '10 отжиманий', 'Говорить с акцентом', 'Ответить на 3 вопроса', 'Танец 15 сек'] },
@@ -226,7 +244,7 @@ function widgetState(u) {
   const p = effectivePlan(u);
   const lastDon = q(`SELECT name, amount, message FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 1`).get(u.id);
   return {
-    nick: u.nick, plan: publicPlan(u), settings: { alerts: s.alerts, goal: s.goal, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, hotkeys: p.hotkeys ? s.hotkeys : [] },
+    nick: u.nick, plan: publicPlan(u), settings: { alerts: s.alerts, goal: { ...s.goal, style: p.shop || GOAL_FREE.includes(s.goal.style || 'classic') ? (s.goal.style || 'classic') : 'classic' }, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, hotkeys: p.hotkeys ? s.hotkeys : [] },
     top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title },
     timer: timerState(s), last: lastDon || null, media: mediaQueue(u),
   };
@@ -454,7 +472,7 @@ app.get('/api/me', auth, (req, res) => {
     plan: publicPlan(u), plan_raw: u.plan, plan_until: u.plan_until, vip: u.paid_months >= 10, paid_months: u.paid_months,
     freeze_available: effectivePlan(u).freezeDays > 0 && now() - u.freeze_used_at > 30 * 864e5,
     storage: { used: storageUsed(u.id), limit: effectivePlan(u).storageMB * 1048576 },
-    settings: s, themes: THEMES, plans: Object.values(PLANS).map(p => ({ ...p, media: p.media === Infinity ? -1 : p.media })),
+    settings: s, themes: THEMES, goal_styles: GOAL_STYLES, goal_free: GOAL_FREE, goal_max: GOAL_MAX, voices: Object.keys(VOICES), plans: Object.values(PLANS).map(p => ({ ...p, media: p.media === Infinity ? -1 : p.media })),
     stats: { ...stats, today, month, year, tests: tests.c, tests_sum: tests.s },
     urls: {
       page: `${b}/d/${u.nick}`, ingest: `${b}/api/ingest/${u.token}`,
@@ -491,7 +509,8 @@ app.put('/api/settings', auth, (req, res) => {
     if (a.show_msg !== undefined) A.show_msg = !!a.show_msg;
     if (a.theme !== undefined) { if (!p.shop && a.theme !== 'default') errors.push('Магазин тем доступен с тарифа Lite'); else if (THEMES.includes(a.theme)) A.theme = a.theme; }
     if (a.tts !== undefined) A.tts = !!a.tts;
-    if (a.tts_lang !== undefined) { if (!p.ttsAdvanced && a.tts_lang !== 'ru') errors.push('Выбор языка озвучки — тариф Pro'); else if (['ru', 'kk', 'en', 'tr', 'uk'].includes(a.tts_lang)) A.tts_lang = a.tts_lang; }
+    if (a.tts_voice !== undefined) { if (!VOICES[a.tts_voice]) errors.push('Неизвестный голос'); else if (!p.tts && a.tts_voice !== 'dmitry') errors.push('Выбор голоса — с тарифа Lite'); else { A.tts_voice = a.tts_voice; A.tts_lang = VOICES[a.tts_voice][4]; } }
+    if (a.tts_lang !== undefined && a.tts_voice === undefined) { if (!p.ttsAdvanced && a.tts_lang !== 'ru') errors.push('Выбор языка озвучки — тариф Pro'); else if (['ru', 'kk', 'en', 'tr', 'uk'].includes(a.tts_lang)) A.tts_lang = a.tts_lang; }
     if (a.tts_rate !== undefined) A.tts_rate = p.ttsAdvanced ? Math.min(2, Math.max(0.5, +a.tts_rate || 1)) : 1;
     if (Array.isArray(a.variations)) {
       if (!p.memes && a.variations.length) errors.push('Мем-алерты доступны на тарифе Pro');
@@ -505,8 +524,10 @@ app.put('/api/settings', auth, (req, res) => {
   }
   if (b.goal) {
     s.goal.title = clampStr(b.goal.title ?? s.goal.title, 80);
-    s.goal.target = int(b.goal.target, 1, 1e9, s.goal.target);
-    s.goal.base = int(b.goal.base, 0, 1e9, s.goal.base);
+    if (b.goal.target !== undefined && (+b.goal.target > GOAL_MAX || +b.goal.target < 1)) errors.push('Цель — от 1 до 2 000 000 ₸');
+    s.goal.target = int(b.goal.target, 1, GOAL_MAX, Math.min(GOAL_MAX, s.goal.target));
+    s.goal.base = int(b.goal.base, 0, GOAL_MAX, s.goal.base);
+    if (b.goal.style !== undefined) { if (!GOAL_STYLES.includes(b.goal.style)) errors.push('Неизвестный стиль цели'); else if (!p.shop && !GOAL_FREE.includes(b.goal.style)) errors.push('Этот стиль цели доступен с тарифа Lite'); else s.goal.style = b.goal.style; }
     if (b.goal.reset) s.goal.start_at = now();
     if (b.goal.theme && THEMES.includes(b.goal.theme)) s.goal.theme = p.shop ? b.goal.theme : 'default';
   }
@@ -787,14 +808,17 @@ app.post('/api/w/:token/media/done', (req, res) => {
 });
 
 // --- озвучка (TTS-прокси) ---
-const ttsCache = new Map();
-// Мужские голоса Microsoft Edge (бесплатно, без ключа). Если недоступно — запасной вариант Google.
-const MALE_VOICES = { ru: 'ru-RU-DmitryNeural', kk: 'kk-KZ-DauletNeural', en: 'en-US-GuyNeural', tr: 'tr-TR-AhmetNeural', uk: 'uk-UA-OstapNeural' };
-async function edgeTts(text, lang, rate) {
+// Голоса Microsoft Neural (бесплатно, без ключа — тот же движок, что у FreeTTS). Если недоступно — запасной вариант Google.
+const pct = r => { const v = Math.round((r - 1) * 100); return (v >= 0 ? '+' : '') + v + '%'; };
+function addPct(a, b) { const v = (parseInt(a) || 0) + (parseInt(b) || 0); return (v >= 0 ? '+' : '') + v + '%'; }
+async function edgeTts(text, voiceId, rate) {
+  const v = VOICES[voiceId] || VOICES.dmitry;
   const tts = new MsEdgeTTS();
   try {
-    await tts.setMetadata(MALE_VOICES[lang] || MALE_VOICES.ru, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-    const { audioStream } = tts.toStream(text, { rate: `${Math.round((rate - 1) * 100) >= 0 ? '+' : ''}${Math.round((rate - 1) * 100)}%` });
+    await tts.setMetadata(v[0], OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+    const opts = { rate: addPct(pct(rate), v[3]) };
+    if (v[2]) opts.pitch = v[2];
+    const { audioStream } = tts.toStream(text, opts);
     const chunks = [];
     await new Promise((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('timeout')), 12000);
@@ -807,38 +831,51 @@ async function edgeTts(text, lang, rate) {
     return buf;
   } finally { try { tts.close(); } catch { } }
 }
-// проверка озвучки: какой движок сейчас работает (без звука)
+// проверка озвучки: какие голоса сейчас работают (без звука)
 let ttsStatus = null;
 app.get('/api/tts/status', async (req, res) => {
   if (!ttsStatus || now() - ttsStatus.at > 600e3) {
-    const edge = await edgeTts('Проверка', 'ru', 1).then(b => b.length).catch(e => 'ошибка: ' + e.message);
-    ttsStatus = { at: now(), edge_male_voice: edge };
+    const voices = {};
+    for (const id of Object.keys(VOICES)) voices[id] = await edgeTts('Проверка связи', id, 1).then(b => b.length).catch(e => 'ошибка: ' + e.message);
+    ttsStatus = { at: now(), voices };
   }
   res.json(ttsStatus);
 });
+const ttsCache = new Map();
+async function ttsAudio(text, voiceId, rate) {
+  const key = voiceId + '|' + rate + '|' + text;
+  let buf = ttsCache.get(key);
+  if (buf) return buf;
+  buf = await edgeTts(text, voiceId, rate).catch(e => { console.error('Edge TTS:', e.message); return null; });
+  if (!buf) {
+    const lang = (VOICES[voiceId] || VOICES.dmitry)[4];
+    const hosts = [`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=`,
+      `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${lang}&q=`];
+    for (const h of hosts) {
+      try {
+        const r = await fetch(h + encodeURIComponent(text), { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36', Referer: 'https://translate.google.com/' }, signal: AbortSignal.timeout(8000) });
+        if (r.ok && /audio/.test(r.headers.get('content-type') || '')) { buf = Buffer.from(await r.arrayBuffer()); break; }
+      } catch { }
+    }
+  }
+  if (!buf) throw new Error('tts');
+  ttsCache.set(key, buf); if (ttsCache.size > 400) ttsCache.delete(ttsCache.keys().next().value);
+  return buf;
+}
 app.get('/api/tts', async (req, res) => {
   const u = userByToken(req.query.t); if (!u || !effectivePlan(u).tts) return res.status(403).end();
-  const text = clampStr(req.query.text, 300); const lang = ['ru', 'kk', 'en', 'tr', 'uk'].includes(req.query.lang) ? req.query.lang : 'ru';
+  const text = clampStr(req.query.text, 300);
+  const s = getSettings(u);
+  const voice = VOICES[req.query.voice] ? req.query.voice : (s.alerts.tts_voice || 'dmitry');
   const rate = Math.min(2, Math.max(0.5, +req.query.rate || 1));
   if (!text) return res.status(400).end();
-  const key = lang + '|' + rate + '|' + text;
-  try {
-    let buf = ttsCache.get(key);
-    if (!buf) buf = await edgeTts(text, lang, rate).catch(e => { console.error('Edge TTS:', e.message); return null; });
-    if (!buf) {
-      const hosts = [`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=`,
-        `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${lang}&q=`];
-      for (const h of hosts) {
-        try {
-          const r = await fetch(h + encodeURIComponent(text), { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36', Referer: 'https://translate.google.com/' }, signal: AbortSignal.timeout(8000) });
-          if (r.ok && /audio/.test(r.headers.get('content-type') || '')) { buf = Buffer.from(await r.arrayBuffer()); break; }
-        } catch { }
-      }
-      if (!buf) throw new Error('tts');
-      ttsCache.set(key, buf); if (ttsCache.size > 300) ttsCache.delete(ttsCache.keys().next().value);
-    }
-    res.set('Content-Type', 'audio/mpeg').send(buf);
-  } catch { res.status(502).end(); }
+  try { res.set('Content-Type', 'audio/mpeg').send(await ttsAudio(text, voice, rate)); } catch { res.status(502).end(); }
+});
+// прослушать голос в кабинете (короткая фраза, доступно всем)
+app.get('/api/tts/sample', auth, async (req, res) => {
+  const voice = VOICES[req.query.voice] ? req.query.voice : 'dmitry';
+  const text = VOICES[voice][4] === 'kk' ? 'Сәлем! Донат үшін рахмет, керемет стрим!' : 'Привет! Спасибо за донат, ты лучший!';
+  try { res.set('Content-Type', 'audio/mpeg').send(await ttsAudio(text, voice, 1)); } catch { res.status(502).end(); }
 });
 
 // --- SEO: robots.txt и карта сайта для Google ---

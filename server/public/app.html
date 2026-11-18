@@ -47,6 +47,31 @@
   .top-grid{display:grid;grid-template-columns:330px 1fr;gap:24px;align-items:start}
   .top-prev{position:relative;height:440px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:repeating-conic-gradient(#14172a 0% 25%,#101322 0% 50%) 50%/24px 24px}
   .top-prev iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .gl-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .gl-bar{display:grid;grid-template-columns:2fr 1fr auto auto;gap:10px;margin:6px 0 16px}
+  .gl-bar input{width:100%}
+  @media(max-width:760px){.gl-bar{grid-template-columns:1fr 1fr}}
+  .btn-danger-ghost{background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.45);color:#ff6b84}
+  .btn-danger-ghost:hover{background:rgba(255,59,92,.2)}
+  .gl-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:start}
+  @media(max-width:900px){.gl-grid{grid-template-columns:1fr}}
+  .gl-styles{display:grid;grid-template-columns:1fr;gap:10px;max-height:520px;overflow:auto;padding-right:4px}
+  .gs{display:grid;grid-template-columns:132px 1fr;gap:14px;align-items:center;border:2px solid var(--line);border-radius:14px;padding:9px;cursor:pointer;background:var(--bg2);position:relative;transition:.15s}
+  .gs:hover{border-color:#3a4060}.gs.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,59,92,.16);background:linear-gradient(120deg,rgba(255,59,92,.08),transparent)}
+  .gs .gpv{height:74px;border-radius:9px;background:#0b0c16;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:6px}
+  .gs b{font-size:14.5px}.gs p{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+  .gs .tg{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:2px}
+  .gs .tg.live{background:rgba(62,230,196,.15);color:#3ee6c4;border:1px solid rgba(62,230,196,.4)}
+  .gs .tg.lk{background:rgba(255,255,255,.08);color:#cfd3e3}
+  .gl-prev{border-radius:16px;border:1px solid var(--line);background:radial-gradient(circle at 30% 20%,#1d2140,#0b0c16 70%);padding:10px;position:relative}
+  .gl-cap{font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin:0 0 4px 4px}
+  .gl-prev iframe{width:100%;height:400px;border:0;display:block;background:transparent}
+  .voices{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+  .vc{border:2px solid var(--line);border-radius:12px;padding:9px 10px;background:var(--bg2);cursor:pointer;position:relative;transition:.15s}
+  .vc:hover{border-color:#3a4060}.vc.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,59,92,.16)}
+  .vc b{display:block;font-size:13.5px}.vc span{font-size:11.5px;color:var(--muted)}
+  .vc .play{position:absolute;right:7px;top:7px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;font-size:11px}
+  .vc .play:hover{background:var(--accent)}
   .designs{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
   .dz{position:relative;border-radius:14px;border:2px solid var(--line);padding:8px;cursor:pointer;background:var(--bg2);transition:.15s}
   .dz:hover{border-color:#3a4060}.dz.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,59,92,.16)}
@@ -221,14 +246,12 @@
         <label class="check"><input type="checkbox" id="a_show_msg"> Показывать сообщение донатера</label>
       </div>
       <div class="card">
-        <h3>Озвучка доната <span class="lock" data-need="tts">Lite</span></h3><p class="hint">Мужской голос читает только текст сообщения доната.</p>
+        <h3>Озвучка доната <span class="lock" data-need="tts">Lite</span></h3><p class="hint">Голос читает только текст сообщения доната. Нажмите ▶, чтобы прослушать.</p>
         <label class="check"><input type="checkbox" id="a_tts"> Включить озвучку</label>
+        <div class="field"><label>Голос</label><div class="voices" id="a_voices"></div></div>
         <div class="field"><label>Мин. сумма для озвучки</label><input type="number" id="a_min_tts" min="0"></div>
-        <h3 style="margin-top:18px">Продвинутая озвучка <span class="lock" data-need="ttsAdvanced">Pro</span></h3><p class="hint">Язык, скорость, чтение имени.</p>
-        <div class="row">
-          <div class="field"><label>Язык</label><select id="a_tts_lang"><option value="ru">Русский</option><option value="kk">Қазақша</option><option value="en">English</option><option value="tr">Türkçe</option><option value="uk">Українська</option></select></div>
-          <div class="field"><label>Скорость</label><input type="range" id="a_tts_rate" min="0.5" max="2" step="0.1"></div>
-        </div>
+        <h3 style="margin-top:18px">Продвинутая озвучка <span class="lock" data-need="ttsAdvanced">Pro</span></h3><p class="hint">Скорость речи.</p>
+        <div class="field"><label>Скорость</label><input type="range" id="a_tts_rate" min="0.5" max="2" step="0.1"></div>
       </div>
       <div class="card">
         <h3>Цензура</h3><p class="hint">Слова через запятую заменяются на ***.</p>
@@ -282,12 +305,30 @@
           </div>
         </div>
       </div>
-      <div class="card">
-        <h3>Цель сбора <span class="wb free">Бесплатно</span></h3><p class="hint" id="goalNow"></p>
-        <div class="field"><label>Название</label><input id="g_title"></div>
-        <div class="row"><div class="field"><label>Цель, ₸</label><input type="number" id="g_target"></div><div class="field"><label>Уже собрано вне сервиса, ₸</label><input type="number" id="g_base"></div></div>
-        <div class="field"><label>Тема <span class="lock" data-need="shop">Lite</span></label><select id="g_theme" data-themes></select></div>
-        <div style="display:flex;gap:8px"><button class="btn btn-primary" data-save="goal">Сохранить</button><button class="btn btn-ghost" id="goalReset">Начать сбор заново</button></div>
+      <div class="card" style="grid-column:1/-1">
+        <div class="gl-head"><h3>Цель сбора <span class="wb free">Бесплатно</span></h3><span class="muted" style="font-size:13px">В эфире сейчас: <b id="goalLive" style="color:var(--accent2)">Классика</b></span></div>
+        <p class="hint" id="goalNow"></p>
+        <div class="gl-bar">
+          <input id="g_title" maxlength="80" placeholder="Название цели, например: Новый микрофон">
+          <input type="number" id="g_target" min="1" max="2000000" placeholder="Сумма, до 2 000 000 ₸">
+          <button class="btn btn-primary" data-save="goal">Сохранить</button>
+          <button class="btn btn-danger-ghost" id="goalReset">Сбросить прогресс</button>
+        </div>
+        <div class="gl-grid">
+          <div class="gl-styles" id="g_styles"></div>
+          <div>
+            <div class="gl-prev"><div class="gl-cap">ПРЕВЬЮ · ТАК В ЭФИРЕ</div><iframe id="goalFrame" title="Превью цели"></iframe></div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button class="btn btn-ghost" id="goalTest">▶ Тестовый донат</button>
+              <button class="btn btn-ghost" id="goalSaved" disabled>✓ Сохранено</button>
+            </div>
+            <div class="row" style="margin-top:14px">
+              <div class="field"><label>Уже собрано вне сервиса, ₸</label><input type="number" id="g_base" min="0" max="2000000"></div>
+              <div class="field" id="g_theme_field"><label>Цвета <span class="lock" data-need="shop">Lite</span></label><select id="g_theme" data-themes></select></div>
+            </div>
+          </div>
+        </div>
+        <p class="muted" style="font-size:12.5px;margin-top:10px">Виджет в эфире переключится сам — ссылку в TikTok Live Studio менять не нужно. Цель — до 2 000 000 ₸. Классика, Неон и Батарейка — бесплатно, остальные стили — с тарифа Lite.</p>
       </div>
       <div class="card">
         <h3>Info-виджет <span class="lock" data-need="info">Lite</span></h3><p class="hint">Бегущие строки + последний донат.</p>

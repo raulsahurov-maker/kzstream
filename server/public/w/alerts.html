@@ -53,14 +53,14 @@
       if (!window.speechSynthesis) return res();
       const u = new SpeechSynthesisUtterance(text); u.lang = { ru: 'ru-RU', kk: 'kk-KZ', en: 'en-US', tr: 'tr-TR', uk: 'uk-UA' }[S.tts_lang] || 'ru-RU';
       u.rate = S.tts_rate || 1; u.volume = S.volume;
-      const vs = speechSynthesis.getVoices().filter(v => v.lang.startsWith(u.lang.slice(0, 2))); const male = vs.find(v => /pavel|dmitr|male|муж|daulet|guy|ahmet|ostap/i.test(v.name)); if (male || vs[0]) u.voice = male || vs[0]; u.onend = res; u.onerror = res;
+      const vs = speechSynthesis.getVoices().filter(v => v.lang.startsWith(u.lang.slice(0, 2))); const fem = /svetlana|aigul|emma|ava|chipmunk/.test(S.tts_voice || ''); const male = vs.find(v => (fem ? /svetlana|irina|aigul|female|жен/i : /pavel|dmitr|male|муж|daulet|guy|ahmet|ostap/i).test(v.name)); if (male || vs[0]) u.voice = male || vs[0]; u.onend = res; u.onerror = res;
       skipFn = () => { speechSynthesis.cancel(); res(); };
       speechSynthesis.speak(u);
     });
   }
   async function speak(text) {
     for (const c of chunks(text)) {
-      const r = await playAudio(`/api/tts?t=${encodeURIComponent(token)}&lang=${S.tts_lang}&rate=${S.tts_rate || 1}&text=${encodeURIComponent(c)}`);
+      const r = await playAudio(`/api/tts?t=${encodeURIComponent(token)}&voice=${S.tts_voice || 'dmitry'}&rate=${S.tts_rate || 1}&text=${encodeURIComponent(c)}`);
       if (r === 'error') { await speakBrowser(c); }
       if (r === 'blocked') return;
     }

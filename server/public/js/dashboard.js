@@ -24,6 +24,47 @@ function topPickers() {
 }
 function postTop() { try { $('#topFrame').contentWindow.postMessage({ kzTop: collectors.top().top }, location.origin); } catch { } }
 
+// ---------- цель сбора: стили ----------
+const GOAL_DESIGNS = [
+  { id: 'classic', name: 'Классика KZStream', desc: 'Фирменная красно-оранжевая полоса с бегущими линиями, название внутри.', pv: `<div style="width:100%;height:24px;border-radius:6px;border:1.5px solid #ff3b5c;background:#0e0f1a;position:relative;overflow:hidden;box-shadow:0 0 10px rgba(255,59,92,.4)"><div style="position:absolute;inset:0 35% 0 0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.18) 0 5px,transparent 5px 10px),linear-gradient(90deg,#ff3b5c,#ff7a45)"></div><div style="position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 5px;font:800 7px Unbounded;color:#fff"><span>94 250</span><span>МИКРОФОН</span><span>145 000</span></div></div>` },
+  { id: 'neon', name: 'Неон-трубка', desc: 'Тонкая светящаяся полоса, процент сверху.', pv: `<div style="width:100%"><div style="display:flex;justify-content:space-between;font:800 7px Unbounded;color:#e9e6ff"><span>МИКРОФОН</span><span style="color:#ff4fd8">65%</span></div><div style="height:8px;margin:5px 0;border-radius:8px;border:1.5px solid rgba(62,230,196,.6);box-shadow:0 0 8px rgba(62,230,196,.5);position:relative"><div style="position:absolute;inset:1px 35% 1px 1px;border-radius:8px;background:linear-gradient(90deg,#3ee6c4,#8b6cff,#ff4fd8);box-shadow:0 0 8px #8b6cff"></div></div><div style="display:flex;justify-content:space-between;font:800 6.5px Manrope;color:#bfe9ff"><span>94 250 ₸</span><span>145 000 ₸</span></div></div>` },
+  { id: 'battery', name: 'Батарейка', desc: '10 делений, цвет меняется от красного к зелёному.', pv: `<div style="width:100%"><div style="display:flex;justify-content:space-between;font:800 7px Unbounded;color:#fff"><span>МИКРОФОН</span><span>65%</span></div><div style="display:flex;align-items:center;margin-top:5px"><div style="flex:1;display:grid;grid-template-columns:repeat(10,1fr);gap:2px;padding:2px;border:2px solid #ddd;border-radius:4px;height:20px">${[...Array(10)].map((_, i) => `<i style="border-radius:2px;background:${i < 7 ? 'hsl(78,90%,52%)' : 'rgba(255,255,255,.08)'}"></i>`).join('')}</div><div style="width:3px;height:9px;background:#ddd;border-radius:0 2px 2px 0"></div></div></div>` },
+  { id: 'water', name: 'Вода', desc: 'Вертикальная колба: вода поднимается с волнами и пузырьками.', pv: `<div style="width:38px;height:62px;border:2px solid rgba(255,255,255,.75);border-radius:8px 8px 12px 12px;position:relative;overflow:hidden"><div style="position:absolute;left:0;right:0;bottom:0;height:65%;background:linear-gradient(#18c8ff,#0062e0)"></div><svg style="position:absolute;left:0;bottom:calc(65% - 2px);width:100%;height:6px" viewBox="0 0 40 6" preserveAspectRatio="none"><path d="M0 3 Q5 0 10 3 T20 3 T30 3 T40 3 V6 H0Z" fill="#18c8ff"/></svg><b style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 9px Unbounded;color:#fff">65%</b></div><div style="margin-left:8px;font:800 7px Unbounded;color:#fff">94 250 ₸<br><span style="opacity:.6;font-family:Manrope">из 145 000</span></div>` },
+  { id: 'ring', name: 'Кольцо', desc: 'Круглый прогресс с процентом в центре.', pv: `<svg width="56" height="56" viewBox="0 0 130 130" style="transform:rotate(-90deg)"><circle cx="65" cy="65" r="54" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="14"/><circle cx="65" cy="65" r="54" fill="none" stroke="#ff3b5c" stroke-width="14" stroke-linecap="round" stroke-dasharray="339" stroke-dashoffset="119"/></svg><div style="margin-left:8px;font:800 7px Unbounded;color:#fff">МИКРОФОН<br><span style="color:#ff7a45">94 250 ₸</span></div>` },
+  { id: 'thermo', name: 'Градусник', desc: 'Вертикальный термометр: чем больше донатов, тем «жарче».', pv: `<div style="display:flex;flex-direction:column;align-items:center"><div style="width:12px;height:44px;border:2px solid #ddd;border-bottom:0;border-radius:8px 8px 0 0;position:relative;overflow:hidden"><i style="position:absolute;left:2px;right:2px;bottom:0;height:65%;background:#ff3b5c;border-radius:4px 4px 0 0"></i></div><div style="width:22px;height:22px;border-radius:50%;background:#ff3b5c;border:2px solid #ddd;margin-top:-3px;box-shadow:0 0 8px #ff3b5c"></div></div><div style="margin-left:10px;font:800 7px Unbounded;color:#fff">МИКРОФОН<br>94 250 ₸</div>` },
+  { id: 'gold', name: 'Золото', desc: 'Премиальная золотая полоса с бегущими линиями.', pv: `<div style="width:100%;height:24px;border-radius:5px;border:1.5px solid #d4af37;background:#0b0a08;position:relative;overflow:hidden"><div style="position:absolute;inset:0 35% 0 0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.2) 0 5px,transparent 5px 10px),linear-gradient(#fcf6ba,#d4af37 45%,#aa771c)"></div><div style="position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 5px;font:800 7px Unbounded;color:#fff;text-shadow:0 1px 3px #000"><span>94 250</span><span>МИКРОФОН</span><span style="color:#fcf6ba">145 000</span></div></div>` },
+  { id: 'minimal', name: 'Минимал', desc: 'Только текст и тонкая линия — без фона, не закрывает кадр.', pv: `<div style="width:100%;color:#fff"><div style="font:800 6.5px Unbounded;opacity:.85">МИКРОФОН</div><div style="font:800 11px Unbounded">94 250 ₸ <span style="font-size:7px;opacity:.6">/ 145 000 ₸</span></div><div style="height:3px;border-radius:3px;background:rgba(255,255,255,.2);margin-top:4px"><div style="width:65%;height:100%;border-radius:3px;background:linear-gradient(90deg,#ff3b5c,#ff7a45)"></div></div></div>` },
+];
+let GOALSEL = 'classic';
+const goalFree = id => (ME.goal_free || ['classic', 'neon', 'battery']).includes(id);
+function goalPickers() {
+  const saved = ME.settings.goal.style || 'classic';
+  $('#g_styles').innerHTML = GOAL_DESIGNS.map(d => { const locked = !ME.plan.shop && !goalFree(d.id);
+    return `<div class="gs ${GOALSEL === d.id ? 'on' : ''}" data-g="${d.id}"><div class="gpv">${d.pv}</div><div><b>${d.name}</b>${saved === d.id ? '<span class="tg live">В ЭФИРЕ</span>' : ''}${locked ? '<span class="tg lk">🔒 Lite</span>' : ''}<p>${d.desc}</p></div></div>`; }).join('');
+  $('#goalLive').textContent = (GOAL_DESIGNS.find(d => d.id === saved) || GOAL_DESIGNS[0]).name;
+  $('#g_theme_field').style.display = ['classic', 'ring', 'minimal'].includes(GOALSEL) ? '' : 'none';
+  goalDirty();
+}
+function goalDirty() {
+  const g = ME.settings.goal, dirty = GOALSEL !== (g.style || 'classic') || val('g_title') !== g.title || +val('g_target') !== +g.target || +val('g_base') !== +g.base || val('g_theme') !== g.theme;
+  const b = $('#goalSaved'); b.textContent = dirty ? '● Не сохранено' : '✓ Сохранено'; b.style.color = dirty ? '#ffc84a' : '#3ee6c4';
+}
+function postGoal(extra) { $('#goalFrame').style.height = ({ water: 430, thermo: 400, ring: 210, battery: 170 }[GOALSEL] || 150) + 'px'; try { $('#goalFrame').contentWindow.postMessage(extra || { kzGoal: { style: GOALSEL, title: val('g_title') || 'Цель сбора', target: Math.min(2000000, +val('g_target') || 1), theme: val('g_theme') } }, location.origin); } catch { } }
+
+// ---------- голоса озвучки ----------
+const VOICE_LIST = [
+  ['dmitry', 'Дмитрий', 'мужской · русский'], ['svetlana', 'Светлана', 'женский · русский'],
+  ['bass', 'Бас', 'низкий мужской'], ['chipmunk', 'Бурундук', 'писклявый, смешной'],
+  ['daulet', 'Дәулет', 'мужской · қазақша'], ['aigul', 'Айгүл', 'женский · қазақша'],
+  ['andrew', 'Эндрю', 'американский акцент'], ['ava', 'Ава', 'американский акцент'],
+  ['emma', 'Эмма', 'английский акцент'], ['remy', 'Реми', 'французский акцент'],
+  ['florian', 'Флориан', 'немецкий акцент'], ['giuseppe', 'Джузеппе', 'итальянский акцент'],
+];
+let VOICESEL = 'dmitry', voiceAudio = null;
+function voicePicker() {
+  $('#a_voices').innerHTML = VOICE_LIST.map(([id, nm, ds]) => `<div class="vc ${VOICESEL === id ? 'on' : ''}" data-v="${id}"><button type="button" class="play" data-play="${id}" title="Прослушать">▶</button><b>${nm}</b><span>${ds}</span></div>`).join('');
+}
+
 function themePickers() {
   $$('select[data-themes]').forEach(sel => {
     sel.style.display = 'none';
@@ -89,9 +130,10 @@ function render() {
   // алерты
   const a = s.alerts;
   $('#durMax').textContent = `(до ${p.maxDuration})`; $('#a_duration').max = p.maxDuration;
-  ['duration', 'volume', 'min_alert', 'min_tts', 'tts_lang', 'tts_rate', 'theme'].forEach(k => val('a_' + k, a[k]));
+  ['duration', 'volume', 'min_alert', 'min_tts', 'tts_rate', 'theme'].forEach(k => val('a_' + k, a[k]));
   val('a_gif', a.gif); val('a_sound', a.sound);
   ['show_msg', 'tts'].forEach(k => val('a_' + k, a[k]));
+  VOICESEL = a.tts_voice || 'dmitry'; voicePicker();
   val('c_words', s.censor.words); val('c_strip_links', s.censor.strip_links);
   listEdit('#nicksList', Object.entries(s.nicks || {}).map(([k, v]) => ({ k, v })), [['k', 'Имя в Kaspi'], ['v', 'Ник']]);
   listEdit('#varList', a.variations || [], [['amount', 'Сумма', 'number'], ['gif', 'Гифка (URL)', 'file:image,video'], ['sound', 'Звук (URL)', 'file:audio'], ['text', 'Подпись']]);
@@ -106,6 +148,8 @@ function render() {
   TOPSEL = { style: s.top.style || 'classic', font: s.top.font || 'manrope' }; topPickers();
   if (!$('#topFrame').src) { $('#topFrame').onload = () => setTimeout(postTop, 400); $('#topFrame').src = ME.urls.widgets.top + '&demo'; } else postTop();
   val('g_title', s.goal.title); val('g_target', s.goal.target); val('g_base', s.goal.base); val('g_theme', s.goal.theme);
+  GOALSEL = s.goal.style || 'classic'; goalPickers();
+  if (!$('#goalFrame').src) { $('#goalFrame').onload = () => setTimeout(postGoal, 400); $('#goalFrame').src = ME.urls.widgets.goal + '&demo'; } else postGoal();
   listEdit('#infoList', (s.info.lines || []).map(v => ({ v })), [['v', 'Текст строки']]);
   val('i_interval', s.info.interval); val('i_theme', s.info.theme);
   val('tm_sec', s.timer.sec_per_100); val('tm_theme', s.timer.theme);
@@ -164,12 +208,17 @@ const readList = sel => [...$(sel).children].map(r => Object.fromEntries([...r.q
 // ---------- сохранение ----------
 const collectors = {
   alerts: () => ({ alerts: { duration: val('a_duration'), gif: val('a_gif'), sound: val('a_sound'), volume: +val('a_volume'), min_alert: val('a_min_alert'), theme: val('a_theme'),
-    show_msg: val('a_show_msg'), tts: val('a_tts'), min_tts: val('a_min_tts'), tts_lang: val('a_tts_lang'), tts_rate: +val('a_tts_rate'),
+    show_msg: val('a_show_msg'), tts: val('a_tts'), min_tts: val('a_min_tts'), tts_voice: VOICESEL, tts_rate: +val('a_tts_rate'),
     variations: readList('#varList') } }),
   censor: () => ({ censor: { words: val('c_words'), strip_links: val('c_strip_links') } }),
   nicks: () => ({ nicks: Object.fromEntries(readList('#nicksList').map(r => [r.k, r.v])) }),
   top: () => ({ top: { period: val('t_period'), count: val('t_count'), theme: val('t_theme'), style: TOPSEL.style, font: TOPSEL.font, title: val('t_title'), size: val('t_size'), radius: +val('t_radius'), opacity: +val('t_opacity') } }),
-  goal: () => ({ goal: { title: val('g_title'), target: val('g_target'), base: val('g_base'), theme: val('g_theme') } }),
+  goal: () => {
+    const t = +val('g_target');
+    if (!t || t < 1 || t > 2000000) throw new Error('Цель сбора — от 1 до 2 000 000 ₸');
+    if (!ME.plan.shop && !goalFree(GOALSEL)) throw new Error('Стиль «' + GOAL_DESIGNS.find(d => d.id === GOALSEL).name + '» доступен с тарифа Lite. Бесплатно: Классика, Неон, Батарейка');
+    return { goal: { title: val('g_title'), target: t, base: val('g_base'), theme: val('g_theme'), style: GOALSEL } };
+  },
   info: () => ({ info: { lines: readList('#infoList').map(r => r.v), interval: val('i_interval'), theme: val('i_theme') } }),
   timer: () => ({ timer: { sec_per_100: val('tm_sec'), theme: val('tm_theme') } }),
   roulette: () => ({ roulette: { enabled: val('r_enabled'), min: val('r_min'), style: val('r_style'), tasks: readList('#taskList').map(r => r.v) } }),
@@ -199,7 +248,18 @@ document.addEventListener('click', e => {
 $('#t_styles').onclick = e => { const d = e.target.closest('.dz'); if (!d) return; TOPSEL.style = d.dataset.s; topPickers(); postTop(); if (d.classList.contains('locked')) toast('Это предпросмотр. Чтобы включить дизайн в эфире, подключите Lite', true); };
 $('#t_fonts').onclick = e => { const b = e.target.closest('button'); if (!b) return; TOPSEL.font = b.dataset.f; topPickers(); postTop(); if (!ME.plan.shop && b.dataset.f !== 'manrope') toast('Это предпросмотр. Шрифты доступны с тарифа Lite', true); };
 ['input', 'change'].forEach(ev => $('.topcfg').addEventListener(ev, postTop));
-$('#goalReset').onclick = () => save('goal', { reset: true });
+$('#goalReset').onclick = () => { if (!confirm('Сбросить прогресс цели? Собранная сумма начнётся с нуля (донаты не удаляются).')) return; save('goal', { reset: true }); postGoal({ kzGoalReset: 1 }); };
+$('#g_styles').onclick = e => { const d = e.target.closest('.gs'); if (!d) return; GOALSEL = d.dataset.g; goalPickers(); postGoal(); if (!ME.plan.shop && !goalFree(GOALSEL)) toast('Это предпросмотр. Стиль включится в эфире с тарифом Lite', true); };
+['g_title', 'g_target', 'g_base', 'g_theme'].forEach(id => ['input', 'change'].forEach(ev => $('#' + id).addEventListener(ev, () => { postGoal(); goalDirty(); })));
+$('#goalTest').onclick = () => { const a = [500, 1000, 2000, 5000, 10000][Math.floor(Math.random() * 5)]; postGoal({ kzGoalBump: a }); toast('Превью: +' + fmt(a) + ' (в эфир не отправляется)'); };
+// голоса: выбор и прослушивание
+$('#a_voices').onclick = e => {
+  const pl = e.target.closest('[data-play]');
+  if (pl) { e.stopPropagation(); try { voiceAudio?.pause(); } catch { } pl.textContent = '…'; voiceAudio = new Audio('/api/tts/sample?voice=' + pl.dataset.play); voiceAudio.onended = voiceAudio.onerror = () => { pl.textContent = '▶'; }; voiceAudio.onplaying = () => { pl.textContent = '■'; }; voiceAudio.play().catch(() => { pl.textContent = '▶'; toast('Не удалось воспроизвести', true); }); return; }
+  const v = e.target.closest('.vc'); if (!v) return;
+  if (!ME.plan.tts && v.dataset.v !== 'dmitry') return toast('Озвучка и выбор голоса — с тарифа Lite. Прослушать можно кнопкой ▶', true);
+  VOICESEL = v.dataset.v; voicePicker(); toast('Голос выбран — нажмите «Сохранить» вверху страницы');
+};
 
 // ---------- тестовый донат ----------
 $('#tSend').onclick = async () => {

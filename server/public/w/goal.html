@@ -1,32 +1,179 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — цель</title>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — цель сбора</title>
 <link rel="stylesheet" href="/w/w.css">
 <style>
-  .panel{width:min(560px,96vw);margin:10px}
-  .t{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
-  h2{font-family:Unbounded;font-size:20px}
-  .pct{font-family:Unbounded;font-size:18px;color:var(--w-b)}
-  .track{height:22px;border-radius:12px;background:rgba(255,255,255,.1);overflow:hidden;position:relative}
-  .fill{height:100%;border-radius:12px;background:linear-gradient(90deg,var(--w-a),var(--w-b));transition:width 1.2s cubic-bezier(.2,.8,.2,1);position:relative;overflow:hidden}
-  .fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sh 2.2s infinite}
-  @keyframes sh{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-  .nums{margin-top:8px;font-weight:800;font-size:17px;opacity:.9}
+  body{padding:34px 12px 12px}
+  .g{width:min(620px,calc(100vw - 24px));position:relative}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .ttl{font-family:Unbounded;font-weight:800;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .num{font-family:Unbounded;font-weight:800;white-space:nowrap}
+  .pop{position:absolute;font-family:Unbounded;font-weight:800;font-size:22px;color:#fff;text-shadow:0 2px 12px rgba(255,59,92,.9);pointer-events:none;animation:pop 1.6s ease-out forwards;z-index:9}
+  @keyframes pop{0%{opacity:0;transform:translateY(10px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1.1)}100%{opacity:0;transform:translateY(-46px) scale(1)}}
+  .done{animation:glow 1.2s ease-in-out infinite alternate}
+  @keyframes glow{to{filter:drop-shadow(0 0 14px rgba(255,200,74,.85))}}
+
+  /* 1. КЛАССИКА KZSTREAM */
+  .s-classic .bar{height:66px;border-radius:16px;background:var(--w-bg);border:2px solid var(--w-a);box-shadow:0 0 0 4px rgba(0,0,0,.25),0 0 24px color-mix(in srgb,var(--w-a) 45%,transparent);position:relative;overflow:hidden}
+  .s-classic .fill{position:absolute;inset:0 auto 0 0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.14) 0 14px,transparent 14px 28px),linear-gradient(90deg,var(--w-a),var(--w-b));background-size:40px 40px,100% 100%;animation:stripes 1s linear infinite;transition:width 1.4s cubic-bezier(.2,.8,.2,1);border-right:2px solid rgba(255,255,255,.6)}
+  .s-classic .fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:shine 2.4s infinite}
+  @keyframes stripes{to{background-position:40px 0,0 0}}
+  @keyframes shine{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+  .s-classic .in{position:absolute;inset:0;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:0 18px;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+  .s-classic .in .num{font-size:19px}.s-classic .in .ttl{font-size:17px;text-align:center}.s-classic .in .t2{text-align:right}
+
+  /* 2. НЕОН-ТРУБКА */
+  .s-neon .ttl{font-size:17px;color:#e9e6ff;text-shadow:0 0 10px #8b6cff}
+  .s-neon .pc{font-family:Unbounded;font-weight:800;font-size:22px;color:#ff4fd8;text-shadow:0 0 12px #ff4fd8}
+  .s-neon .tube{margin:10px 0 8px;height:18px;border-radius:20px;background:rgba(10,8,30,.85);border:2px solid rgba(62,230,196,.55);box-shadow:0 0 14px rgba(62,230,196,.45),inset 0 0 10px rgba(0,0,0,.8);position:relative}
+  .s-neon .fill{position:absolute;left:2px;top:2px;bottom:2px;border-radius:20px;background:linear-gradient(90deg,#3ee6c4,#8b6cff,#ff4fd8);box-shadow:0 0 16px #8b6cff,0 0 30px rgba(255,79,216,.6);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+  .s-neon .fill::after{content:"";position:absolute;right:-9px;top:50%;width:18px;height:18px;margin-top:-9px;border-radius:50%;background:#fff;box-shadow:0 0 12px #fff,0 0 24px #ff4fd8}
+  .s-neon .nums{font-weight:800;color:#bfe9ff;font-size:15px}
+
+  /* 3. БАТАРЕЙКА */
+  .s-battery .ttl{font-size:17px}.s-battery .pc{font-family:Unbounded;font-weight:800;font-size:20px}
+  .s-battery .bat{display:flex;align-items:center;gap:0;margin:10px 0 8px}
+  .s-battery .body{flex:1;display:grid;grid-template-columns:repeat(10,1fr);gap:5px;padding:6px;border:3px solid rgba(255,255,255,.85);border-radius:12px;background:rgba(10,11,20,.85);height:60px}
+  .s-battery .cell{border-radius:5px;background:rgba(255,255,255,.07);transition:background .4s,box-shadow .4s}
+  .s-battery .cap{width:9px;height:24px;background:rgba(255,255,255,.85);border-radius:0 5px 5px 0}
+  .s-battery .nums{text-align:center;font-weight:800;font-size:15px;opacity:.9}
+
+  /* 4. ВОДА (вертикально) */
+  .s-water .g{width:auto}
+  .s-water .wrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:230px}
+  .s-water .ttl{font-size:16px;max-width:230px;text-align:center}
+  .s-water .tank{position:relative;width:170px;height:300px;border-radius:26px 26px 40px 40px;border:3px solid rgba(255,255,255,.75);background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.02) 40%,rgba(255,255,255,.08));overflow:hidden;box-shadow:0 0 0 5px rgba(14,15,26,.6),0 0 30px rgba(0,179,230,.35),inset 0 0 24px rgba(0,0,0,.5)}
+  .s-water .tank::before{content:"";position:absolute;left:14px;top:18px;width:12px;height:70%;border-radius:10px;background:linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,0));z-index:4}
+  .s-water .marks{position:absolute;right:10px;top:10%;bottom:10%;display:flex;flex-direction:column;justify-content:space-between;z-index:4}
+  .s-water .marks i{display:block;width:14px;height:2px;background:rgba(255,255,255,.45)}.s-water .marks i:nth-child(odd){width:22px}
+  .s-water .liquid{position:absolute;left:0;right:0;bottom:0;transition:height 1.8s cubic-bezier(.2,.8,.2,1);background:linear-gradient(#18c8ff,#0077ff 70%,#0053c8)}
+  .s-water .wave{position:absolute;left:0;width:200%;height:26px;top:-24px}
+  .s-water .wave svg{width:100%;height:100%;display:block}
+  .s-water .w1{animation:wave 3.2s linear infinite}.s-water .w2{animation:wave 5s linear infinite reverse;opacity:.55;top:-20px}
+  @keyframes wave{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .s-water .bub{position:absolute;bottom:-12px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);animation:bub linear infinite}
+  @keyframes bub{0%{transform:translateY(0);opacity:0}10%{opacity:1}90%{opacity:.8}100%{transform:translateY(-300px);opacity:0}}
+  .s-water .pc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:Unbounded;font-weight:800;font-size:34px;z-index:5;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+  .s-water .nums{font-family:Unbounded;font-weight:800;font-size:15px;text-align:center;background:var(--w-bg);padding:7px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
+  .s-water .nums small{display:block;font-family:Manrope;font-size:12px;opacity:.7}
+
+  /* 5. КОЛЬЦО */
+  .s-ring .wrap{display:flex;align-items:center;gap:18px;background:var(--w-bg);border-radius:22px;padding:14px 22px 14px 14px;border:1px solid rgba(255,255,255,.1);width:max-content;max-width:100%}
+  .s-ring .rc{position:relative;width:130px;height:130px;flex:none}
+  .s-ring svg{width:130px;height:130px;transform:rotate(-90deg)}
+  .s-ring .arc{transition:stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 6px var(--w-a))}
+  .s-ring .pc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:Unbounded;font-weight:800;font-size:26px}
+  .s-ring .ttl{font-size:18px;max-width:300px}.s-ring .nums{font-weight:800;margin-top:6px;font-size:16px}.s-ring .nums b{color:var(--w-b)}
+
+  /* 6. ГРАДУСНИК */
+  .s-thermo .wrap{display:flex;align-items:flex-end;gap:16px;width:max-content}
+  .s-thermo .th{position:relative;width:56px;height:330px;display:flex;flex-direction:column;align-items:center}
+  .s-thermo .tube{position:relative;width:30px;flex:1;border-radius:20px 20px 0 0;background:rgba(14,15,26,.85);border:3px solid rgba(255,255,255,.8);border-bottom:none;overflow:hidden}
+  .s-thermo .merc{position:absolute;left:4px;right:4px;bottom:0;border-radius:12px 12px 0 0;background:linear-gradient(90deg,#ff3b5c,#ff7a6a,#ff3b5c);transition:height 1.6s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 12px #ff3b5c}
+  .s-thermo .bulb{width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ff8b9e,#ff3b5c 55%,#c0123a);border:3px solid rgba(255,255,255,.8);margin-top:-6px;box-shadow:0 0 22px rgba(255,59,92,.7);display:flex;align-items:center;justify-content:center;font-family:Unbounded;font-weight:800;font-size:13px}
+  .s-thermo .ticks{position:absolute;left:46px;top:14px;bottom:70px;display:flex;flex-direction:column;justify-content:space-between}
+  .s-thermo .ticks i{display:block;width:10px;height:2px;background:rgba(255,255,255,.6)}
+  .s-thermo .info{background:var(--w-bg);border-radius:16px;padding:12px 16px;border:1px solid rgba(255,255,255,.1);margin-bottom:8px;max-width:300px}
+  .s-thermo .ttl{font-size:16px;white-space:normal}.s-thermo .num{font-size:20px;margin-top:6px}.s-thermo .of{opacity:.7;font-weight:800;font-size:14px}
+
+  /* 7. ЗОЛОТО */
+  .s-gold .bar{height:66px;border-radius:12px;background:#0b0a08;border:2px solid #d4af37;box-shadow:0 0 0 3px rgba(0,0,0,.4),0 0 20px rgba(212,175,55,.35);position:relative;overflow:hidden}
+  .s-gold .fill{position:absolute;inset:0 auto 0 0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.18) 0 12px,transparent 12px 24px),linear-gradient(180deg,#fcf6ba,#d4af37 45%,#aa771c);background-size:34px 34px,100% 100%;animation:stripes 1.2s linear infinite;transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+  .s-gold .in{position:absolute;inset:0;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:0 18px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.75)}
+  .s-gold .in .num{font-size:19px}.s-gold .in .ttl{font-size:17px}.s-gold .in .ttl{text-align:center}.s-gold .in .t2{text-align:right;color:#fcf6ba}
+
+  /* 8. МИНИМАЛ */
+  .s-minimal .ttl{font-size:15px;opacity:.9;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+  .s-minimal .big{font-family:Unbounded;font-weight:800;font-size:30px;text-shadow:0 2px 10px rgba(0,0,0,.8)}.s-minimal .big span{font-size:16px;opacity:.7}
+  .s-minimal .line{margin-top:8px;height:6px;border-radius:6px;background:rgba(255,255,255,.18)}
+  .s-minimal .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--w-a),var(--w-b));transition:width 1.4s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 10px var(--w-a)}
 </style></head><body>
-<div class="panel"><div class="t"><h2 id="title">Цель</h2><span class="pct" id="pct">0%</span></div>
-<div class="track"><div class="fill" id="fill" style="width:0"></div></div><div class="nums" id="nums"></div></div>
+<div class="g" id="g"></div>
 <div class="ad" id="ad" style="display:none">KZStream · донаты через Kaspi</div>
 <script src="/w/widget.js"></script>
 <script>
 (() => {
-  const { on, start, theme, fmt } = KZ;
-  function draw(g) {
-    const p = g.target ? Math.min(100, g.sum / g.target * 100) : 0;
-    document.getElementById('title').textContent = g.title; document.getElementById('pct').textContent = Math.floor(p) + '%';
-    document.getElementById('fill').style.width = p + '%'; document.getElementById('nums').textContent = `${fmt(g.sum)} / ${fmt(g.target)}`;
+  const { on, start, theme, fmt, esc } = KZ;
+  const demo = new URLSearchParams(location.search).has('demo');
+  let style = '', G = { sum: 0, target: 1, title: '' }, shown = null;
+  const $ = s => document.querySelector(s);
+  const pct = () => G.target ? Math.min(100, G.sum / G.target * 100) : 0;
+  const n0 = n => Number(n || 0).toLocaleString('ru-RU').replace(/,/g, ' ');
+
+  const T = {
+    classic: () => `<div class="bar"><div class="fill" data-w></div><div class="in"><span class="num" data-sum></span><span class="ttl" data-title></span><span class="num t2" data-target></span></div></div>`,
+    gold: () => `<div class="bar"><div class="fill" data-w></div><div class="in"><span class="num" data-sum></span><span class="ttl" data-title></span><span class="num t2" data-target></span></div></div>`,
+    neon: () => `<div class="row"><span class="ttl" data-title></span><span class="pc" data-pc></span></div><div class="tube"><div class="fill" data-w></div></div><div class="row nums"><span data-sum></span><span data-target></span></div>`,
+    battery: () => `<div class="row"><span class="ttl" data-title></span><span class="pc" data-pc></span></div><div class="bat"><div class="body">${'<div class="cell"></div>'.repeat(10)}</div><div class="cap"></div></div><div class="nums"><span data-sum></span> из <span data-target></span></div>`,
+    water: () => `<div class="wrap"><div class="ttl" data-title></div><div class="tank"><div class="liquid" data-h>
+        <div class="wave w2"><svg viewBox="0 0 400 26" preserveAspectRatio="none"><path d="M0 14 Q50 0 100 14 T200 14 T300 14 T400 14 V26 H0Z" fill="#7fdcff"/></svg></div>
+        <div class="wave w1"><svg viewBox="0 0 400 26" preserveAspectRatio="none"><path d="M0 14 Q50 26 100 14 T200 14 T300 14 T400 14 V26 H0Z" fill="#18c8ff"/></svg></div>
+        ${[...Array(9)].map(() => { const s = 5 + Math.random() * 10; return `<i class="bub" style="left:${8 + Math.random() * 80}%;width:${s}px;height:${s}px;animation-duration:${3 + Math.random() * 4}s;animation-delay:${-Math.random() * 6}s"></i>`; }).join('')}
+      </div><div class="marks">${'<i></i>'.repeat(9)}</div><div class="pc" data-pc></div></div>
+      <div class="nums"><span data-sum></span><small>из <span data-target></span></small></div></div>`,
+    ring: () => `<div class="wrap"><div class="rc"><svg viewBox="0 0 130 130"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--w-a)"/><stop offset="1" stop-color="var(--w-b)"/></linearGradient></defs>
+        <circle cx="65" cy="65" r="54" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="13"/><circle class="arc" data-arc cx="65" cy="65" r="54" fill="none" stroke="url(#rg)" stroke-width="13" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3"/></svg><div class="pc" data-pc></div></div>
+        <div><div class="ttl" data-title></div><div class="nums"><b data-sum></b> / <span data-target></span></div></div></div>`,
+    thermo: () => `<div class="wrap"><div class="th"><div class="tube"><div class="merc" data-h></div></div><div class="bulb" data-pc></div><div class="ticks">${'<i></i>'.repeat(10)}</div></div>
+        <div class="info"><div class="ttl" data-title></div><div class="num" data-sum></div><div class="of">из <span data-target></span></div></div></div>`,
+    minimal: () => `<div class="ttl" data-title></div><div class="big"><span data-sum-raw></span> <span>/ <i data-target style="font-style:normal"></i></span></div><div class="line"><div class="fill" data-w></div></div>`,
+  };
+
+  function build(st) {
+    style = T[st] ? st : 'classic';
+    document.body.className = 's-' + style;
+    $('#g').innerHTML = T[style]();
+    shown = null; draw();
   }
-  on('state', st => { theme(st.settings.goal.theme); document.getElementById('ad').style.display = st.plan.ads ? '' : 'none'; draw(st.goal); });
-  on('settings', s => theme(s.goal.theme));
-  on('stats', d => draw(d.goal));
+  function draw() {
+    const p = pct();
+    document.querySelectorAll('[data-title]').forEach(e => e.textContent = G.title);
+    document.querySelectorAll('[data-sum]').forEach(e => e.textContent = fmt(G.sum));
+    document.querySelectorAll('[data-sum-raw]').forEach(e => e.textContent = fmt(G.sum));
+    document.querySelectorAll('[data-target]').forEach(e => e.textContent = fmt(G.target));
+    document.querySelectorAll('[data-pc]').forEach(e => e.textContent = Math.floor(p) + '%');
+    document.querySelectorAll('[data-w]').forEach(e => e.style.width = (style === 'neon' ? `calc(${p}% - 4px)` : p + '%'));
+    document.querySelectorAll('[data-h]').forEach(e => e.style.height = (style === 'water' ? Math.max(p, 2) : p) + '%');
+    const arc = $('[data-arc]'); if (arc) arc.style.strokeDashoffset = 339.3 * (1 - p / 100);
+    // батарейка: 10 делений, цвет от красного к зелёному
+    const cells = document.querySelectorAll('.cell');
+    if (cells.length) { const on = Math.round(p / 10), hue = Math.round(p * 1.2); cells.forEach((c, i) => { const lit = i < on; c.style.background = lit ? `hsl(${hue},90%,52%)` : ''; c.style.boxShadow = lit ? `0 0 10px hsla(${hue},90%,55%,.7)` : ''; }); }
+    $('#g').classList.toggle('done', p >= 100);
+    if (shown !== null && G.sum > shown) bump(G.sum - shown);
+    shown = G.sum;
+  }
+  function bump(amount) {
+    const e = document.createElement('div'); e.className = 'pop'; e.textContent = '+' + n0(amount) + ' ₸';
+    const r = $('#g').getBoundingClientRect(); e.style.left = (r.width / 2 - 50) + 'px'; e.style.top = '-6px';
+    $('#g').appendChild(e); setTimeout(() => e.remove(), 1700);
+  }
+
+  if (demo) {
+    // превью в кабинете: примерная сумма, настройки приходят из кабинета
+    let set = { style: 'classic', title: 'Цель сбора', target: 145000, theme: 'default' };
+    G = { sum: Math.round(set.target * 0.65), target: set.target, title: set.title };
+    addEventListener('message', e => {
+      if (e.origin !== location.origin || !e.data) return;
+      if (e.data.kzGoal) {
+        const n = e.data.kzGoal, oldT = G.target;
+        set = { ...set, ...n }; theme(set.theme || 'default');
+        G.title = set.title || 'Цель сбора'; G.target = Math.max(1, +set.target || 1);
+        if (oldT !== G.target) { G.sum = Math.round(G.target * 0.65); shown = G.sum; }
+        if (set.style !== style) build(set.style); else draw();
+      }
+      if (e.data.kzGoalBump) { G.sum += e.data.kzGoalBump; draw(); }
+      if (e.data.kzGoalReset) { shown = 0; G.sum = 0; draw(); }
+    });
+    document.documentElement.style.background = 'transparent';
+    theme('default'); build('classic');
+    return;
+  }
+  on('state', st => {
+    theme(st.settings.goal.theme); $('#ad').style.display = st.plan.ads ? '' : 'none';
+    G = { ...st.goal }; shown = G.sum;
+    if (st.settings.goal.style !== style) build(st.settings.goal.style); else draw();
+  });
+  on('settings', s => { theme(s.goal.theme); if (s.goal.style !== style) build(s.goal.style); });
+  on('stats', d => { G = { ...G, ...d.goal }; draw(); });
   start();
 })();
 </script></body></html>
