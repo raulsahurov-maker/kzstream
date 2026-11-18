@@ -52,6 +52,9 @@
 (() => {
   const { on, start, theme, fmt, esc, token } = KZ;
   let S = null, PLAN = null, queue = [], busy = false, skipFn = null, aborted = false;
+  const IS_PREVIEW = new URLSearchParams(location.search).has('preview');
+  let MUTE = false;
+  addEventListener('message', e => { if (IS_PREVIEW && e.origin === location.origin && e.data && 'kzMute' in e.data) { MUTE = !!e.data.kzMute; document.querySelectorAll('video,audio').forEach(v => v.muted = MUTE); if (MUTE) { try { speechSynthesis.cancel(); } catch { } } } });
   const DEF_SOUND = 'data:audio/wav;base64,' + makeChime();
 
   on('state', st => { S = st.settings.alerts; PLAN = st.plan; theme(S.theme); });
@@ -64,7 +67,7 @@
   function playAudio(src, vol) {
     if (aborted) return Promise.resolve();
     return new Promise(res => {
-      const a = new Audio(src); a.volume = vol ?? S.volume;
+      const a = new Audio(src); a.volume = vol ?? S.volume; a.muted = MUTE;
       const done = () => { skipFn = null; res(); };
       a.onended = done; a.onerror = () => res('error');
       skipFn = () => { a.pause(); done(); };
@@ -78,7 +81,7 @@
   }
   function speakBrowser(text) {
     return new Promise(res => {
-      if (!window.speechSynthesis) return res();
+      if (!window.speechSynthesis || MUTE) return res();
       const u = new SpeechSynthesisUtterance(text); u.lang = { ru: 'ru-RU', kk: 'kk-KZ', en: 'en-US', tr: 'tr-TR', uk: 'uk-UA' }[S.tts_lang] || 'ru-RU';
       u.rate = S.tts_rate || 1; u.volume = S.volume;
       const vs = speechSynthesis.getVoices().filter(v => v.lang.startsWith(u.lang.slice(0, 2))); const fem = /svetlana|aigul|emma|ava|chipmunk/.test(S.tts_voice || ''); const male = vs.find(v => (fem ? /svetlana|irina|aigul|female|жен/i : /pavel|dmitr|male|муж|daulet|guy|ahmet|ostap/i).test(v.name)); if (male || vs[0]) u.voice = male || vs[0]; u.onend = res; u.onerror = res;
@@ -109,7 +112,7 @@
     return new Promise(res => {
       const cap = setTimeout(done, 20000);
       function done() { clearTimeout(cap); skipFn = null; res(); }
-      el.volume = S.volume; el.muted = false; el.onended = done; el.onerror = done;
+      el.volume = S.volume; el.muted = MUTE; el.onended = done; el.onerror = done;
       skipFn = () => { el.pause(); done(); };
       el.play().catch(() => { el.muted = true; el.play().catch(() => {}); document.getElementById('unmute').style.display = 'block'; setTimeout(done, 6000); });
     });
@@ -140,7 +143,7 @@
   }
   // звуки, созданные кодом (без чужих файлов)
   let AC = null; const ac = () => AC || (AC = new (window.AudioContext || window.webkitAudioContext)());
-  function tone(f, t0, dur, type = 'sine', vol = .25) { try { const c = ac(), o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, c.currentTime + t0); g.gain.setValueAtTime(vol * S.volume, c.currentTime + t0); g.gain.exponentialRampToValueAtTime(.001, c.currentTime + t0 + dur); o.connect(g).connect(c.destination); o.start(c.currentTime + t0); o.stop(c.currentTime + t0 + dur + .05); } catch { } }
+  function tone(f, t0, dur, type = 'sine', vol = .25) { try { const c = ac(), o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, c.currentTime + t0); g.gain.setValueAtTime(MUTE ? 0.0001 : vol * S.volume, c.currentTime + t0); g.gain.exponentialRampToValueAtTime(.001, c.currentTime + t0 + dur); o.connect(g).connect(c.destination); o.start(c.currentTime + t0); o.stop(c.currentTime + t0 + dur + .05); } catch { } }
   const cashSound = () => { tone(1320, 0, .12, 'square', .12); tone(1760, .1, .5, 'triangle', .22); tone(2640, .12, .6, 'sine', .12); for (let i = 0; i < 8; i++) tone(3000 + Math.random() * 2000, .3 + i * .06, .08, 'triangle', .05); };
   const coinSound = () => { for (let i = 0; i < 10; i++) tone(2200 + i * 80, i * .2, .07, 'triangle', .08); tone(3520, 2.3, .9, 'sine', .25); tone(4186, 2.35, .9, 'sine', .15); };
   const EAGLE = `<svg viewBox="0 0 120 90"><g fill="#7a4300"><path d="M60 22c-4 0-7 3-7 7 0 2 1 4 2 5l-6 3c-12-14-30-20-46-18 10 6 18 13 23 22-8-2-15-1-21 2 11 2 20 6 27 12l-6 6h8l2-3c4 2 8 3 12 3l-2 10 6-6 6 6-2-10c4 0 8-1 12-3l2 3h8l-6-6c7-6 16-10 27-12-6-3-13-4-21-2 5-9 13-16 23-22-16-2-34 4-46 18l-6-3c1-1 2-3 2-5 0-4-3-7-7-7z"/><circle cx="57" cy="27" r="1.6" fill="#ffd36a"/><path d="M53 29l-5 2 5 1z"/></g><g fill="none" stroke="#7a4300" stroke-width="2.4"><path d="M18 14c8-9 18-12 26-12M102 14c-8-9-18-12-26-12" opacity=".55"/></g></svg>`;

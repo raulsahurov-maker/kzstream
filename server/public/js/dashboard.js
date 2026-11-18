@@ -234,7 +234,7 @@ function render() {
   listEdit('#hkList', s.hotkeys, [['min', 'От, ₸', 'number'], ['max', 'До, ₸ (0 = ∞)', 'number'], ['keys', 'Клавиши, напр. ctrl+shift+1']]);
   listEdit('#whList', s.webhooks.map(v => ({ v })), [['v', 'https://...']]);
   // превью и тесты
-  if (!$('#prevFrame').src) $('#prevFrame').src = ME.urls.widgets.alerts + '&preview';
+  if (!$('#prevFrame').src) { let hid = false; try { hid = localStorage.kzPvHide === '1'; } catch { } if (hid) pvShow(false); else $('#prevFrame').src = ME.urls.widgets.alerts + '&preview'; }
   if (!$('#rFrame').src) $('#rFrame').src = ME.urls.widgets.roulette + '&preview';
   $('#rOpen').href = ME.urls.widgets.roulette; $('#mOpen').href = ME.urls.widgets.media; val('mPlayerUrl', ME.urls.widgets.media);
   themePickers();
@@ -371,7 +371,27 @@ $('#tSend').onclick = async () => {
   catch (e) { toast(e.message, true); }
 };
 
-$('#tSound').onclick = () => { try { $('#prevFrame').contentWindow.KZunlock?.(); } catch { } toast('Звук в превью включён'); };
+// звук превью — только на сайте; выбор запоминается
+let pvOn = (() => { try { return localStorage.kzPvSound === '1'; } catch { return false; } })();
+function pvSound(on, user) {
+  pvOn = on; try { localStorage.kzPvSound = on ? '1' : '0'; } catch { }
+  const w = $('#prevFrame').contentWindow;
+  try { if (on && user) w.KZunlock?.(); w.postMessage({ kzMute: !on }, location.origin); } catch { }
+  $('#pvSound').textContent = on ? '🔊 Звук включён' : '🔇 Звук выключен';
+  $('#tSound').textContent = on ? '🔇 Выключить звук в превью' : '🔊 Включить звук в превью';
+  $('#pvSound').classList.toggle('on', on);
+}
+$('#tSound').onclick = $('#pvSound').onclick = () => { pvSound(!pvOn, true); toast(pvOn ? 'Звук в превью включён (только на сайте)' : 'Звук в превью выключен — в эфире звук остаётся'); };
+// скрыть превью — только на сайте (в эфире ничего не меняется)
+function pvShow(show) {
+  try { localStorage.kzPvHide = show ? '0' : '1'; } catch { }
+  $('#pvBox').classList.toggle('hide', !show); $('#pvOff').classList.toggle('hide', show);
+  $('#pvHide').textContent = show ? '🙈 Скрыть превью' : '👁 Показать превью';
+  const f = $('#prevFrame');
+  if (!show) f.src = 'about:blank'; else if (!f.src || f.src === 'about:blank') f.src = ME.urls.widgets.alerts + '&preview';
+}
+$('#pvHide').onclick = () => { const show = $('#pvBox').classList.contains('hide'); pvShow(show); toast(show ? 'Превью включено' : 'Превью скрыто — только на сайте'); };
+$('#prevFrame').addEventListener('load', () => setTimeout(() => pvSound(pvOn, false), 300));
 $('#rTest').onclick = async () => { try { const r = await api('/api/test/roulette', { method: 'POST' }); toast('Крутим! Выпадет: ' + r.task); } catch (e) { toast(e.message, true); } };
 $('#mTest').onclick = async () => { try { await api('/api/test/media', { method: 'POST', body: { url: val('mTestUrl') } }); toast('Видео добавлено в очередь — откройте плеер'); } catch (e) { toast(e.message, true); } };
 

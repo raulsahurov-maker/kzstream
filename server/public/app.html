@@ -87,6 +87,8 @@
   .up-ava{width:76px;height:76px;border-radius:50%;border:2px dashed var(--line);background:var(--bg2) center/cover no-repeat;display:grid;place-items:center;font-size:28px;flex:none}
   .up-ava.has{border:3px solid var(--accent);font-size:0}
   .up-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .hide{display:none!important}
+  #pvSound.on{border-color:rgba(62,230,196,.5);color:#3ee6c4}
   .as-sec{font-size:13px;font-weight:800;margin:4px 0 8px}
   .my-alerts{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
   .ma{position:relative;border-radius:12px;overflow:hidden;border:2px solid var(--line);cursor:pointer;aspect-ratio:16/11;background:#000}
@@ -206,7 +208,7 @@
         <div class="row"><div class="field"><input id="tName" placeholder="Имя" value="Тестовый донатер"></div><div class="field"><input id="tAmount" type="number" value="1000"></div></div>
         <div class="field"><input id="tMsg" placeholder="Сообщение" value="Привет! Это тестовый донат 🔥"></div>
         <div class="field"><label>Голос озвучки для теста</label><div style="display:flex;gap:8px"><select id="tVoice" style="flex:1"></select><button class="btn btn-ghost" id="tVoicePlay" type="button" title="Прослушать">▶</button></div></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="tSend">Отправить тестовый донат</button><button class="btn btn-ghost" id="tSound">🔊 Включить звук в превью</button></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="tSend">Отправить тестовый донат</button><button class="btn btn-ghost" id="tSound">🔊 Звук в превью: выкл</button></div>
       </div>
       <div class="card" id="alertStyles">
         <h3>Стиль алерта</h3>
@@ -218,8 +220,8 @@
         <div class="as-grid" id="asGrid"></div>
       </div>
       <div class="card" style="grid-column:1/-1">
-        <h3>Превью — так алерт выглядит в TikTok Live</h3><p class="hint">Отправьте тестовый донат и смотрите. Чтобы слышать звук и озвучку здесь, нажмите «Включить звук в превью».</p>
-        <div class="obs-prev"><iframe id="prevFrame" allow="autoplay"></iframe></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>Превью — так алерт выглядит в TikTok Live</h3><div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="pvSound">🔇 Звук выключен</button><button class="btn btn-ghost btn-sm" id="pvHide">🙈 Скрыть превью</button></div></div><p class="hint">Отправьте тестовый донат и смотрите. Кнопка звука включает или выключает звук и озвучку <b>только здесь, на сайте</b> — в эфире алерты звучат как обычно.</p>
+        <div class="obs-prev" id="pvBox"><iframe id="prevFrame" allow="autoplay"></iframe></div><div class="muted hide" id="pvOff" style="padding:18px;text-align:center;border:1px dashed var(--line);border-radius:14px">Превью выключено — алерты в эфире работают как обычно.</div>
       </div>
       <div class="card">
         <h3>Лента в реальном времени</h3>
