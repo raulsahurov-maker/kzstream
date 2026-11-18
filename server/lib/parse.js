@@ -17,7 +17,10 @@ const SENDER_RES = [
   new RegExp(`(?:от|from|[Оо]тправитель:?|[Жж]іберуші:?)\\s+${NAME}`, 'gu'),
   // Kaspi: «Пополнение: 100 ₸ Арысланбек Т.» — имя сразу после суммы (в одну строку)
   new RegExp(`\\d\\s*${CUR}\\s+${NAME}\\s*$`, 'gimu'),
+  new RegExp(`\\d\\s*${CUR}\\s+${NAME}\\s*:`, 'gimu'),
   new RegExp(`${NAME}\\s+(?:перевел|перевела|перевёл|отправил|отправила|аударды)`, 'gu'),
+  // Kaspi: «Арысланбек Т.: текст» — имя, двоеточие, сообщение
+  new RegExp(`^${NAME}\\s*:\\s*\\S`, 'gmu'),
   // Kaspi: имя отправителя отдельной строкой («Арысланбек Т.»)
   new RegExp(`^${NAME}\\s*$`, 'gmu'),
 ];
@@ -62,6 +65,7 @@ function parseMessage(title, text, sender) {
       let s = line.trim();
       if (!s || SERVICE_LINE.test(s) || JUNK_LINE.test(s)) return '';
       if (sender && s.replace(/[.\s]/g, '') === sender.replace(/[.\s]/g, '')) return '';
+      if (sender && s.startsWith(sender) && /^\s*:/.test(s.slice(sender.length))) return s.slice(sender.length).replace(/^\s*:\s*/, '');
       const bankLine = AMOUNT_RES[0].test(s) || AMOUNT_RES[1].test(s) || (sender && s.includes(sender));
       if (!bankLine) return s; // отдельная строка — это комментарий зрителя, оставляем как есть
       s = s.replace(AMOUNT_RES[0], ' ').replace(AMOUNT_RES[1], ' ');

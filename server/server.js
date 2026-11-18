@@ -101,15 +101,21 @@ async function initStorage() {
     catch (e) { console.error('Turso: ошибка в запросе:', st.slice(0, 80).replace(/\s+/g, ' '), '→', e.message, e.cause?.message || ''); throw e; }
   }
   for (const [alter, after] of MIGRATIONS) { try { await client.execute(alter); if (after) await client.execute(after); } catch { /* поле уже есть */ } }
+  // загружаем таблицы частями (большой ответ Turso обрывает соединение); видео/картинки (file_data) — не грузим,
+  // они подтягиваются по одному при первом запросе файла
   let total = 0;
   for (const t of TABLES) {
-    const r = await client.execute(`SELECT * FROM ${t}`);
-    if (!r.rows.length) continue;
-    const cols = r.columns, ins = db.prepare(`INSERT OR REPLACE INTO ${t}(${cols.join(',')}) VALUES(${cols.map(() => '?').join(',')})`);
-    db.exec('BEGIN');
-    for (const row of r.rows) ins.run(...cols.map(c => { const v = row[c]; return v instanceof ArrayBuffer ? Buffer.from(v) : (typeof v === 'bigint' ? Number(v) : v); }));
-    db.exec('COMMIT');
-    total += r.rows.length;
+    if (t === 'file_data') continue;
+    for (let off = 0; ; off += 500) {
+      const r = await client.execute({ sql: `SELECT * FROM ${t} ORDER BY rowid LIMIT 500 OFFSET ?`, args: [off] });
+      if (!r.rows.length) break;
+      const cols = r.columns, ins = db.prepare(`INSERT OR REPLACE INTO ${t}(${cols.join(',')}) VALUES(${cols.map(() => '?').join(',')})`);
+      db.exec('BEGIN');
+      for (const row of r.rows) ins.run(...cols.map(c => { const v = row[c]; return v instanceof ArrayBuffer ? Buffer.from(v) : (typeof v === 'bigint' ? Number(v) : v); }));
+      db.exec('COMMIT');
+      total += r.rows.length;
+      if (r.rows.length < 500) break;
+    }
   }
   remote = client;
   console.log(`База Turso подключена, загружено строк: ${total}`);
@@ -623,9 +629,17 @@ app.delete('/api/files/:id', auth, (req, res) => {
   if (f) { q('DELETE FROM file_data WHERE file=?').run(f.file); q('DELETE FROM files WHERE id=?').run(f.id); }
   res.json({ ok: true });
 });
-app.get('/u/:uid/:file', (req, res) => {
+app.get('/u/:uid/:file', async (req, res) => {
   const key = `${req.params.uid}/${req.params.file}`;
-  const f = q('SELECT mime FROM files WHERE file=?').get(key), d = f && q('SELECT data FROM file_data WHERE file=?').get(key);
+  const f = q('SELECT mime FROM files WHERE file=?').get(key);
+  let d = f && q('SELECT data FROM file_data WHERE file=?').get(key);
+  if (f && !d && remote) {
+    try {
+      const r = await remote.execute({ sql: 'SELECT data FROM file_data WHERE file=?', args: [key] });
+      const v = r.rows[0]?.data;
+      if (v) { d = { data: v instanceof ArrayBuffer ? Buffer.from(v) : Buffer.from(v) }; db.prepare('INSERT OR REPLACE INTO file_data(file,data) VALUES(?,?)').run(key, d.data); }
+    } catch (e) { console.error('Turso: файл', key, e.message); }
+  }
   if (!d) return res.status(404).end();
   res.set({ 'Content-Type': f.mime, 'Cache-Control': 'public, max-age=604800' }).send(Buffer.from(d.data));
 });
@@ -991,8 +1005,17 @@ if (SELF_URL) {
   setInterval(() => { fetch(SELF_URL + '/healthz', { signal: AbortSignal.timeout(20000) }).catch(() => {}); }, 10 * 60 * 1000);
   console.log('Защита от сна включена: ' + SELF_URL);
 }
-initStorage().then(listen).catch(e => {
-  console.error('Не удалось подключиться к Turso:', e.message, e.code || '', e.cause?.message || '');
-  console.error('ВНИМАНИЕ: сайт запущен БЕЗ сохранения данных в Turso. Проверьте TURSO_URL и TURSO_TOKEN.');
-  remote = null; listen();
-});
+// база обязательна: без неё новые донаты и аккаунты пропали бы при обновлении сайта.
+// Пробуем подключиться несколько раз; если не вышло — выходим с ошибкой (Render оставит работать прошлую версию и перезапустит).
+(async () => {
+  for (let i = 1; i <= 8; i++) {
+    try { await initStorage(); return listen(); }
+    catch (e) {
+      console.error(`Не удалось подключиться к Turso (попытка ${i}/8):`, e.message, e.cause?.message || '');
+      db.exec('BEGIN'); for (const t of TABLES) db.exec(`DELETE FROM ${t}`); db.exec('COMMIT');
+      await new Promise(r => setTimeout(r, 10000));
+    }
+  }
+  console.error('ВНИМАНИЕ: Turso недоступен — сервер не запускается без базы, чтобы не потерять данные.');
+  process.exit(1);
+})();
