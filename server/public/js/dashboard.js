@@ -659,3 +659,19 @@ function sizePickers() {
 }
 setInterval(sizePickers, 1500);
 })();
+
+// виджеты: разделы-ярлыки, чтобы не листать всё подряд
+(function () {
+  const bar = document.getElementById('wtabs'); if (!bar) return;
+  function show(t) {
+    if (!document.querySelector(`[data-wsec="${t}"]`)) t = 'links';
+    bar.querySelectorAll('[data-wt]').forEach(b => b.classList.toggle('on', b.dataset.wt === t));
+    document.querySelectorAll('[data-wsec]').forEach(el => el.classList.toggle('wh', el.dataset.wsec !== t));
+    try { localStorage.kzWTab = t; } catch { }
+    // превью в скрытых разделах подстраиваются заново, когда раздел открыли
+    setTimeout(() => { try { fitPreviews(); } catch { } document.querySelectorAll(`[data-wsec="${t}"] iframe`).forEach(f => { try { f.contentWindow.dispatchEvent(new Event('resize')); } catch { } }); }, 60);
+  }
+  bar.addEventListener('click', e => { const b = e.target.closest('[data-wt]'); if (b) { show(b.dataset.wt); bar.scrollIntoView({ block: 'nearest' }); } });
+  let t = 'links'; try { t = localStorage.kzWTab || 'links'; } catch { }
+  show(t);
+})();

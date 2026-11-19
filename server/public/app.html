@@ -111,6 +111,12 @@
   .ck2{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--bg2);display:flex;flex-direction:column;gap:8px}
   .ck2 .hd2{display:flex;align-items:center;gap:10px;font-weight:800}.ck2 .hd2 i{width:30px;height:30px;border-radius:8px;overflow:hidden;display:grid;place-items:center;flex:none}
   @keyframes pvf{from{filter:brightness(.85);transform:scaleY(.85)}to{filter:brightness(1.2);transform:scaleY(1.1)}}
+  .wtabs{position:sticky;top:0;z-index:20;display:flex;gap:8px;flex-wrap:wrap;padding:10px 0 14px;margin-bottom:4px;background:var(--bg,#0b0c12)}
+  .wtabs button{padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:var(--card,#14161f);color:var(--muted,#9aa0b4);font:inherit;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap}
+  .wtabs button:hover{color:#fff}
+  .wtabs button.on{color:#fff;border-color:var(--accent);background:color-mix(in srgb,var(--accent) 20%,transparent);box-shadow:0 0 0 1px var(--accent) inset}
+  [data-wsec].wh{display:none!important}
+  @media (max-width:760px){.wtabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.wtabs button{padding:9px 13px;font-size:13px}}
   .shape2{display:flex;gap:6px}.shape2 button{flex:1;padding:8px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted,#9aa0b4);font-weight:800;cursor:pointer;font-family:inherit}.shape2 button.on{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 18%,transparent)}
   .ck2 .hd2 i img{width:100%;height:100%;object-fit:cover}.ck2 .hd2 i svg{width:18px;height:18px}
   .ck2 iframe{width:100%;height:96px;border:0;border-radius:10px;background:repeating-conic-gradient(#1a1c26 0 25%,#13151e 0 50%) 0 0/18px 18px}
@@ -372,9 +378,13 @@
   <section class="page" id="p-widgets">
     <div class="top"><h1>Виджеты для TikTok Live Studio</h1></div>
     <div class="card" style="margin-bottom:18px"><h3>Как добавить в TikTok Live Studio</h3><p class="hint" style="margin:0">Откройте TikTok Live Studio → «Добавить источник» → «Ссылка» (Link) → вставьте ссылку виджета → «Добавить». Растяните виджет на нужное место кадра. Алерты и рулетку лучше растянуть на весь экран, ТОП и цель сбора поставить сбоку. Перед эфиром отправьте тестовый донат на главной.</p></div>
-    <div class="grid g2" id="wlinks"></div>
-    <div class="grid g2" style="margin-top:18px">
-      <div class="card topcfg" style="grid-column:1/-1">
+    <div class="wtabs" id="wtabs">
+      <button data-wt="links">🔗 Все ссылки</button><button data-wt="top">🏆 ТОП дня</button><button data-wt="goal">🎯 Цель сбора</button>
+      <button data-wt="cards">🏦 Карточки: банки и соцсети</button><button data-wt="info">📰 Info-виджет</button><button data-wt="timer">⏱ Таймер</button>
+    </div>
+    <div class="grid g2" id="wlinks" data-wsec="links"></div>
+    <div class="grid g2" id="wsecs">
+      <div class="card topcfg" style="grid-column:1/-1" data-wsec="top">
         <h3>ТОП донатеров <span class="wb free">Бесплатно</span></h3><p class="hint">Конструктор виджета: выберите дизайн, шрифт и размеры — превью меняется сразу. На Free — дизайн «Классика» с небольшим логотипом KZStream.</p>
         <div class="top-grid">
           <div>
@@ -401,7 +411,7 @@
           </div>
         </div>
       </div>
-      <div class="card" style="grid-column:1/-1">
+      <div class="card" style="grid-column:1/-1" data-wsec="goal">
         <div class="gl-head"><h3>Цель сбора <span class="wb free">Бесплатно</span></h3><span class="muted" style="font-size:13px">В эфире сейчас: <b id="goalLive" style="color:var(--accent2)">Классика</b></span></div>
         <p class="hint" id="goalNow"></p>
         <div class="gl-bar">
@@ -426,12 +436,12 @@
         </div>
         <p class="muted" style="font-size:12.5px;margin-top:10px">Виджет в эфире переключится сам — ссылку в TikTok Live Studio менять не нужно. Цель — до 2 000 000 ₸. Классика, Неон и Батарейка — бесплатно, остальные стили — с тарифа Lite.</p>
       </div>
-      <div class="card" style="grid-column:1/-1" id="cardsCfg">
+      <div class="card" style="grid-column:1/-1" id="cardsCfg" data-wsec="cards">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>Карточки: банки и соцсети</h3><button class="btn btn-primary btn-sm" id="cardsSave">Сохранить</button></div>
         <p class="hint">Каждая карточка — отдельный виджет: логотип слева, ваш номер или ник. Добавьте нужные в TikTok Live Studio по своей ссылке. Пустая карточка в эфире не показывается.</p>
         <div class="cards-grid" id="cardsGrid"></div>
       </div>
-      <div class="card infocfg" style="grid-column:1/-1">
+      <div class="card infocfg" style="grid-column:1/-1" data-wsec="info">
         <h3>Info-виджет <span class="lock" data-need="info">Lite</span></h3><p class="hint">Бегущая строка или обычный текст со стилями: впишите подробности (правила, ссылки, акции). В режиме «Обычный текст» каждая строка — отдельная строчка на экране.</p>
         <div class="gl-prev" style="margin-bottom:14px"><div class="gl-cap">ПРЕВЬЮ · ТАК В ЭФИРЕ</div><iframe id="infoFrame" title="Превью info" style="height:82px"></iframe></div>
         <div class="field"><label>Режим</label><div class="shape2" id="i_modeBox"><button type="button" data-im="marquee">➡️ Бегущая строка</button><button type="button" data-im="static">📝 Обычный текст</button></div><input type="hidden" id="i_mode"></div>
@@ -451,7 +461,7 @@
         <div class="field"><label>Цвета</label><select id="i_theme" data-themes></select></div>
         <button class="btn btn-primary" data-save="info">Сохранить</button>
       </div>
-      <div class="card">
+      <div class="card" style="grid-column:1/-1" data-wsec="timer">
         <h3>Таймер (сабатон) <span class="lock" data-need="timer">Lite</span></h3><p class="hint">Донаты добавляют время к эфиру. Сейчас: <b id="timerNow">—</b></p>
         <div class="row"><div class="field"><label>Секунд за каждые 100 ₸</label><input type="number" id="tm_sec"></div><div class="field"><label>Тема</label><select id="tm_theme" data-themes></select></div></div>
         <button class="btn btn-ghost btn-sm" data-save="timer" style="margin-bottom:14px">Сохранить</button>
