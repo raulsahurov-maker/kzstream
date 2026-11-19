@@ -825,6 +825,16 @@ app.post('/api/admin/payments/:id', admin, (req, res) => {
   } else q(`UPDATE payments SET status='rejected' WHERE id=?`).run(p.id);
   res.json({ ok: true });
 });
+// админ: выдать пользователю новый пароль (старый узнать нельзя — хранится только хеш)
+app.post('/api/admin/users/:id/password', admin, (req, res) => {
+  const u = userById(+req.params.id); if (!u) return res.status(404).json({ error: 'Пользователь не найден' });
+  const pw = String(req.body.password || '').trim() || Array.from(crypto.randomBytes(8), b => 'abcdefghkmnpqrstuvwxyz23456789'[b % 30]).join('');
+  if (pw.length < 6) return res.status(400).json({ error: 'Пароль минимум 6 символов' });
+  const salt = rnd(16);
+  q('UPDATE users SET pass=?, salt=? WHERE id=?').run(hashPass(pw, salt), salt, u.id);
+  q('DELETE FROM sessions WHERE user_id=?').run(u.id); // выходим со всех устройств
+  res.json({ ok: true, password: pw, nick: u.nick, email: u.email });
+});
 app.post('/api/admin/users/:id', admin, (req, res) => {
   const u = userById(+req.params.id); if (!u) return res.status(404).json({ error: 'Нет пользователя' });
   if (req.body.plan === 'free') q(`UPDATE users SET plan='free', plan_until=0 WHERE id=?`).run(u.id);
