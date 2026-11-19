@@ -4,12 +4,12 @@
 <style>
   #stage{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;opacity:0;transition:.4s}
   #stage.on{opacity:1}
-  .who{font-family:Unbounded;font-weight:800;font-size:24px;text-shadow:0 2px 10px #000}
-  .res{font-family:Unbounded;font-weight:800;font-size:32px;padding:12px 22px;border-radius:14px;background:var(--w-bg);opacity:0;transform:scale(.8);transition:.5s cubic-bezier(.2,1.4,.4,1);text-align:center;max-width:90vw}
+  .who{font-family:Unbounded;font-weight:800;font-size:26px;color:#fff;text-shadow:0 0 10px var(--w-a),0 0 22px var(--w-a),0 2px 6px #000;padding:8px 20px;border-radius:14px;background:rgba(10,8,20,.75);border:2px solid var(--w-a)}
+  .res{font-family:Unbounded;font-weight:800;font-size:34px;padding:14px 26px;border-radius:16px;background:rgba(10,8,20,.9);color:#ffd23f;border:3px solid #ffd23f;box-shadow:0 0 30px rgba(255,210,63,.6);text-shadow:0 0 12px rgba(255,190,60,.9);opacity:0;transform:scale(.8);transition:.5s cubic-bezier(.2,1.4,.4,1);text-align:center;max-width:90vw}
   .res.on{opacity:1;transform:none}
   /* колесо */
   .wheel-wrap{position:relative;width:360px;height:360px}
-  .wheel{width:100%;height:100%;border-radius:50%;box-shadow:0 0 0 8px rgba(0,0,0,.5),0 0 0 11px var(--w-a);transition:transform 5s cubic-bezier(.12,.8,.12,1);position:relative}
+  .wheel{width:100%;height:100%;border-radius:50%;box-shadow:0 0 0 8px rgba(0,0,0,.55),0 0 0 12px var(--w-a),0 0 40px var(--w-a);transition:transform 5s cubic-bezier(.12,.8,.12,1);position:relative}
   .wheel span{position:absolute;left:50%;top:50%;width:46%;transform-origin:0 50%;font-weight:800;font-size:13px;text-align:right;padding-right:14px;text-shadow:0 1px 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pin{position:absolute;top:-16px;left:50%;transform:translateX(-50%);border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid #fff;z-index:3;filter:drop-shadow(0 3px 4px #000)}
   /* слоты и кейс */
@@ -49,6 +49,11 @@
   const COLORS = ['#ff3b5c', '#8b6cff', '#ff7a45', '#3ee6c4', '#5b7cff', '#ffc84a', '#ff6bd6', '#00b3e6'];
   let queue = [], busy = false;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  let AC = null; const ac = () => AC || (AC = new (window.AudioContext || window.webkitAudioContext)());
+  function tone(f, t, d, type = 'square', v = .06) { try { const c = ac(), o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v, c.currentTime + t); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + t + d); o.connect(g).connect(c.destination); o.start(c.currentTime + t); o.stop(c.currentTime + t + d + .05); } catch { } }
+  // тики замедляются, как у настоящей рулетки
+  function ticks(ms) { let t = 0, gap = .05; while (t * 1000 < ms - 300) { tone(1200, t, .03); t += gap; gap *= 1.07; } }
+  const win = () => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * .12, .35, 'triangle', .12)); };
   on('state', st => { if (!st.plan.roulette) document.body.innerHTML = '<p style="font:15px sans-serif;padding:14px">Рулетка доступна с тарифа Lite</p>'; });
   on('roulette', r => { queue.push(r); run(); });
 
@@ -59,20 +64,20 @@
         ${r.tasks.map((t, i) => `<span style="transform:rotate(${i * seg + seg / 2 - 90}deg)">${esc(t)}</span>`).join('')}</div></div>`;
       await sleep(80);
       const rot = 360 * 6 + (360 - (r.index * seg + seg / 2));
-      document.getElementById('wh').style.transform = `rotate(${rot}deg)`; await sleep(5200);
+      ticks(5000); document.getElementById('wh').style.transform = `rotate(${rot}deg)`; await sleep(5200);
     },
     async slots(g, r) {
       const items = []; for (let i = 0; i < 30; i++) items.push(r.tasks[i % r.tasks.length]);
       items.push(r.task);
       g.innerHTML = `<div class="win slots"><div class="strip" id="st">${items.map(t => `<div class="cell">${esc(t)}</div>`).join('')}</div></div>`;
-      await sleep(80); document.getElementById('st').style.transform = `translateY(-${(items.length - 1) * 96}px)`; await sleep(5200);
+      await sleep(80); ticks(5000); document.getElementById('st').style.transform = `translateY(-${(items.length - 1) * 96}px)`; await sleep(5200);
     },
     async case(g, r) {
       const items = []; for (let i = 0; i < 40; i++) items.push(r.tasks[Math.floor(Math.random() * r.tasks.length)]);
       const target = 34; items[target] = r.task;
       g.innerHTML = `<div class="win case"><div class="marker"></div><div class="strip" id="st">${items.map((t, i) => `<div class="cell" style="background:rgba(255,255,255,.06);border-color:${COLORS[i % 8]}">${esc(t)}</div>`).join('')}</div></div>`;
       await sleep(80); const off = target * 170 + 85 - 360 + (Math.random() * 100 - 50);
-      document.getElementById('st').style.transform = `translateX(-${off}px)`; await sleep(5200);
+      ticks(5000); document.getElementById('st').style.transform = `translateX(-${off}px)`; await sleep(5200);
     },
     async cards(g, r) {
       const n = Math.min(5, r.tasks.length); const pick = Math.floor(Math.random() * n);
@@ -97,7 +102,7 @@
     await sleep(2500); // даём сначала показаться алерту
     st.classList.add('on');
     await (games[r.style] || games.wheel)(document.getElementById('game'), r);
-    res.textContent = '🎯 ' + r.task; res.classList.add('on');
+    res.textContent = '🎯 ' + r.task; res.classList.add('on'); win();
     await sleep(6000); st.classList.remove('on'); await sleep(500);
     document.getElementById('game').innerHTML = ''; busy = false; run();
   }

@@ -157,7 +157,7 @@ function defaults(nick) {
     nicks: {},
     goal: { title: 'Цель сбора', target: 100000, base: 0, start_at: Date.now(), theme: 'default', style: 'classic' },
     top: { period: 'month', count: 5, theme: 'default', style: 'classic', font: 'manrope', title: '', size: 'md', radius: 16, opacity: 0.9 },
-    roulette: { enabled: false, min: 1000, style: 'wheel',
+    roulette: { enabled: true, min: 500, style: 'wheel',
       tasks: ['Спеть песню', 'Катка без прицела', '10 отжиманий', 'Говорить с акцентом', 'Ответить на 3 вопроса', 'Танец 15 сек'] },
     media: { enabled: true, min: 100, max_sec: 180, volume: 0.6 },
     info: { lines: ['Донаты через Kaspi — ссылка в описании!'], interval: 8, theme: 'default', label: 'INFO', speed: 'normal', dir: 'right', show_last: true },
@@ -179,6 +179,8 @@ function deepMerge(base, over) {
 const getSettings = (u) => {
   const s = deepMerge(defaults(u.nick), JSON.parse(u.settings || '{}'));
   // разово (ноябрь 2026): включаем «Принимать заказы музыки и видео» всем, у кого не было отметки — дальше стример решает сам
+  // разово: включаем рулетку всем (минимум 500 ₸) — дальше стример решает сам
+  if (!s.roulette.auto_v2) { s.roulette.enabled = true; if (s.roulette.min > 500) s.roulette.min = 500; s.roulette.auto_v2 = 1; }
   if (!s.media.auto_v2) { s.media.enabled = true; if (s.media.min > 100) s.media.min = 100; s.media.auto_v2 = 1; }
   return s;
 };
@@ -583,7 +585,7 @@ app.put('/api/settings', auth, (req, res) => {
   }
   if (b.roulette) {
     if (!p.roulette && b.roulette.enabled) errors.push('Рулетка доступна с тарифа Lite');
-    s.roulette.enabled = p.roulette && !!b.roulette.enabled;
+    if (b.roulette.enabled !== undefined) s.roulette.enabled = p.roulette && !!b.roulette.enabled;
     s.roulette.min = int(b.roulette.min, 1, 1e7, s.roulette.min);
     if (['wheel', 'slots', 'cards', 'box', 'case'].includes(b.roulette.style)) s.roulette.style = b.roulette.style;
     if (Array.isArray(b.roulette.tasks)) s.roulette.tasks = b.roulette.tasks.map(t => clampStr(t, 60)).filter(Boolean).slice(0, 24);
