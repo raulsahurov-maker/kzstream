@@ -7,13 +7,14 @@
   const demo = /[?&](demo|preview)/.test(location.search);
   function fit() {
     const el = document.querySelector('[data-fit]'); if (!el) return;
-    if (demo) { el.style.zoom = ''; return; }
     const cur = parseFloat(el.style.zoom) || 1;
     const tr = el.style.transition; el.style.transition = 'opacity .4s, transform .4s';
     el.style.zoom = 1; const r = el.getBoundingClientRect(); const nw = r.width, nh = r.height;
     const cs = getComputedStyle(document.body), px = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight), py = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
     if (!nw || !nh) { el.style.zoom = cur; return; }
-    const k = Math.max(0.2, Math.min((innerWidth - px) * 0.95 / nw, (innerHeight - py) * 0.92 / nh, 6)) * mult;
+    const fitK = Math.min((innerWidth - px) * 0.95 / nw, (innerHeight - py) * 0.92 / nh, 6);
+    // превью в кабинете: только уменьшаем, чтобы виджет целиком помещался в окошко
+    const k = demo ? Math.max(0.2, Math.min(1, fitK)) : Math.max(0.2, fitK) * mult;
     el.style.zoom = k;
   }
   addEventListener('resize', fit);
