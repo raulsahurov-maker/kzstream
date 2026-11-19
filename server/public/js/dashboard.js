@@ -262,10 +262,10 @@ function render() {
   listEdit('#nicksList', Object.entries(s.nicks || {}).map(([k, v]) => ({ k, v })), [['k', 'Имя в Kaspi'], ['v', 'Ник']]);
   listEdit('#varList', a.variations || [], [['amount', 'Сумма', 'number'], ['gif', 'Гифка (URL)', 'file:image,video'], ['sound', 'Звук (URL)', 'file:audio'], ['text', 'Подпись']]);
   // виджеты
-  const names = { alerts: '🔔 Алерты', top: '🏆 ТОП донатеров', goal: '🎯 Цель сбора', roulette: '🎰 Рулетка', media: '🎵 Музыка и видео', info: 'ℹ️ Info-виджет', timer: '⏱ Таймер' };
+  const names = { alerts: '🔔 Алерты', top: '🏆 ТОП донатеров', goal: '🎯 Цель сбора', roulette: '🎰 Рулетка', media: '🎵 Музыка и видео', info: 'ℹ️ Info-виджет', timer: '⏱ Таймер', faceit: '🎮 FACEIT' };
   const need = { alerts: null, top: null, goal: null, roulette: 'roulette', media: 'media', info: 'info', timer: 'timer' };
   const badge = k => !need[k] ? '<span class="wb free">Бесплатно</span>' : `<span class="wb lite">Lite</span>`;
-  $('#wlinks').innerHTML = Object.entries(ME.urls.widgets).map(([k, u]) => { const locked = need[k] && !p[need[k]];
+  $('#wlinks').innerHTML = Object.entries(ME.urls.widgets).filter(([k]) => names[k]).map(([k, u]) => { const locked = need[k] && !p[need[k]];
     return `<div class="wlink ${locked ? 'locked' : ''}"><h4><span>${names[k]} ${badge(k)}</span>${locked ? '<a class="btn btn-ghost btn-sm" href="#billing">🔒 Подключить Lite</a>' : `<a class="btn btn-ghost btn-sm" href="${u}" target="_blank">Открыть ↗</a>`}</h4><div class="copy-row"><input readonly value="${u}" id="w_${k}"><button class="btn btn-ghost btn-sm" data-copy="w_${k}">Копировать</button></div></div>`; }).join('');
   val('t_period', s.top.period); val('t_count', s.top.count); val('t_theme', s.top.theme);
   val('t_title', s.top.title); val('t_size', s.top.size); val('t_radius', s.top.radius); val('t_opacity', s.top.opacity);
@@ -601,4 +601,19 @@ $('#logout').onclick = async () => { await api('/api/logout', { method: 'POST' }
 $('#pwSave').onclick = async () => { try { await api('/api/password', { method: 'POST', body: { old: val('pwOld'), new: val('pwNew') } }); toast('Пароль изменён'); val('pwOld', ''); val('pwNew', ''); } catch (e) { toast(e.message, true); } };
 
 load().then(() => { route(); connectEvents(); loadState(); }).catch(e => toast(e.message, true));
+// ---------- размер каждого виджета: выбор рядом с его ссылкой (хранится в ссылке &s=) ----------
+const SIZES = [50, 75, 100, 125, 150, 200];
+function sizePickers() {
+  document.querySelectorAll('input[readonly]').forEach(inp => {
+    if (!/\/w\/[\w-]+\.html\?t=/.test(inp.value) || inp.dataset.sz) return;
+    inp.dataset.sz = 1;
+    let saved = 100; try { saved = +localStorage['kzSz_' + inp.id] || 100; } catch { }
+    const sel = document.createElement('select'); sel.className = 'sz-pick'; sel.title = 'Размер виджета';
+    sel.innerHTML = SIZES.map(v => `<option value="${v}" ${v === saved ? 'selected' : ''}>${v}%</option>`).join('');
+    const apply = () => { const v = +sel.value, base = inp.value.replace(/&s=\d+/, ''); inp.value = v === 100 ? base : base + '&s=' + v; try { localStorage['kzSz_' + inp.id] = v; } catch { } };
+    sel.onchange = () => { apply(); toast(`Размер ${sel.value}% — скопируйте ссылку заново и вставьте в TikTok Live Studio`); };
+    inp.after(sel); apply();
+  });
+}
+setInterval(sizePickers, 1500);
 })();

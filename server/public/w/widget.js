@@ -1,4 +1,6 @@
 // Общий код виджетов KZStream: состояние + realtime-события
+// размер виджета из ссылки: &s=150 → 150%
+(() => { const z = +new URLSearchParams(location.search).get('s'); if (z >= 30 && z <= 300 && z !== 100) document.documentElement.style.zoom = z / 100; })();
 window.KZ = (() => {
   const token = new URLSearchParams(location.search).get('t') || '';
   const handlers = {};
