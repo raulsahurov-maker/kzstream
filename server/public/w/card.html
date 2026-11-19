@@ -2,14 +2,14 @@
 <html lang="ru"><head><meta charset="UTF-8"><title>KZStream — карточка</title>
 <link rel="stylesheet" href="/w/w.css">
 <style>
-  .cd{display:flex;align-items:center;gap:16px;padding:12px 22px 12px 12px;border-radius:20px;background:rgba(10,11,18,.9);border:2px solid var(--c);box-shadow:0 0 22px color-mix(in srgb,var(--c) 45%,transparent),0 12px 34px rgba(0,0,0,.45);color:#fff;width:max-content;max-width:calc(100vw - 20px);opacity:0;transform:translateY(8px);transition:.4s}
+  .cd{display:flex;align-items:center;gap:18px;padding:8px 34px 8px 8px;border-radius:16px;min-width:520px;background:rgba(10,11,18,.9);border:2px solid var(--c);box-shadow:0 0 22px color-mix(in srgb,var(--c) 45%,transparent),0 12px 34px rgba(0,0,0,.45);color:#fff;width:max-content;max-width:calc(100vw - 20px);opacity:0;transform:translateY(8px);transition:.4s}
   .cd.on{opacity:1;transform:none}
-  .lg{width:64px;height:64px;border-radius:16px;overflow:hidden;flex:none;display:grid;place-items:center;background:var(--c)}
+  .lg{width:52px;height:52px;border-radius:12px;overflow:hidden;flex:none;display:grid;place-items:center;background:var(--c)}
   .lg img{width:100%;height:100%;object-fit:cover}.lg svg{width:40px;height:40px}
-  .tx{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .tx{display:flex;flex-direction:row;align-items:baseline;gap:16px;min-width:0;flex-wrap:nowrap}
   .t1{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--c2)}
   .t2{font-family:Unbounded,sans-serif;font-weight:800;font-size:24px;letter-spacing:.02em;white-space:nowrap}
-  .t3{font-size:14px;font-weight:700;opacity:.8}
+  .t3{font-size:15px;font-weight:700;opacity:.8;white-space:nowrap}.t3:empty{display:none}
 </style></head><body>
 <div class="cd" id="cd" data-fit></div>
 <script src="/w/widget.js"></script>
