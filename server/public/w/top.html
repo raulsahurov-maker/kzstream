@@ -115,14 +115,17 @@
   .st-fire .hd{font-family:Unbounded,sans-serif;font-weight:800;font-size:calc(var(--fs)*1.5);letter-spacing:.08em;text-align:center;color:#ffe2a8;padding:10px 12px;margin:0 -6px 12px;
     background:linear-gradient(180deg,#7a4524,#4a2512);border:2px solid #9c5a2e;border-radius:8px;box-shadow:0 6px 0 #2a1208,0 10px 18px rgba(0,0,0,.5);
     text-shadow:0 0 10px rgba(255,170,60,.9),0 2px 0 #2a1208}
-  .st-fire .hd::before{content:"🔥 "}.st-fire .hd::after{content:" 🔥"}
+  .st-fire .hd{display:flex;align-items:center;justify-content:center;gap:12px}
+  .st-fire .hd::before,.st-fire .hd::after{content:"";flex:none;width:calc(var(--fs)*3.1);height:calc(var(--fs)*4.2);margin:-22px 0 -10px;background:url(/img/top/flame.png) center/contain no-repeat;filter:drop-shadow(0 0 8px rgba(255,140,30,.8));transform-origin:50% 100%;animation:mascot 1.4s ease-in-out infinite alternate}
+  .st-fire .hd::after{animation-delay:-.7s}
+  @keyframes mascot{0%{transform:rotate(-6deg) scale(1)}100%{transform:rotate(6deg) scale(1.08)}}
   .st-fire .list{gap:8px}
   .st-fire .row{background:linear-gradient(90deg,rgba(60,24,10,.85),rgba(30,12,6,.8));border:1.5px solid rgba(255,140,50,.35);border-radius:var(--ri);color:#ffe9c7;box-shadow:inset 0 0 14px rgba(255,110,20,.12)}
   .st-fire .row .sm{color:#ffb547;text-shadow:0 0 8px rgba(255,150,40,.7)}
   .st-fire .row .pos{background:#ff8a2a;color:#2a1208}
   .st-fire .row:nth-child(1){border-color:#ffb547;background:linear-gradient(90deg,rgba(150,60,10,.9),rgba(70,20,6,.85));box-shadow:0 0 18px rgba(255,140,30,.55),inset 0 0 14px rgba(255,200,80,.25);animation:frow 1.8s ease-in-out infinite}
   .st-fire .row:nth-child(1) .nm{color:#fff3c4;text-shadow:0 0 10px #ff9a2a}
-  .st-fire .row:nth-child(1) .nm::before{content:"👑 "}
+  .st-fire .row:nth-child(1) .nm::before{content:"";display:inline-block;width:1.5em;height:1.3em;margin-right:.35em;vertical-align:-.25em;background:url(/img/top/crown.png) center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(255,200,60,.8))}
   .st-fire .row.first{transform:none;margin:0}
   .st-fire .empty{color:#ffe2a8;text-shadow:0 0 10px #ff8a2a}
   .st-fire .fire{display:block;position:relative;z-index:1;height:118px;margin:14px -16px 0;border-top:8px solid #2a1208;
