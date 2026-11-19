@@ -292,7 +292,7 @@ function render() {
   if (!$('#infoFrame').src) { $('#infoFrame').onload = () => setTimeout(postInfo, 300); $('#infoFrame').src = ME.urls.widgets.info + '&demo'; } else postInfo();
   val('tm_sec', s.timer.sec_per_100); val('tm_theme', s.timer.theme);
   // рулетка
-  val('r_enabled', s.roulette.enabled); val('r_sound', s.roulette.sound !== false); val('r_min', s.roulette.min); val('r_style', s.roulette.style);
+  val('r_enabled', s.roulette.enabled); val('r_sound', s.roulette.sound === true); val('r_min', s.roulette.min); val('r_style', s.roulette.style);
   listEdit('#taskList', s.roulette.tasks.map(v => ({ v })), [['v', 'Задание']]);
   // медиа
   val('m_enabled', s.media.enabled); val('m_min', s.media.min); val('m_max', s.media.max_sec); val('m_volume', s.media.volume);

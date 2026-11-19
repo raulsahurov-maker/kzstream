@@ -97,7 +97,7 @@
 
   async function run() {
     if (busy || !queue.length) return; busy = true;
-    const r = queue.shift(); SND = r.sound !== false; const st = document.getElementById('stage'), res = document.getElementById('res');
+    const r = queue.shift(); SND = r.sound === true; const st = document.getElementById('stage'), res = document.getElementById('res');
     document.getElementById('who').innerHTML = `🎰 ${esc(r.name)} — <span class="grad">${fmt(r.amount)}</span>`;
     res.classList.remove('on'); res.textContent = '';
     await sleep(2500); // даём сначала показаться алерту

@@ -186,6 +186,8 @@ const getSettings = (u) => {
   const s = deepMerge(defaults(u.nick), JSON.parse(u.settings || '{}'));
   // разово (ноябрь 2026): включаем «Принимать заказы музыки и видео» всем, у кого не было отметки — дальше стример решает сам
   // разово: включаем рулетку всем (минимум 500 ₸) — дальше стример решает сам
+  // разово: звук рулетки выключен у всех, пока стример сам не включит
+  if (!s.roulette.snd_v3) { s.roulette.sound = false; s.roulette.snd_v3 = 1; }
   if (!s.roulette.auto_v2) { s.roulette.enabled = true; if (s.roulette.min > 500) s.roulette.min = 500; s.roulette.auto_v2 = 1; }
   if (!s.media.auto_v2) { s.media.enabled = true; if (s.media.min > 100) s.media.min = 100; s.media.auto_v2 = 1; }
   return s;
@@ -339,7 +341,7 @@ function finalizeDonation(u, d, opts = {}) {
     show: d.amount >= (s.alerts.min_alert || 0), at: now(),
   };
   emit(u.id, 'donation', event);
-  if (roulette) emit(u.id, 'roulette', { ...roulette, name, amount: d.amount, sound: s.roulette.sound !== false });
+  if (roulette) emit(u.id, 'roulette', { ...roulette, name, amount: d.amount, sound: s.roulette.sound === true });
   pushStats(u);
   // вебхуки (Pro)
   if (p.webhooks) for (const url of (s.webhooks || []).slice(0, 5)) {
@@ -707,7 +709,7 @@ app.post('/api/test/roulette', auth, (req, res) => {
   if (!effectivePlan(u).roulette) return res.status(403).json({ error: 'Рулетка доступна с тарифа Lite' });
   if (!s.roulette.tasks.length) return res.status(400).json({ error: 'Добавьте задания' });
   const idx = crypto.randomInt(s.roulette.tasks.length);
-  emit(u.id, 'roulette', { index: idx, task: s.roulette.tasks[idx], tasks: s.roulette.tasks, style: s.roulette.style, name: 'Тест', amount: s.roulette.min, test: true, sound: s.roulette.sound !== false });
+  emit(u.id, 'roulette', { index: idx, task: s.roulette.tasks[idx], tasks: s.roulette.tasks, style: s.roulette.style, name: 'Тест', amount: s.roulette.min, test: true, sound: s.roulette.sound === true });
   res.json({ ok: true, task: s.roulette.tasks[idx] });
 });
 app.post('/api/test/media', auth, (req, res) => {
