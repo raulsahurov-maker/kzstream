@@ -35,13 +35,14 @@
     twitch: { t: 'Twitch', c: '#9146ff', c2: '#c9a7ff', svg: SV.twitch, hint: 'twitch.tv/' },
     instagram: { t: 'Instagram', c: '#e1306c', c2: '#ffb37a', svg: SV.instagram, bg: 'linear-gradient(45deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5)', hint: '@' },
     youtube: { t: 'YouTube', c: '#ff0000', c2: '#ff8080', svg: SV.youtube, hint: 'youtube.com/@' },
+    blackrussia: { t: 'Black Russia', c: '#ff4a12', c2: '#ff9a3c', img: '/img/logo/blackrussia.png', bg: '#000', pre: 'Сервер: ' },
   };
   const M = META[K] || META.kaspi;
   document.documentElement.style.setProperty('--c', M.c); document.documentElement.style.setProperty('--c2', M.c2);
   function draw(c) {
     const el = document.getElementById('cd');
     if (!c || !c.value) { el.classList.remove('on'); el.innerHTML = demo ? '' : ''; return; }
-    el.innerHTML = `<div class="lg" style="${M.bg ? 'background:' + M.bg : ''}">${M.img ? `<img src="${M.img}" alt="">` : M.svg}</div><div class="tx"><div class="t1">${M.t}</div><div class="t2">${esc(c.value)}</div>${c.name ? `<div class="t3">${esc(c.name)}</div>` : ''}</div>`;
+    el.innerHTML = `<div class="lg" style="${M.bg ? 'background:' + M.bg : ''}">${M.img ? `<img src="${M.img}" alt="">` : M.svg}</div><div class="tx"><div class="t1">${M.t}</div><div class="t2">${esc(c.value)}</div>${c.name ? `<div class="t3">${M.pre || ''}${esc(c.name)}</div>` : ''}</div>`;
     requestAnimationFrame(() => el.classList.add('on'));
   }
   // превью в кабинете: ужимаем карточку под маленькое окошко

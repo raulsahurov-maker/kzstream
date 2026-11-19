@@ -175,6 +175,7 @@ const CARD_DEF = [
   ['twitch', 'Twitch', '<span style="background:#9146ff;width:100%;height:100%;display:grid;place-items:center"><svg viewBox="0 0 24 24" fill="#fff"><path d="M4 2 2.5 6v14h5v3h3l3-3h4l5-5V2H4zm16 12-3 3h-5l-3 3v-3H5V4h15v10z"/></svg></span>', 'Ник на Twitch', 'Подпись, напр. «стримы каждый день»'],
   ['instagram', 'Instagram', '<span style="background:linear-gradient(45deg,#feda75,#fa7e1e,#d62976,#962fbf);width:100%;height:100%;display:grid;place-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></span>', '@ник в Instagram', 'Подпись'],
   ['youtube', 'YouTube', '<span style="background:#ff0000;width:100%;height:100%;display:grid;place-items:center"><svg viewBox="0 0 24 24"><path d="M9 7v10l8-5z" fill="#fff"/></svg></span>', 'Название канала', 'Подпись'],
+  ['blackrussia', 'Black Russia', '<img src="/img/logo/blackrussia.png">', 'Ник_Нейм', 'Сервер, напр. RED'],
 ];
 function cardsInit() {
   const C = ME.settings.cards || {}, base = ME.urls.widgets.card;
