@@ -14,7 +14,7 @@ public class KaspiListener extends NotificationListenerService {
 
     // Похоже на денежную сумму в тенге
     private static final Pattern MONEY = Pattern.compile("\\d[\\d\\s\\u00a0\\u202f]*([.,]\\d{1,2})?\\s*(₸|тг|тенге|KZT)|(₸|KZT)\\s*\\d", Pattern.CASE_INSENSITIVE);
-    private static final String[] BANKS = {"kaspi", "halyk", "jusan", "freedom", "bcc", "forte", "homecredit", "eubank", "bereke", "otbasy", "rbk"};
+    private static final String[] BANKS = {"kaspi", "halyk", "jusan", "freedom", "ffin", "homebank", "bcc", "forte", "homecredit", "eubank", "bereke", "otbasy", "rbk"};
 
     @Override
     public void onListenerConnected() {
@@ -46,7 +46,8 @@ public class KaspiListener extends NotificationListenerService {
             boolean onlyBanks = Sender.prefs(this).getBoolean("onlyBanks", true);
             boolean isBank = false;
             String lp = pkg.toLowerCase();
-            for (String b : BANKS) if (lp.contains(b)) { isBank = true; break; }
+            String lt = title.toLowerCase();
+            for (String b : BANKS) if (lp.contains(b) || lt.contains(b)) { isBank = true; break; }
             // отправляем только то, что похоже на сумму в тенге — остальные уведомления не покидают телефон
             if (!MONEY.matcher(full).find()) return;
             if (onlyBanks && !isBank) return;

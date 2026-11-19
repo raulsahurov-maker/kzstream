@@ -2,7 +2,7 @@
 // Зритель переводит деньги напрямую через Kaspi и пишет сообщение в комментарии к переводу.
 // Возвращает { amount, sender, message, media_url } для входящего перевода или null.
 
-const OUTGOING = /(вы\s+перевели|покупка|оплата\s|списан|снятие|платёж|платеж|отправлен[оа]?\s+вами|аударымыңыз|сатып\s+алу|төлем|код\s+подтверждения|одноразовый\s+код)/i;
+const OUTGOING = /(вы\s+перевели|исходящий\s+перевод|перевод\s+на\s+карту\s+\d|покупка|оплата\s|списан|снятие|платёж|платеж|отправлен[оа]?\s+вами|аударымыңыз|сатып\s+алу|төлем|код\s+подтверждения|одноразовый\s+код)/i;
 const INCOMING = /(перевод|пополнен|поступ|зачислен|получен|перевел|перевела|перевёл|вам\s+отправил|аударым|аударды|түсті|келді|\+\s*\d)/i;
 
 const NUM = '(\\d{1,3}(?:[\\s\\u00a0\\u202f]\\d{3})+|\\d+)(?:[.,]\\d{1,2})?';
@@ -11,7 +11,8 @@ const AMOUNT_RES = [
   new RegExp('(?:₸|kzt)\\s*' + NUM, 'i'),
 ];
 const L = 'A-ZА-ЯЁӘҒҚҢӨҰҮҺІ', l = 'a-zа-яёәғқңөұүһі';
-const NAME = `([${L}][${l}\\-]+(?:\\s+[${L}][${l}\\-]*\\.?)?)`;
+// имя: «Алибек Т.» или ЗАГЛАВНЫМИ «АЛИБЕК Т.» (так пишет Halyk)
+const NAME = `([${L}](?:[${l}\\-]+|[${L}\\-]+)(?:\\s+[${L}](?:[${l}\\-]*|[${L}\\-]*)\\.?)?)`;
 const CUR = '(?:₸|тг\\.?|тенге|kzt)';
 const SENDER_RES = [
   new RegExp(`(?:от|from|[Оо]тправитель:?|[Жж]іберуші:?)\\s+${NAME}`, 'gu'),
@@ -24,12 +25,12 @@ const SENDER_RES = [
   // Kaspi: имя отправителя отдельной строкой («Арысланбек Т.»)
   new RegExp(`^${NAME}\\s*$`, 'gmu'),
 ];
-const NOT_NAME = /^(Kaspi|Перевод|Пополнение|Вам|Поступление|Каспи|Сообщение|Комментарий|Зачисление|Подтвердить|Halyk|Jusan|Freedom|Сейчас|Gold)/i;
+const NOT_NAME = /^(Kaspi|Перевод|Пополнение|Вам|Поступление|Каспи|Сообщение|Комментарий|Зачисление|Подтвердить|Halyk|Homebank|Jusan|Freedom|Сейчас|Gold|Отправитель|Получатель|Входящий|Карта|KZT|Сумма|Доступно|Баланс)/i;
 const MSG_LABEL = /(?:сообщение|комментарий|коммент|назначение|хабарлама|пікір|message)\s*[:\-—]\s*([\s\S]+)/i;
-const SERVICE_LINE = /^(kaspi(\.kz)?|kaspi\s*gold|kaspi\s*bank|каспи|halyk|homebank|jusan|freedom|bcc|forte|перевод|переводы|пополнение|поступление|зачисление|входящий\s+перевод|аударым)\.?$/i;
+const SERVICE_LINE = /^(kaspi(\.kz)?|kaspi\s*gold|kaspi\s*bank|каспи|halyk(\s*bank)?|homebank|freedom(\s*bank)?|jusan|freedom|bcc|forte|перевод|переводы|пополнение|поступление|зачисление|входящий\s+перевод|аударым)\.?$/i;
 const JUNK_LINE = /(баланс|доступно|остаток|қалдық|карта\s*\*|\*{2,}\d{2,}|\d{2}:\d{2}|подробнее|нажмите|подтвердить\s+получение|^сейчас$)/i;
 const W = (list) => new RegExp(`(?<!\\p{L})(?:${list})(?!\\p{L})`, 'giu');
-const SERVICE_WORDS = W('вам\\s+перевели|перевел\\(а\\)|перевела|перевёл|перевел|отправила|отправил|входящий\\s+перевод|перевод|пополнение|поступление|зачисление|на\\s+kaspi\\s*gold|kaspi\\s*gold|на\\s+карту|отправитель:?|от|from|вам');
+const SERVICE_WORDS = W('вам\\s+перевели|перевел\\(а\\)|перевела|перевёл|перевел|отправила|отправил|входящий\\s+перевод|перевод|пополнение|поступление|зачисление|на\\s+kaspi\\s*gold|kaspi\\s*gold|на\\s+карту|на\\s+сумму|сумма:?|отправитель:?|получено|halyk\\s*bank|freedom\\s*bank|от|from|вам');
 const YT = /(https?:\/\/)?(www\.|m\.|music\.)?(youtube\.com\/(watch\?[^\s]*v=|shorts\/|live\/|embed\/)|youtu\.be\/)[\w\-]{11}[^\s]*/i;
 
 function parseAmount(text) {
@@ -88,7 +89,10 @@ function parseNotification({ title = '', text = '' }) {
   if (!amount) return null;
   if (!INCOMING.test(full) && !/^\s*\+/.test(text)) return null;
   const sender = parseSender(title, text);
-  return { amount, sender, ...parseMessage(title, text, sender) };
+  const msg = parseMessage(title, text, sender);
+  // «АЛИБЕК Т.» (Halyk пишет заглавными) -> «Алибек Т.»
+  const nice = sender && sender === sender.toUpperCase() ? sender.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()) : sender;
+  return { amount, sender: nice, ...msg };
 }
 
 module.exports = { parseNotification, parseAmount, parseSender };
