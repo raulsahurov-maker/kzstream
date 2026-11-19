@@ -132,7 +132,7 @@ process.on('SIGTERM', flushAndExit); process.on('SIGINT', flushAndExit);
 
 // ---------- настройки по умолчанию ----------
 const INFO_STYLES = ['plate', 'plain', 'neon', 'gold', 'glass', 'outline', 'gradient', 'fire'];
-const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud', 'vice', 'fire'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
+const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud', 'vice', 'fire', 'cs2'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
 // стили цели сбора: первые три — бесплатно, остальные с тарифа Lite
 const GOAL_STYLES = ['classic', 'neon', 'battery', 'water', 'ring', 'thermo', 'gold', 'minimal'], GOAL_FREE = ['classic', 'neon', 'battery'];
 const GOAL_MAX = 2000000;
@@ -754,6 +754,16 @@ const PROMO_OFF = 20; // скидка по промокоду, %
 // цена тарифа с учётом активного промокода (скидка действует на одну оплату тарифа)
 function planPrice(u, plan, months) { const full = plan.price * months; const promo = u.promo_used && !u.promo_spent ? u.promo_used : '';
   return { full, sum: promo ? Math.round(full * (100 - PROMO_OFF) / 100) : full, promo }; }
+// публичная статистика для главной: стримеры и настоящие донаты (без тестовых)
+let PUB_STATS = null, PUB_AT = 0;
+app.get('/api/stats/public', (req, res) => {
+  if (!PUB_STATS || Date.now() - PUB_AT > 60000) {
+    const u = q(`SELECT COUNT(*) c FROM users`).get().c;
+    const d = q(`SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM donations WHERE status='done' AND source<>'test'`).get();
+    PUB_STATS = { streamers: u, donations: d.c, sum: d.s }; PUB_AT = Date.now();
+  }
+  res.set('Cache-Control', 'public, max-age=60').json(PUB_STATS);
+});
 app.post('/api/pay', auth, (req, res) => {
   const pending = q(`SELECT id FROM payments WHERE user_id=? AND status='pending'`).get(req.user.id);
   if (pending) return res.status(409).json({ error: 'У вас уже есть заявка на проверке' });

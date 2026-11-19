@@ -100,6 +100,12 @@
   @keyframes float{50%{transform:translateY(-8px)}}
 
   /* stats */
+  .trust{position:relative;z-index:1;margin-top:60px;padding:26px 28px;border-radius:22px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(135deg,rgba(255,59,92,.14),rgba(124,77,255,.12));text-align:center}
+  .tr-h{font-family:Unbounded,sans-serif;font-weight:800;font-size:22px;margin-bottom:18px}
+  .tr-g{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .tr-i b{display:block;font-family:Unbounded,sans-serif;font-size:38px;font-weight:800;background:linear-gradient(90deg,#ff3b5c,#ffb648);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tr-i span{opacity:.75;font-size:14px;font-weight:600}
+  @media (max-width:760px){.tr-g{grid-template-columns:1fr}.tr-i b{font-size:30px}.tr-h{font-size:18px}}
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:70px;position:relative;z-index:1}
   .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
   .stat b{font-family:Unbounded;font-size:26px;display:block}
@@ -364,6 +370,15 @@
           <div class="ico">K</div>
           <div><b>Перевод 2 000 ₸</b><span>от Аружан А. · только что</span></div>
         </div>
+      </div>
+    </div>
+
+    <div class="trust reveal" id="trust">
+      <div class="tr-h">🤝 Нам доверяют стримеры</div>
+      <div class="tr-g">
+        <div class="tr-i"><b data-cnt="streamers">—</b><span>стримеров пользуются KZStream</span></div>
+        <div class="tr-i"><b data-cnt="donations">—</b><span>донатов принято за всё время</span></div>
+        <div class="tr-i"><b data-cnt="sum" data-suf=" ₸">—</b><span>сумма донатов стримерам</span></div>
       </div>
     </div>
 
@@ -774,6 +789,17 @@
     $$('[data-open]').forEach(el=>{ el.removeAttribute('data-open'); if(el.closest('.plan')){ el.href='/app#billing'; return; } el.href='/app'; el.textContent=el.classList.contains('btn-ghost')?'Кабинет':'Открыть кабинет →'; });
   }).catch(()=>{});
 })();
+</script>
+<script>
+// «Нам доверяют стримеры»: живые цифры с сервера, плавный счётчик
+fetch('/api/stats/public').then(r => r.json()).then(st => {
+  document.querySelectorAll('[data-cnt]').forEach(el => {
+    const to = +st[el.dataset.cnt] || 0, suf = el.dataset.suf || '', t0 = performance.now();
+    const step = t => { const k = Math.min(1, (t - t0) / 1600), v = Math.round(to * (1 - Math.pow(1 - k, 3)));
+      el.textContent = v.toLocaleString('ru-RU') + suf; if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
+}).catch(() => {});
 </script>
 </body>
 </html>
