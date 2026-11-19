@@ -162,6 +162,7 @@ function defaults(nick) {
     media: { enabled: true, min: 100, max_sec: 180, volume: 0.6 },
     info: { lines: ['Донаты через Kaspi — ссылка в описании!'], interval: 8, theme: 'default', label: 'INFO', speed: 'normal', dir: 'right', show_last: true },
     timer: { end_at: 0, paused_left: 0, running: false, sec_per_100: 30, theme: 'default' },
+    cards: { kaspi: { value: '', name: '' }, halyk: { value: '', name: '' }, freedom: { value: '', name: '' }, twitch: { value: '', name: '' }, instagram: { value: '', name: '' }, youtube: { value: '', name: '' } },
     faceit: { nick: '', show: { level: true, elo: true, today: true, kd: true, wr: true, hs: true, adr: false, matches: true, streak: false, last: true, flag: true } },
     hotkeys: [], webhooks: [],
   };
@@ -259,7 +260,7 @@ function widgetState(u) {
   const p = effectivePlan(u);
   const lastDon = q(`SELECT name, amount, message FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 1`).get(u.id);
   return {
-    nick: u.nick, plan: publicPlan(u), settings: { alerts: { ...s.alerts, layout: p.shop || ALERT_FREE.includes(s.alerts.layout || 'classic') ? (s.alerts.layout || 'classic') : 'classic' }, goal: { ...s.goal, style: p.shop || GOAL_FREE.includes(s.goal.style || 'classic') ? (s.goal.style || 'classic') : 'classic' }, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, faceit: s.faceit, hotkeys: p.hotkeys ? s.hotkeys : [] },
+    nick: u.nick, plan: publicPlan(u), settings: { alerts: { ...s.alerts, layout: p.shop || ALERT_FREE.includes(s.alerts.layout || 'classic') ? (s.alerts.layout || 'classic') : 'classic' }, goal: { ...s.goal, style: p.shop || GOAL_FREE.includes(s.goal.style || 'classic') ? (s.goal.style || 'classic') : 'classic' }, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, faceit: s.faceit, cards: s.cards, hotkeys: p.hotkeys ? s.hotkeys : [] },
     top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title },
     timer: timerState(s), last: lastDon || null, media: mediaQueue(u),
   };
@@ -503,7 +504,7 @@ app.get('/api/me', auth, (req, res) => {
     stats: { ...stats, today, month, year, tests: tests.c, tests_sum: tests.s },
     urls: {
       page: `${b}/d/${u.nick}`, ingest: `${b}/api/ingest/${u.token}`,
-      widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
+      widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit', 'card'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
     },
     pay: { kaspi: PAY_KASPI, name: PAY_NAME, telegram: PAY_TELEGRAM },
   });
@@ -602,6 +603,9 @@ app.put('/api/settings', auth, (req, res) => {
       if (['slow', 'normal', 'fast'].includes(b.info.speed)) s.info.speed = b.info.speed;
       if (['right', 'left'].includes(b.info.dir)) s.info.dir = b.info.dir;
       if (b.info.show_last !== undefined) s.info.show_last = !!b.info.show_last; }
+  }
+  if (b.cards) for (const k of ['kaspi', 'halyk', 'freedom', 'twitch', 'instagram', 'youtube']) if (b.cards[k]) {
+    s.cards[k] = { value: clampStr(b.cards[k].value, 60), name: clampStr(b.cards[k].name, 40) };
   }
   if (b.faceit && b.faceit.show) {
     const F = s.faceit.show;
@@ -830,7 +834,7 @@ app.get('/api/app/me/:token', (req, res) => {
   res.json({ nick: u.nick, plan: effectivePlan(u).name, today: today.s, today_count: today.c, hotkeys: effectivePlan(u).hotkeys ? s.hotkeys : [],
     top_month: topSince(periodStart('month')).slice(0, 5), top_stream: since ? topSince(since) : [],
     hotkeys_allowed: !!effectivePlan(u).hotkeys, page: `${b}/d/${encodeURIComponent(u.nick)}`, ingest: `${b}/api/ingest/${u.token}`,
-    widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
+    widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit', 'card'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
     last: q(`SELECT name, amount, message, done_at FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 10`).all(u.id) });
 });
 

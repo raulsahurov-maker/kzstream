@@ -107,6 +107,11 @@
   .fc-prev iframe{width:100%;height:130px;border:0;display:block}
   .fc-opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
   .fc-opt{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-weight:700;font-size:14px;cursor:pointer}
+  .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-top:10px}
+  .ck2{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--bg2);display:flex;flex-direction:column;gap:8px}
+  .ck2 .hd2{display:flex;align-items:center;gap:10px;font-weight:800}.ck2 .hd2 i{width:30px;height:30px;border-radius:8px;overflow:hidden;display:grid;place-items:center;flex:none}
+  .ck2 .hd2 i img{width:100%;height:100%;object-fit:cover}.ck2 .hd2 i svg{width:18px;height:18px}
+  .ck2 iframe{width:100%;height:96px;border:0;border-radius:10px;background:repeating-conic-gradient(#1a1c26 0 25%,#13151e 0 50%) 0 0/18px 18px}
   .as-sec{font-size:13px;font-weight:800;margin:4px 0 8px}
   .my-alerts{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
   .ma{position:relative;border-radius:12px;overflow:hidden;border:2px solid var(--line);cursor:pointer;aspect-ratio:16/11;background:#000}
@@ -410,6 +415,11 @@
           </div>
         </div>
         <p class="muted" style="font-size:12.5px;margin-top:10px">Виджет в эфире переключится сам — ссылку в TikTok Live Studio менять не нужно. Цель — до 2 000 000 ₸. Классика, Неон и Батарейка — бесплатно, остальные стили — с тарифа Lite.</p>
+      </div>
+      <div class="card" style="grid-column:1/-1" id="cardsCfg">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>Карточки: банки и соцсети</h3><button class="btn btn-primary btn-sm" id="cardsSave">Сохранить</button></div>
+        <p class="hint">Каждая карточка — отдельный виджет: логотип слева, ваш номер или ник. Добавьте нужные в TikTok Live Studio по своей ссылке. Пустая карточка в эфире не показывается.</p>
+        <div class="cards-grid" id="cardsGrid"></div>
       </div>
       <div class="card infocfg" style="grid-column:1/-1">
         <h3>Info-виджет <span class="lock" data-need="info">Lite</span></h3><p class="hint">Бегущая строка: впишите подробности (правила, ссылки, акции) — текст плавно уходит в сторону и заходит с другой, чтобы всё было видно.</p>

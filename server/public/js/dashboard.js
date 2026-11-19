@@ -167,6 +167,26 @@ function fcInit() {
   else fcAccount(null);
 }
 
+// ---------- карточки: банки и соцсети ----------
+const CARD_DEF = [
+  ['kaspi', 'Kaspi', '<img src="/img/logo/kaspi.png">', 'Номер телефона или карты Kaspi', 'Получатель, напр. Алибек Т.'],
+  ['halyk', 'Halyk Bank', '<img src="/img/logo/halyk.png">', 'Номер карты или телефона Halyk', 'Получатель'],
+  ['freedom', 'Freedom Bank', '<img src="/img/logo/freedom.png">', 'Номер карты или телефона Freedom', 'Получатель'],
+  ['twitch', 'Twitch', '<span style="background:#9146ff;width:100%;height:100%;display:grid;place-items:center"><svg viewBox="0 0 24 24" fill="#fff"><path d="M4 2 2.5 6v14h5v3h3l3-3h4l5-5V2H4zm16 12-3 3h-5l-3 3v-3H5V4h15v10z"/></svg></span>', 'Ник на Twitch', 'Подпись, напр. «стримы каждый день»'],
+  ['instagram', 'Instagram', '<span style="background:linear-gradient(45deg,#feda75,#fa7e1e,#d62976,#962fbf);width:100%;height:100%;display:grid;place-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></span>', '@ник в Instagram', 'Подпись'],
+  ['youtube', 'YouTube', '<span style="background:#ff0000;width:100%;height:100%;display:grid;place-items:center"><svg viewBox="0 0 24 24"><path d="M9 7v10l8-5z" fill="#fff"/></svg></span>', 'Название канала', 'Подпись'],
+];
+function cardsInit() {
+  const C = ME.settings.cards || {}, base = ME.urls.widgets.card;
+  $('#cardsGrid').innerHTML = CARD_DEF.map(([k, nm, ic, ph, ph2]) => `<div class="ck2" data-ck="${k}"><div class="hd2"><i>${ic}</i>${nm}</div>
+    <input data-f="value" maxlength="60" placeholder="${ph}" value="${esc((C[k] || {}).value || '')}"><input data-f="name" maxlength="40" placeholder="${ph2}" value="${esc((C[k] || {}).name || '')}">
+    <iframe data-pv="${k}" src="${base}&k=${k}&demo"></iframe>
+    <div class="copy-row"><input readonly value="${base}&k=${k}" id="cardUrl_${k}"><button class="btn btn-ghost btn-sm" data-copy="cardUrl_${k}">Копировать</button></div></div>`).join('');
+  document.querySelectorAll('#cardsGrid iframe').forEach(f => f.onload = () => setTimeout(() => cardPost(f.dataset.pv), 200));
+}
+function cardVal(k) { const r = document.querySelector(`[data-ck="${k}"]`); return { value: r.querySelector('[data-f=value]').value.trim(), name: r.querySelector('[data-f=name]').value.trim() }; }
+function cardPost(k) { try { document.querySelector(`[data-pv="${k}"]`).contentWindow.postMessage({ kzCard: cardVal(k).value ? cardVal(k) : { value: 'Пример', name: '' } }, location.origin); } catch { } }
+
 function themePickers() {
   $$('select[data-themes]').forEach(sel => {
     sel.style.display = 'none';
@@ -235,7 +255,7 @@ function render() {
   ['duration', 'volume', 'min_alert', 'min_tts', 'tts_rate', 'theme'].forEach(k => val('a_' + k, a[k]));
   val('a_gif', a.gif); val('a_sound', a.sound);
   ['show_msg', 'tts'].forEach(k => val('a_' + k, a[k]));
-  VOICESEL = a.tts_voice || 'dmitry'; voicePicker(); vidAmounts(); fcInit();
+  VOICESEL = a.tts_voice || 'dmitry'; voicePicker(); vidAmounts(); fcInit(); cardsInit();
   if (!$('#tVoice').options.length) $('#tVoice').innerHTML = VOICE_LIST.map(([id, nm, ds]) => `<option value="${id}">${nm} — ${ds}</option>`).join('');
   val('tVoice', VOICESEL); alertStyles();
   val('c_words', s.censor.words); val('c_strip_links', s.censor.strip_links);
@@ -376,6 +396,8 @@ $('#fcNick').addEventListener('keydown', e => { if (e.key === 'Enter') $('#fcChe
 $('#fcRefresh').onclick = async () => { try { const r = await api('/api/faceit/me?fresh=1'); fcAccount(r.player); toast('Статистика обновлена ✓'); } catch (e) { toast(e.message, true); } };
 $('#fcUnlink').onclick = async () => { if (!confirm('Отвязать аккаунт FACEIT? Виджет перестанет показывать статистику.')) return; await api('/api/faceit/unlink', { method: 'POST', body: {} }); ME.settings.faceit.nick = ''; val('fcNick', ''); fcAccount(null); toast('Отвязано'); };
 $('#fcOpts').addEventListener('change', fcPost);
+$('#cardsGrid').addEventListener('input', e => { const r = e.target.closest('[data-ck]'); if (r) cardPost(r.dataset.ck); });
+$('#cardsSave').onclick = async () => { const cards = Object.fromEntries(CARD_DEF.map(([k]) => [k, cardVal(k)])); try { const r = await api('/api/settings', { method: 'PUT', body: { cards } }); ME.settings = r.settings; toast('Карточки сохранены — виджеты обновятся сами ✓'); } catch (e) { toast(e.message, true); } };
 $('#fcSave').onclick = async () => { try { const r = await api('/api/settings', { method: 'PUT', body: { faceit: { show: fcShow() } } }); ME.settings = r.settings; toast('Сохранено — виджет обновится сам ✓'); } catch (e) { toast(e.message, true); } };
 $('#vaList').addEventListener('mouseover', e => { const v = e.target.closest('.va')?.querySelector('video'); if (v) v.play().catch(() => {}); });
 $('#vaList').addEventListener('mouseout', e => { const v = e.target.closest('.va')?.querySelector('video'); if (v) { v.pause(); } });
