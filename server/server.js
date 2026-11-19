@@ -167,7 +167,7 @@ function defaults(nick) {
     media: { enabled: true, min: 100, max_sec: 180, volume: 0.6 },
     info: { lines: ['Донаты через Kaspi — ссылка в описании!'], interval: 8, theme: 'default', label: 'INFO', speed: 'normal', dir: 'right', show_last: true },
     timer: { end_at: 0, paused_left: 0, running: false, sec_per_100: 30, theme: 'default' },
-    cards: { kaspi: { value: '', name: '' }, halyk: { value: '', name: '' }, freedom: { value: '', name: '' }, twitch: { value: '', name: '' }, instagram: { value: '', name: '' }, youtube: { value: '', name: '' }, blackrussia: { value: '', name: '' } },
+    cards: { kaspi: { value: '', name: '' }, halyk: { value: '', name: '' }, freedom: { value: '', name: '' }, twitch: { value: '', name: '' }, instagram: { value: '', name: '' }, youtube: { value: '', name: '' }, blackrussia: { value: '', name: '', promo: '' } },
     faceit: { nick: '', show: { level: true, elo: true, today: true, kd: true, wr: true, hs: true, adr: false, matches: true, streak: false, last: true, flag: true } },
     hotkeys: [], webhooks: [],
   };
@@ -616,6 +616,7 @@ app.put('/api/settings', auth, (req, res) => {
   }
   if (b.cards) for (const k of ['kaspi', 'halyk', 'freedom', 'twitch', 'instagram', 'youtube', 'blackrussia']) if (b.cards[k]) {
     s.cards[k] = { value: clampStr(b.cards[k].value, 60), name: clampStr(b.cards[k].name, 40) };
+    if (k === 'blackrussia') s.cards[k].promo = clampStr(b.cards[k].promo, 30);
   }
   if (b.faceit && b.faceit.show) {
     const F = s.faceit.show;

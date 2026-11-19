@@ -9,6 +9,8 @@
   .tx{display:flex;flex-direction:row;align-items:baseline;gap:16px;min-width:0;flex-wrap:nowrap}
   .t1{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--c2)}
   .t2{font-family:Unbounded,sans-serif;font-weight:800;font-size:24px;letter-spacing:.02em;white-space:nowrap}
+  .pr{font-size:14px;font-weight:800;white-space:nowrap;padding:3px 10px;border-radius:8px;border:1px dashed var(--c2);color:var(--c2);align-self:center}.pr b{color:#fff;letter-spacing:.05em}
+  .tall .pr{align-self:flex-start;margin-top:3px}
   .t3{font-size:15px;font-weight:700;opacity:.8;white-space:nowrap}.t3:empty{display:none}
   /* «толстая» форма (&l=tall): крупный логотип, текст в три строки */
   .tall .cd{gap:16px;padding:12px 26px 12px 12px;border-radius:20px;min-width:0}
@@ -42,7 +44,7 @@
   function draw(c) {
     const el = document.getElementById('cd');
     if (!c || !c.value) { el.classList.remove('on'); el.innerHTML = demo ? '' : ''; return; }
-    el.innerHTML = `<div class="lg" style="${M.bg ? 'background:' + M.bg : ''}">${M.img ? `<img src="${M.img}" alt="">` : M.svg}</div><div class="tx"><div class="t1">${M.t}</div><div class="t2">${esc(c.value)}</div>${c.name ? `<div class="t3">${M.pre || ''}${esc(c.name)}</div>` : ''}</div>`;
+    el.innerHTML = `<div class="lg" style="${M.bg ? 'background:' + M.bg : ''}">${M.img ? `<img src="${M.img}" alt="">` : M.svg}</div><div class="tx"><div class="t1">${M.t}</div><div class="t2">${esc(c.value)}</div>${c.name ? `<div class="t3">${M.pre || ''}${esc(c.name)}</div>` : ''}${c.promo ? `<div class="pr">🎁 Промокод: <b>${esc(c.promo)}</b></div>` : ''}</div>`;
     requestAnimationFrame(() => el.classList.add('on'));
   }
   // превью в кабинете: ужимаем карточку под маленькое окошко

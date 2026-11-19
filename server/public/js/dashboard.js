@@ -180,7 +180,7 @@ const CARD_DEF = [
 function cardsInit() {
   const C = ME.settings.cards || {}, base = ME.urls.widgets.card;
   $('#cardsGrid').innerHTML = CARD_DEF.map(([k, nm, ic, ph, ph2]) => `<div class="ck2" data-ck="${k}"><div class="hd2"><i>${ic}</i>${nm}</div>
-    <input data-f="value" maxlength="60" placeholder="${ph}" value="${esc((C[k] || {}).value || '')}"><input data-f="name" maxlength="40" placeholder="${ph2}" value="${esc((C[k] || {}).name || '')}">
+    <input data-f="value" maxlength="60" placeholder="${ph}" value="${esc((C[k] || {}).value || '')}"><input data-f="name" maxlength="40" placeholder="${ph2}" value="${esc((C[k] || {}).name || '')}">${k === 'blackrussia' ? `<input data-f="promo" maxlength="30" placeholder="Промокод (если есть)" value="${esc((C[k] || {}).promo || '')}">` : ''}
     <iframe data-pv="${k}" src="${base}&k=${k}&demo"></iframe>
     <div class="shape2" data-shape="${k}"><button type="button" data-l="wide">▬ В ширину</button><button type="button" data-l="tall">▮ В толщину</button></div>
     <div class="copy-row"><input readonly value="${base}&k=${k}" id="cardUrl_${k}"><button class="btn btn-ghost btn-sm" data-copy="cardUrl_${k}">Копировать</button></div></div>`).join('');
@@ -195,7 +195,7 @@ function cardShape(k, l, init) {
   inp.value = inp.value.replace(/&l=\w+/, '') + (l === 'tall' ? '&l=tall' : '');
   const src = f.src.replace(/&l=\w+/, '') + (l === 'tall' ? '&l=tall' : ''); if (f.src !== src) f.src = src;
 }
-function cardVal(k) { const r = document.querySelector(`[data-ck="${k}"]`); return { value: r.querySelector('[data-f=value]').value.trim(), name: r.querySelector('[data-f=name]').value.trim() }; }
+function cardVal(k) { const r = document.querySelector(`[data-ck="${k}"]`), pr = r.querySelector('[data-f=promo]'); return { value: r.querySelector('[data-f=value]').value.trim(), name: r.querySelector('[data-f=name]').value.trim(), ...(pr ? { promo: pr.value.trim() } : {}) }; }
 function cardPost(k) { try { document.querySelector(`[data-pv="${k}"]`).contentWindow.postMessage({ kzCard: cardVal(k).value ? cardVal(k) : { value: 'Пример', name: '' } }, location.origin); } catch { } }
 
 function themePickers() {
