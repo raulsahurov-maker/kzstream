@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — реклама</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;background:transparent;overflow:hidden;height:100%}
+  body{display:grid;place-items:center;font-family:Manrope,sans-serif}
+  .ad{position:relative;display:flex;align-items:center;gap:18px;padding:12px 30px 12px 12px;border-radius:20px;background:rgba(10,8,20,.92);color:#fff;
+    box-shadow:0 0 28px rgba(255,59,92,.45),0 12px 34px rgba(0,0,0,.5);overflow:hidden;animation:in .7s cubic-bezier(.2,1.4,.4,1) both}
+  .ad::before{content:"";position:absolute;inset:0;border-radius:20px;padding:2px;background:linear-gradient(120deg,#ff3b5c,#ffb648,#7c4dff,#ff3b5c);background-size:300% 100%;animation:mv 4s linear infinite;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .ad::after{content:"";position:absolute;top:0;bottom:0;width:60px;left:-80px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transform:skewX(-20deg);animation:sh 3.5s ease-in-out infinite}
+  .lg{width:64px;height:64px;border-radius:16px;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,#ff3b5c,#ff8a3b);font-family:Unbounded;font-weight:800;font-size:22px;box-shadow:0 0 18px rgba(255,59,92,.6)}
+  .tx{display:flex;flex-direction:column;gap:2px}
+  .t1{font-family:Unbounded;font-weight:800;font-size:26px;letter-spacing:.01em;white-space:nowrap}
+  .t1 b{background:linear-gradient(90deg,#ff3b5c,#ffb648);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .t2{font-size:15px;font-weight:800;color:#ffd23f;white-space:nowrap;text-shadow:0 0 10px rgba(255,190,60,.6)}
+  .t3{font-size:13px;font-weight:700;opacity:.75;white-space:nowrap;letter-spacing:.03em}
+  @keyframes mv{to{background-position:300% 0}}
+  @keyframes sh{0%,60%{left:-80px}100%{left:110%}}
+  @keyframes in{from{opacity:0;transform:translateY(14px) scale(.95)}}
+</style></head>
+<body>
+  <div class="ad" id="ad" data-fit>
+    <div class="lg">KZ</div>
+    <div class="tx">
+      <div class="t1"><b>KZ</b>Stream</div>
+      <div class="t2">🏆 Лучший донат-сервис</div>
+      <div class="t3">kzstream.onrender.com</div>
+    </div>
+  </div>
+<script>
+  // размер: подгоняем под кадр источника; &s=1.5 — увеличить
+  (function fit() {
+    const el = document.getElementById('ad'), m = +(new URLSearchParams(location.search).get('s')) || 1;
+    el.style.zoom = 1; const k = Math.min((innerWidth - 20) / el.offsetWidth, (innerHeight - 20) / el.offsetHeight, 3) * m;
+    el.style.zoom = Math.max(.3, k); addEventListener('resize', fit, { once: true });
+  })();
+</script>
+</body></html>

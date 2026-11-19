@@ -2,7 +2,7 @@
 <html lang="ru"><head><meta charset="UTF-8"><title>KZStream — карточка</title>
 <link rel="stylesheet" href="/w/w.css">
 <style>
-  .cd{display:flex;align-items:center;gap:18px;padding:8px 34px 8px 8px;border-radius:16px;min-width:520px;background:rgba(10,11,18,.9);border:2px solid var(--c);box-shadow:0 0 22px color-mix(in srgb,var(--c) 45%,transparent),0 12px 34px rgba(0,0,0,.45);color:#fff;width:max-content;max-width:calc(100vw - 20px);opacity:0;transform:translateY(8px);transition:.4s}
+  .cd{display:flex;align-items:center;gap:18px;padding:8px 34px 8px 8px;border-radius:16px;background:rgba(10,11,18,.9);border:2px solid var(--c);box-shadow:0 0 22px color-mix(in srgb,var(--c) 45%,transparent),0 12px 34px rgba(0,0,0,.45);color:#fff;width:max-content;opacity:0;transform:translateY(8px);transition:.4s}
   .cd.on{opacity:1;transform:none}
   .lg{width:52px;height:52px;border-radius:12px;overflow:hidden;flex:none;display:grid;place-items:center;background:var(--c)}
   .lg img{width:100%;height:100%;object-fit:cover}.lg svg{width:40px;height:40px}
@@ -10,6 +10,11 @@
   .t1{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--c2)}
   .t2{font-family:Unbounded,sans-serif;font-weight:800;font-size:24px;letter-spacing:.02em;white-space:nowrap}
   .t3{font-size:15px;font-weight:700;opacity:.8;white-space:nowrap}.t3:empty{display:none}
+  /* «толстая» форма (&l=tall): крупный логотип, текст в три строки */
+  .tall .cd{gap:16px;padding:12px 26px 12px 12px;border-radius:20px;min-width:0}
+  .tall .lg{width:76px;height:76px;border-radius:18px}.tall .lg svg{width:46px;height:46px}
+  .tall .tx{flex-direction:column;align-items:flex-start;gap:3px}
+  .tall .t2{font-size:30px}.tall .t3{font-size:14px}
 </style></head><body>
 <div class="cd" id="cd" data-fit></div>
 <script src="/w/widget.js"></script>
@@ -17,6 +22,7 @@
 (() => {
   const { on, start, esc } = KZ;
   const qs = new URLSearchParams(location.search), K = qs.get('k') || 'kaspi', demo = qs.has('demo');
+  if (qs.get('l') === 'tall') document.documentElement.classList.add('tall');
   const SV = {
     twitch: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 2 2.5 6v14h5v3h3l3-3h4l5-5V2H4zm16 12-3 3h-5l-3 3v-3H5V4h15v10z"/><path d="M15 7h2v5h-2zM10 7h2v5h-2z"/></svg>',
     instagram: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#fff"/></svg>',
@@ -38,7 +44,9 @@
     el.innerHTML = `<div class="lg" style="${M.bg ? 'background:' + M.bg : ''}">${M.img ? `<img src="${M.img}" alt="">` : M.svg}</div><div class="tx"><div class="t1">${M.t}</div><div class="t2">${esc(c.value)}</div>${c.name ? `<div class="t3">${esc(c.name)}</div>` : ''}</div>`;
     requestAnimationFrame(() => el.classList.add('on'));
   }
-  if (demo) { addEventListener('message', e => { if (e.origin === location.origin && e.data && e.data.kzCard) draw(e.data.kzCard); }); return; }
+  // превью в кабинете: ужимаем карточку под маленькое окошко
+  const pvFit = () => { const el = document.getElementById('cd'); el.style.zoom = 1; el.style.maxWidth = 'none'; const w = el.scrollWidth, h = el.offsetHeight; if (w && h) el.style.zoom = Math.min(1, (innerWidth - 16) / w, (innerHeight - 10) / h); };
+  if (demo) { addEventListener('message', e => { if (e.origin === location.origin && e.data && e.data.kzCard) { draw(e.data.kzCard); requestAnimationFrame(pvFit); } }); addEventListener('resize', pvFit); return; }
   on('state', st => draw((st.settings.cards || {})[K]));
   on('settings', s => s.cards && draw(s.cards[K]));
   start();

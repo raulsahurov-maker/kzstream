@@ -110,6 +110,7 @@
   .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-top:10px}
   .ck2{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--bg2);display:flex;flex-direction:column;gap:8px}
   .ck2 .hd2{display:flex;align-items:center;gap:10px;font-weight:800}.ck2 .hd2 i{width:30px;height:30px;border-radius:8px;overflow:hidden;display:grid;place-items:center;flex:none}
+  .shape2{display:flex;gap:6px}.shape2 button{flex:1;padding:8px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted,#9aa0b4);font-weight:800;cursor:pointer;font-family:inherit}.shape2 button.on{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 18%,transparent)}
   .ck2 .hd2 i img{width:100%;height:100%;object-fit:cover}.ck2 .hd2 i svg{width:18px;height:18px}
   .ck2 iframe{width:100%;height:96px;border:0;border-radius:10px;background:repeating-conic-gradient(#1a1c26 0 25%,#13151e 0 50%) 0 0/18px 18px}
   .sz-pick{width:auto;flex:none;padding:0 10px;min-width:78px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);color:var(--text);font-weight:800}
@@ -210,6 +211,7 @@
     <a href="#pro"><span>⌨️</span>Хоткеи и вебхуки<i class="mb pro">Pro</i></a>
     <a href="#billing"><span>💳</span>Тариф</a>
     <a href="#account"><span>👤</span>Аккаунт</a>
+    <a href="https://t.me/raulanrip" target="_blank" rel="noopener" class="ext"><span>🤝</span>Сотрудничество</a>
     <a href="/admin" id="adminLink" style="display:none"><span>🛡️</span>Админка</a>
   </nav>
   <div class="side-plan" id="sidePlan"></div>
@@ -601,6 +603,20 @@
   <section class="page" id="p-billing">
     <div class="top"><h1>Тариф</h1></div>
     <div class="card" style="margin-bottom:18px" id="curPlan"></div>
+    <div class="grid g2" style="margin-bottom:18px">
+      <div class="card" id="balBox"><h3>💰 Баланс</h3>
+        <div style="font-family:Unbounded;font-size:30px;margin:4px 0 12px" id="balNow">0 ₸</div>
+        <p class="hint">Пополните баланс так же, как тариф: переведите сумму на карту Kaspi ниже, отправьте чек в Telegram и нажмите «Отправить заявку». После проверки деньги появятся на балансе — тариф можно оплатить с него в один клик.</p>
+        <div class="row"><div class="field"><label>Сумма пополнения, ₸</label><input type="number" id="balAmount" value="2000" min="500" step="500"></div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-ghost" id="balTg" target="_blank">✈️ Отправить чек в Telegram</a><button class="btn btn-primary" id="balSend">Отправить заявку на пополнение</button></div>
+      </div>
+      <div class="card" id="promoBox"><h3>🎟 Промокоды −20%</h3>
+        <p class="hint">Ваш личный промокод — ваш ник. Тот, кто его активирует, получит <b>скидку 20%</b> на оплату тарифа.</p>
+        <div class="copy-row" style="margin-bottom:6px"><input readonly id="promoMine"><button class="btn btn-ghost btn-sm" data-copy="promoMine">Копировать</button></div>
+        <p class="muted" style="font-size:13px;margin-bottom:14px">Активаций вашего кода: <b id="promoCount">0</b></p>
+        <div id="promoUse"></div>
+      </div>
+    </div>
     <div class="plans" id="plansBox"></div>
     <div class="card" style="margin-top:18px" id="payBox">
       <h3>Оплата через Kaspi</h3>
@@ -609,9 +625,9 @@
         <div class="field"><label>Тариф</label><select id="payPlan"><option value="lite">Lite</option><option value="pro">Pro</option></select></div>
         <div class="field"><label>Месяцев</label><select id="payMonths"><option>1</option><option>2</option><option>3</option><option>6</option><option>12</option></select></div>
       </div>
-      <div class="card" style="background:var(--bg2);margin-bottom:14px"><div class="muted" style="font-size:13px">Переведите</div><div style="font-family:Unbounded;font-size:26px" id="payAmount"></div><div class="muted" style="font-size:14px">на карту Kaspi <b id="payPhone" style="color:var(--text);letter-spacing:.04em"></b> · <span id="payName"></span></div></div>
+      <div class="card" style="background:var(--bg2);margin-bottom:14px"><div class="muted" style="font-size:13px">Переведите</div><div style="font-family:Unbounded;font-size:26px" id="payAmount"></div><div id="payPromo" style="font-size:13px;color:#4ade80;font-weight:700"></div><div class="muted" style="font-size:14px">на карту Kaspi <b id="payPhone" style="color:var(--text);letter-spacing:.04em"></b> · <span id="payName"></span></div></div>
       <div class="field"><label>Комментарий (имя отправителя в Kaspi)</label><input id="payComment" placeholder="Например: Аружан А."></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" id="copyPayPhone">Скопировать номер карты</button><a class="btn btn-ghost" id="payTgBtn" target="_blank">✈️ Отправить чек в Telegram</a><button class="btn btn-primary" id="paySend">Я оплатил — отправить заявку</button></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" id="copyPayPhone">Скопировать номер карты</button><a class="btn btn-ghost" id="payTgBtn" target="_blank">✈️ Отправить чек в Telegram</a><button class="btn btn-primary" id="paySend">Я оплатил — отправить заявку</button><button class="btn btn-ghost" id="payBal">💰 Оплатить с баланса</button></div>
       <h3 style="margin-top:24px">История заявок</h3>
       <table><tbody id="payHist"></tbody></table>
     </div>

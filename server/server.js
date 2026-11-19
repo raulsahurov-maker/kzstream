@@ -62,6 +62,11 @@ const MIGRATIONS = [
   ['ALTER TABLE users ADD COLUMN verify_code TEXT', null],
   ['ALTER TABLE users ADD COLUMN verify_sent_at INTEGER DEFAULT 0', null],
   ['ALTER TABLE users ADD COLUMN verify_tries INTEGER DEFAULT 0', null],
+  ['ALTER TABLE users ADD COLUMN balance INTEGER DEFAULT 0', null],
+  ['ALTER TABLE users ADD COLUMN promo_used TEXT DEFAULT \'\'', null],
+  ['ALTER TABLE users ADD COLUMN promo_spent INTEGER DEFAULT 0', null],
+  ['ALTER TABLE payments ADD COLUMN kind TEXT DEFAULT \'plan\'', null],
+  ['ALTER TABLE payments ADD COLUMN promo TEXT DEFAULT \'\'', null],
 ];
 for (const [alter, after] of MIGRATIONS) { try { db.exec(alter); if (after) db.exec(after); } catch { /* поле уже есть */ } }
 // обёртка: убираем служебное поле _metadata, которое добавляет libsql
@@ -506,9 +511,11 @@ app.get('/api/me', auth, (req, res) => {
     stats: { ...stats, today, month, year, tests: tests.c, tests_sum: tests.s },
     urls: {
       page: `${b}/d/${u.nick}`, ingest: `${b}/api/ingest/${u.token}`,
-      widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit', 'card'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
+      widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit', 'card', 'promo'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
     },
     pay: { kaspi: PAY_KASPI, name: PAY_NAME, telegram: PAY_TELEGRAM },
+    balance: u.balance || 0, promo: { mine: u.nick.toUpperCase(), used: u.promo_used || '', active: !!u.promo_used && !u.promo_spent, discount: PROMO_OFF,
+      activations: q(`SELECT COUNT(*) c FROM users WHERE promo_used=? COLLATE NOCASE`).get(u.nick.toUpperCase()).c },
   });
 });
 app.post('/api/token/reset', auth, (req, res) => { q('UPDATE users SET token=? WHERE id=?').run(rnd(18), req.user.id); res.json({ ok: true }); });
@@ -737,13 +744,44 @@ app.post('/api/timer', auth, (req, res) => {
 });
 
 // --- тарифы и оплата ---
+const PROMO_OFF = 20; // скидка по промокоду, %
+// цена тарифа с учётом активного промокода (скидка действует на одну оплату тарифа)
+function planPrice(u, plan, months) { const full = plan.price * months; const promo = u.promo_used && !u.promo_spent ? u.promo_used : '';
+  return { full, sum: promo ? Math.round(full * (100 - PROMO_OFF) / 100) : full, promo }; }
 app.post('/api/pay', auth, (req, res) => {
-  const plan = PLANS[req.body.plan]; const months = int(req.body.months, 1, 12, 1);
-  if (!plan || plan.id === 'free') return res.status(400).json({ error: 'Выберите тариф' });
   const pending = q(`SELECT id FROM payments WHERE user_id=? AND status='pending'`).get(req.user.id);
   if (pending) return res.status(409).json({ error: 'У вас уже есть заявка на проверке' });
-  q('INSERT INTO payments(user_id,plan,months,amount,created_at,comment) VALUES(?,?,?,?,?,?)').run(req.user.id, plan.id, months, plan.price * months, now(), clampStr(req.body.comment, 200));
+  if (req.body.kind === 'balance') { // пополнение баланса
+    const amount = int(req.body.amount, 500, 1000000, 0); if (!amount) return res.status(400).json({ error: 'Сумма от 500 до 1 000 000 ₸' });
+    q(`INSERT INTO payments(user_id,plan,months,amount,created_at,comment,kind) VALUES(?,?,?,?,?,?,?)`).run(req.user.id, 'balance', 0, amount, now(), clampStr(req.body.comment, 200), 'balance');
+    return res.json({ ok: true });
+  }
+  const plan = PLANS[req.body.plan]; const months = int(req.body.months, 1, 12, 1);
+  if (!plan || plan.id === 'free') return res.status(400).json({ error: 'Выберите тариф' });
+  const pr = planPrice(req.user, plan, months);
+  q('INSERT INTO payments(user_id,plan,months,amount,created_at,comment,kind,promo) VALUES(?,?,?,?,?,?,?,?)').run(req.user.id, plan.id, months, pr.sum, now(), clampStr(req.body.comment, 200), 'plan', pr.promo);
   res.json({ ok: true });
+});
+// оплата тарифа с баланса — сразу, без проверки
+app.post('/api/pay/balance', auth, (req, res) => {
+  const u = req.user, plan = PLANS[req.body.plan], months = int(req.body.months, 1, 12, 1);
+  if (!plan || plan.id === 'free') return res.status(400).json({ error: 'Выберите тариф' });
+  const pr = planPrice(u, plan, months);
+  if ((u.balance || 0) < pr.sum) return res.status(402).json({ error: `Не хватает ${pr.sum - (u.balance || 0)} ₸ на балансе` });
+  q('UPDATE users SET balance=balance-? WHERE id=?').run(pr.sum, u.id);
+  q(`INSERT INTO payments(user_id,plan,months,amount,created_at,comment,kind,promo,status) VALUES(?,?,?,?,?,?,?,?,?)`).run(u.id, plan.id, months, pr.sum, now(), 'с баланса', 'plan', pr.promo, 'approved');
+  applyPlanPayment(u.id, plan.id, months, pr.promo);
+  res.json({ ok: true, balance: userById(u.id).balance });
+});
+// активация чужого промокода (ник другого стримера)
+app.post('/api/promo', auth, (req, res) => {
+  const u = req.user, code = String(req.body.code || '').trim().replace(/^@/, '');
+  if (u.promo_used) return res.status(409).json({ error: 'Промокод уже активирован: ' + u.promo_used });
+  const owner = userByNick(code);
+  if (!owner) return res.status(404).json({ error: 'Такого промокода нет' });
+  if (owner.id === u.id) return res.status(400).json({ error: 'Свой промокод активировать нельзя' });
+  q('UPDATE users SET promo_used=?, promo_spent=0 WHERE id=?').run(owner.nick.toUpperCase(), u.id);
+  res.json({ ok: true, code: owner.nick.toUpperCase(), discount: PROMO_OFF });
 });
 app.get('/api/payments', auth, (req, res) => res.json(q('SELECT * FROM payments WHERE user_id=? ORDER BY id DESC LIMIT 20').all(req.user.id)));
 app.post('/api/freeze', auth, (req, res) => {
@@ -757,11 +795,11 @@ app.post('/api/freeze', auth, (req, res) => {
 // --- админка ---
 app.get('/api/admin/overview', admin, (req, res) => {
   res.json({
-    users: q(`SELECT u.id,u.nick,u.email,u.plan,u.plan_until,u.paid_months,u.created_at,u.is_admin,
+    users: q(`SELECT u.id,u.nick,u.email,u.plan,u.plan_until,u.paid_months,u.created_at,u.is_admin,u.balance,u.promo_used,
       (SELECT COUNT(*) FROM donations d WHERE d.user_id=u.id AND d.status='done') dons,
       (SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.user_id=u.id AND d.status='done') total FROM users u ORDER BY u.id DESC LIMIT 500`).all(),
     payments: q(`SELECT p.*, u.nick, u.email FROM payments p JOIN users u ON u.id=p.user_id ORDER BY (p.status='pending') DESC, p.id DESC LIMIT 200`).all(),
-    totals: q(`SELECT (SELECT COUNT(*) FROM users) users, (SELECT COUNT(*) FROM donations WHERE status='done') dons, (SELECT COALESCE(SUM(amount),0) FROM payments WHERE status='approved') revenue`).get(),
+    totals: q(`SELECT (SELECT COUNT(*) FROM users) users, (SELECT COUNT(*) FROM donations WHERE status='done') dons, (SELECT COALESCE(SUM(amount),0) FROM payments WHERE status='approved' AND comment<>'с баланса') revenue`).get(),
   });
 });
 function grantPlan(uid, plan, days) {
@@ -769,14 +807,19 @@ function grantPlan(uid, plan, days) {
   const from = (u.plan === plan && u.plan_until > now()) ? u.plan_until : now();
   q('UPDATE users SET plan=?, plan_until=? WHERE id=?').run(plan, from + days * 864e5, uid);
 }
+function applyPlanPayment(uid, plan, months, promo) {
+  grantPlan(uid, plan, 30 * months);
+  q('UPDATE users SET paid_months=paid_months+? WHERE id=?').run(months, uid);
+  if (promo) q('UPDATE users SET promo_spent=1 WHERE id=?').run(uid);
+  const u = userById(uid);
+  if (u.paid_months >= 10 && !u.vip_bonus) { grantPlan(u.id, 'pro', 10); q('UPDATE users SET vip_bonus=1 WHERE id=?').run(u.id); }
+}
 app.post('/api/admin/payments/:id', admin, (req, res) => {
   const p = q(`SELECT * FROM payments WHERE id=? AND status='pending'`).get(+req.params.id);
   if (!p) return res.status(404).json({ error: 'Заявка не найдена' });
   if (req.body.action === 'approve') {
-    grantPlan(p.user_id, p.plan, 30 * p.months);
-    q('UPDATE users SET paid_months=paid_months+? WHERE id=?').run(p.months, p.user_id);
-    const u = userById(p.user_id);
-    if (u.paid_months >= 10 && !u.vip_bonus) { grantPlan(u.id, 'pro', 10); q('UPDATE users SET vip_bonus=1 WHERE id=?').run(u.id); }
+    if (p.kind === 'balance') q('UPDATE users SET balance=balance+? WHERE id=?').run(p.amount, p.user_id);
+    else applyPlanPayment(p.user_id, p.plan, p.months, p.promo);
     q(`UPDATE payments SET status='approved' WHERE id=?`).run(p.id);
   } else q(`UPDATE payments SET status='rejected' WHERE id=?`).run(p.id);
   res.json({ ok: true });
@@ -785,6 +828,7 @@ app.post('/api/admin/users/:id', admin, (req, res) => {
   const u = userById(+req.params.id); if (!u) return res.status(404).json({ error: 'Нет пользователя' });
   if (req.body.plan === 'free') q(`UPDATE users SET plan='free', plan_until=0 WHERE id=?`).run(u.id);
   else if (PLANS[req.body.plan]) grantPlan(u.id, req.body.plan, int(req.body.days, 1, 3650, 30));
+  if (req.body.balance_add) q('UPDATE users SET balance=MAX(0, balance+?) WHERE id=?').run(int(req.body.balance_add, -1e7, 1e7, 0), u.id);
   if (req.body.is_admin !== undefined) q('UPDATE users SET is_admin=? WHERE id=?').run(req.body.is_admin ? 1 : 0, u.id);
   res.json({ ok: true });
 });

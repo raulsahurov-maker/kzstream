@@ -181,8 +181,18 @@ function cardsInit() {
   $('#cardsGrid').innerHTML = CARD_DEF.map(([k, nm, ic, ph, ph2]) => `<div class="ck2" data-ck="${k}"><div class="hd2"><i>${ic}</i>${nm}</div>
     <input data-f="value" maxlength="60" placeholder="${ph}" value="${esc((C[k] || {}).value || '')}"><input data-f="name" maxlength="40" placeholder="${ph2}" value="${esc((C[k] || {}).name || '')}">
     <iframe data-pv="${k}" src="${base}&k=${k}&demo"></iframe>
+    <div class="shape2" data-shape="${k}"><button type="button" data-l="wide">▬ В ширину</button><button type="button" data-l="tall">▮ В толщину</button></div>
     <div class="copy-row"><input readonly value="${base}&k=${k}" id="cardUrl_${k}"><button class="btn btn-ghost btn-sm" data-copy="cardUrl_${k}">Копировать</button></div></div>`).join('');
+  CARD_DEF.forEach(([k]) => { let l = 'wide'; try { l = localStorage['kzShape_' + k] || 'wide'; } catch { } cardShape(k, l, true); });
+  $('#cardsGrid').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (!b) return; const k = b.parentNode.dataset.shape; cardShape(k, b.dataset.l); toast((b.dataset.l === 'tall' ? 'Форма «в толщину»' : 'Форма «в ширину»') + ' — скопируйте ссылку заново'); });
   document.querySelectorAll('#cardsGrid iframe').forEach(f => f.onload = () => setTimeout(() => cardPost(f.dataset.pv), 200));
+}
+function cardShape(k, l, init) {
+  try { localStorage['kzShape_' + k] = l; } catch { }
+  document.querySelectorAll(`[data-shape="${k}"] [data-l]`).forEach(b => b.classList.toggle('on', b.dataset.l === l));
+  const inp = $('#cardUrl_' + k), f = document.querySelector(`[data-pv="${k}"]`);
+  inp.value = inp.value.replace(/&l=\w+/, '') + (l === 'tall' ? '&l=tall' : '');
+  const src = f.src.replace(/&l=\w+/, '') + (l === 'tall' ? '&l=tall' : ''); if (f.src !== src) f.src = src;
 }
 function cardVal(k) { const r = document.querySelector(`[data-ck="${k}"]`); return { value: r.querySelector('[data-f=value]').value.trim(), name: r.querySelector('[data-f=name]').value.trim() }; }
 function cardPost(k) { try { document.querySelector(`[data-pv="${k}"]`).contentWindow.postMessage({ kzCard: cardVal(k).value ? cardVal(k) : { value: 'Пример', name: '' } }, location.origin); } catch { } }
@@ -262,7 +272,7 @@ function render() {
   listEdit('#nicksList', Object.entries(s.nicks || {}).map(([k, v]) => ({ k, v })), [['k', 'Имя в Kaspi'], ['v', 'Ник']]);
   listEdit('#varList', a.variations || [], [['amount', 'Сумма', 'number'], ['gif', 'Гифка (URL)', 'file:image,video'], ['sound', 'Звук (URL)', 'file:audio'], ['text', 'Подпись']]);
   // виджеты
-  const names = { alerts: '🔔 Алерты', top: '🏆 ТОП донатеров', goal: '🎯 Цель сбора', roulette: '🎰 Рулетка', media: '🎵 Музыка и видео', info: 'ℹ️ Info-виджет', timer: '⏱ Таймер', faceit: '🎮 FACEIT', card: '🏦 Виджет банка (Kaspi)' };
+  const names = { alerts: '🔔 Алерты', top: '🏆 ТОП донатеров', goal: '🎯 Цель сбора', roulette: '🎰 Рулетка', media: '🎵 Музыка и видео', info: 'ℹ️ Info-виджет', timer: '⏱ Таймер', faceit: '🎮 FACEIT', card: '🏦 Виджет банка (Kaspi)', promo: '📣 Реклама KZStream' };
   const need = { alerts: null, top: null, goal: null, roulette: 'roulette', media: 'media', info: 'info', timer: 'timer' };
   const badge = k => !need[k] ? '<span class="wb free">Бесплатно</span>' : `<span class="wb lite">Lite</span>`;
   $('#wlinks').innerHTML = Object.entries(ME.urls.widgets).filter(([k]) => names[k]).map(([k, u]) => { if (k === 'card') u += '&k=kaspi'; const locked = need[k] && !p[need[k]];
@@ -298,7 +308,7 @@ function render() {
   themePickers();
   // тариф
   renderBilling();
-  $('#accInfo').innerHTML = `Ник: <b>${esc(ME.nick)}</b><br>Email: ${esc(ME.email)}<br>Оплачено месяцев: ${ME.paid_months}${ME.vip ? ' · VIP' : ' (VIP с 10 месяцев)'}`;
+  $('#accInfo').innerHTML = `Ник: <b>${esc(ME.nick)}</b><br>Email: ${esc(ME.email)}<br>Баланс: <b>${fmt(ME.balance)}</b> · <a href="#billing" style="color:var(--accent)">пополнить</a><br>Ваш промокод: <b>${esc(ME.promo.mine)}</b> (−20% другу)<br>Оплачено месяцев: ${ME.paid_months}${ME.vip ? ' · VIP' : ' (VIP с 10 месяцев)'}`;
   if (!pg.kaspi && !sessionStorage.kaspiHint) { sessionStorage.kaspiHint = 1; toast('Укажите номер Kaspi в разделе «Страница доната»'); }
 }
 
@@ -580,11 +590,29 @@ function renderBilling() {
   $$('[data-pick]').forEach(b => b.onclick = () => { val('payPlan', b.dataset.pick); calcPay(); $('#payBox').scrollIntoView({ behavior: 'smooth' }); });
   $('#payPhone').textContent = ME.pay.kaspi; $('#payName').textContent = 'получатель ' + ME.pay.name;
   $('#payTg').textContent = '@' + ME.pay.telegram; calcPay();
+  // баланс и промокоды
+  $('#balNow').textContent = fmt(ME.balance); calcBal();
+  val('promoMine', ME.promo.mine); $('#promoCount').textContent = ME.promo.activations;
+  $('#promoUse').innerHTML = ME.promo.used
+    ? `<div class="tag ${ME.promo.active ? 'ok' : ''}">Активирован код ${esc(ME.promo.used)} — ${ME.promo.active ? 'скидка 20% на следующую оплату тарифа' : 'скидка уже использована'}</div>`
+    : `<div class="field"><label>Есть промокод друга?</label><div class="copy-row"><input id="promoIn" placeholder="Ник стримера"><button class="btn btn-primary btn-sm" id="promoGo">Активировать</button></div></div>`;
+  const pg = $('#promoGo'); if (pg) pg.onclick = async () => { try { const r = await api('/api/promo', { method: 'POST', body: { code: val('promoIn') } }); toast(`Промокод ${r.code} активирован: −${r.discount}%`); load(); } catch (e) { toast(e.message, true); } };
   $('#copyPayPhone').onclick = () => navigator.clipboard?.writeText(ME.pay.kaspi.replace(/\s/g, '')).then(() => toast('Номер карты скопирован'));
 }
+function calcBal() {
+  const a = +val('balAmount') || 0;
+  const msg = `Здравствуйте! Пополняю баланс KZStream на ${fmt(a)}. Мой ник: ${ME.nick}. Чек прикладываю.`;
+  $('#balTg').href = `https://t.me/${ME.pay.telegram}?text=${encodeURIComponent(msg)}`;
+}
+$('#balAmount').oninput = calcBal;
+$('#balSend').onclick = async () => { try { await api('/api/pay', { method: 'POST', body: { kind: 'balance', amount: +val('balAmount') } }); toast('Заявка на пополнение отправлена. Ожидайте подтверждения'); loadPayments(); } catch (e) { toast(e.message, true); } };
+$('#payBal').onclick = async () => { try { const r = await api('/api/pay/balance', { method: 'POST', body: { plan: val('payPlan'), months: +val('payMonths') } }); toast('Тариф оплачен с баланса! Остаток: ' + fmt(r.balance)); load(); } catch (e) { toast(e.message, true); } };
 function calcPay() {
-  const pl = ME.plans.find(x => x.id === val('payPlan')), sum = pl.price * +val('payMonths');
-  $('#payAmount').textContent = fmt(sum);
+  const pl = ME.plans.find(x => x.id === val('payPlan')), full = pl.price * +val('payMonths');
+  const sum = ME.promo.active ? Math.round(full * (100 - ME.promo.discount) / 100) : full;
+  $('#payAmount').innerHTML = ME.promo.active ? `${fmt(sum)} <s class="muted" style="font-size:16px">${fmt(full)}</s>` : fmt(sum);
+  $('#payPromo').textContent = ME.promo.active ? `🎟 Промокод ${ME.promo.used}: −${ME.promo.discount}%` : '';
+  $('#payBal').textContent = `💰 Оплатить с баланса (${fmt(ME.balance)})`;
   const msg = `Здравствуйте! Оплатил KZStream ${pl.name} на ${val('payMonths')} мес — ${fmt(sum)}. Мой ник: ${ME.nick}. Чек прикладываю.`;
   const tg = `https://t.me/${ME.pay.telegram}?text=${encodeURIComponent(msg)}`;
   $('#payTg').href = tg; $('#payTgBtn').href = tg;
@@ -593,7 +621,7 @@ $('#payPlan').onchange = calcPay; $('#payMonths').onchange = calcPay;
 $('#paySend').onclick = async () => { try { await api('/api/pay', { method: 'POST', body: { plan: val('payPlan'), months: +val('payMonths'), comment: val('payComment') } }); toast('Заявка отправлена. Ожидайте подтверждения'); loadPayments(); } catch (e) { toast(e.message, true); } };
 async function loadPayments() {
   const l = await api('/api/payments');
-  $('#payHist').innerHTML = l.map(x => `<tr><td class="muted">${time(x.created_at)}</td><td>${x.plan.toUpperCase()} × ${x.months} мес</td><td>${fmt(x.amount)}</td><td>${{ pending: '<span class="tag wait">на проверке</span>', approved: '<span class="tag ok">подтверждена</span>', rejected: '<span class="tag no">отклонена</span>' }[x.status]}</td></tr>`).join('') || '<tr><td class="muted">Заявок нет</td></tr>';
+  $('#payHist').innerHTML = l.map(x => `<tr><td class="muted">${time(x.created_at)}</td><td>${x.kind === 'balance' ? '💰 Пополнение баланса' : x.plan.toUpperCase() + ' × ' + x.months + ' мес' + (x.promo ? ' · −20% ' + esc(x.promo) : '')}</td><td>${fmt(x.amount)}</td><td>${{ pending: '<span class="tag wait">на проверке</span>', approved: '<span class="tag ok">подтверждена</span>', rejected: '<span class="tag no">отклонена</span>' }[x.status]}</td></tr>`).join('') || '<tr><td class="muted">Заявок нет</td></tr>';
 }
 
 // ---------- аккаунт ----------
