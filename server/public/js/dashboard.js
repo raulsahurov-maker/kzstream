@@ -272,7 +272,7 @@ function render() {
   listEdit('#nicksList', Object.entries(s.nicks || {}).map(([k, v]) => ({ k, v })), [['k', 'Имя в Kaspi'], ['v', 'Ник']]);
   listEdit('#varList', a.variations || [], [['amount', 'Сумма', 'number'], ['gif', 'Гифка (URL)', 'file:image,video'], ['sound', 'Звук (URL)', 'file:audio'], ['text', 'Подпись']]);
   // виджеты
-  const names = { alerts: '🔔 Алерты', top: '🏆 ТОП донатеров', goal: '🎯 Цель сбора', roulette: '🎰 Рулетка', media: '🎵 Музыка и видео', info: 'ℹ️ Info-виджет', timer: '⏱ Таймер', faceit: '🎮 FACEIT', card: '🏦 Виджет банка (Kaspi)', promo: '📣 Реклама KZStream' };
+  const names = { alerts: '🔔 Алерты', top: '🏆 ТОП донатеров', goal: '🎯 Цель сбора', roulette: '🎰 Рулетка', media: '🎵 Музыка и видео', info: 'ℹ️ Info-виджет', timer: '⏱ Таймер', faceit: '🎮 FACEIT', card: '🏦 Виджет банка (Kaspi)' };
   const need = { alerts: null, top: null, goal: null, roulette: 'roulette', media: 'media', info: 'info', timer: 'timer' };
   const badge = k => !need[k] ? '<span class="wb free">Бесплатно</span>' : `<span class="wb lite">Lite</span>`;
   $('#wlinks').innerHTML = Object.entries(ME.urls.widgets).filter(([k]) => names[k]).map(([k, u]) => { if (k === 'card') u += '&k=kaspi'; const locked = need[k] && !p[need[k]];
@@ -306,6 +306,8 @@ function render() {
   if (!$('#rFrame').src) $('#rFrame').src = ME.urls.widgets.roulette + '&preview';
   $('#rOpen').href = ME.urls.widgets.roulette; $('#mOpen').href = ME.urls.widgets.media; val('mPlayerUrl', ME.urls.widgets.media);
   themePickers();
+  // сотрудничество: рекламный виджет
+  val('w_promo', ME.urls.widgets.promo); if (!$('#promoFrame').src) $('#promoFrame').src = ME.urls.widgets.promo;
   // тариф
   renderBilling();
   $('#accInfo').innerHTML = `Ник: <b>${esc(ME.nick)}</b><br>Email: ${esc(ME.email)}<br>Баланс: <b>${fmt(ME.balance)}</b> · <a href="#billing" style="color:var(--accent)">пополнить</a><br>Ваш промокод: <b>${esc(ME.promo.mine)}</b> (−20% другу)<br>Оплачено месяцев: ${ME.paid_months}${ME.vip ? ' · VIP' : ' (VIP с 10 месяцев)'}`;

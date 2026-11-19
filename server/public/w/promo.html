@@ -29,9 +29,9 @@
     </div>
   </div>
 <script>
-  // размер: подгоняем под кадр источника; &s=1.5 — увеличить
+  // размер: подгоняем под кадр источника; &s=150 — увеличить на 50%
   (function fit() {
-    const el = document.getElementById('ad'), m = +(new URLSearchParams(location.search).get('s')) || 1;
+    const el = document.getElementById('ad'), m = (+(new URLSearchParams(location.search).get('s')) || 100) / 100;
     el.style.zoom = 1; const k = Math.min((innerWidth - 20) / el.offsetWidth, (innerHeight - 20) / el.offsetHeight, 3) * m;
     el.style.zoom = Math.max(.3, k); addEventListener('resize', fit, { once: true });
   })();
