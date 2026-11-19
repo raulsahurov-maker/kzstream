@@ -131,7 +131,7 @@ async function flushAndExit() { const t = Date.now(); while ((outbox.length || p
 process.on('SIGTERM', flushAndExit); process.on('SIGINT', flushAndExit);
 
 // ---------- настройки по умолчанию ----------
-const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud', 'vice'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
+const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud', 'vice', 'fire'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
 // стили цели сбора: первые три — бесплатно, остальные с тарифа Lite
 const GOAL_STYLES = ['classic', 'neon', 'battery', 'water', 'ring', 'thermo', 'gold', 'minimal'], GOAL_FREE = ['classic', 'neon', 'battery'];
 const GOAL_MAX = 2000000;
