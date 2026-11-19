@@ -698,7 +698,7 @@ app.post('/api/test/media', auth, (req, res) => {
   const u = req.user; if (!effectivePlan(u).media) return res.status(403).json({ error: 'Музыка и видео доступны с тарифа Lite' });
   const url = clampStr(req.body.url, 300); if (!ytId(url)) return res.status(400).json({ error: 'Вставьте ссылку YouTube' });
   q(`INSERT INTO donations(user_id,name,amount,message,media_url,source,status,media_status,created_at,done_at) VALUES(?,?,?,?,?,?,?,?,?,?)`)
-    .run(u.id, 'Тест музыки', 0, '', url, 'test', 'test', 'queued', now(), now());
+    .run(u.id, 'Алибек Т.', 1000, '', url, 'test', 'test', 'queued', now(), now());
   pushStats(u); res.json({ ok: true });
 });
 app.post('/api/donations/manual', auth, (req, res) => { // ручное подтверждение ожидающего доната

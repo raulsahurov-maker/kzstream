@@ -6,20 +6,22 @@
   #wrap.on{opacity:1;transform:none;pointer-events:auto}
   #pbox{flex:1;position:relative;background:#000;border-radius:16px 16px 0 0;overflow:hidden}
   #player{position:absolute;inset:0;width:100%;height:100%}
-  .cap{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--w-bg);border-radius:0 0 16px 16px;position:relative}
-  .cap::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--w-a),var(--w-b))}
-  .cap .ic{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--w-a),var(--w-b));display:grid;place-items:center;flex:none;font-size:16px}
+  .cap{display:flex;align-items:center;gap:16px;padding:12px 20px;background:linear-gradient(90deg,rgba(14,6,28,.96),rgba(30,8,40,.94));border-radius:0 0 16px 16px;position:relative;border:2px solid #ff3ea5;border-top:none;box-shadow:0 0 26px rgba(255,62,165,.45),inset 0 0 22px rgba(255,62,165,.12)}
+  .cap::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#ff3ea5,#ff7a45,#ffd23f,#3ee8ff);box-shadow:0 0 14px #ff3ea5}
+  .cap .ic{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#ff3ea5,#ff7a45);display:grid;place-items:center;flex:none;font-size:22px;box-shadow:0 0 18px rgba(255,62,165,.8);animation:pulse 1.4s ease-in-out infinite alternate}
+  @keyframes pulse{to{box-shadow:0 0 30px rgba(255,62,165,1);transform:scale(1.06)}}
   .cap .tx{flex:1;min-width:0}
-  .cap .t1{font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .cap .t2{font-size:13px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .cap b{font-family:Unbounded;font-weight:800;font-size:17px;background:linear-gradient(120deg,var(--w-a),var(--w-b));-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+  .cap .who{font-family:Unbounded,sans-serif;font-weight:800;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;text-shadow:0 0 8px #ff3ea5,0 0 18px rgba(255,62,165,.7)}
+  .cap .who span{color:#3ee8ff;text-shadow:0 0 8px #3ee8ff,0 0 18px rgba(62,232,255,.7)}
+  .cap .t1{font-size:15px;font-weight:700;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+  .cap b{font-family:Unbounded,sans-serif;font-weight:800;font-size:26px;white-space:nowrap;color:#ffd23f;text-shadow:0 0 8px #ff9a3c,0 0 20px rgba(255,180,60,.8)}
   .bar{position:absolute;left:0;bottom:0;height:3px;background:#fff;opacity:.8;width:0}
   #tap{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.65);color:#fff;font:800 20px Manrope;display:none;place-items:center;cursor:pointer;text-align:center}
   #msg{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:var(--w-bg);padding:8px 14px;border-radius:10px;font-weight:800;font-size:14px;display:none;z-index:8}
 </style></head><body>
 <div id="tap">🔊 Нажмите один раз, чтобы видео включались со звуком<br><span style="font-size:14px;opacity:.75">В TikTok Live Studio и OBS это обычно не нужно</span></div>
 <div id="msg"></div>
-<div id="wrap"><div id="pbox"><div id="player"></div></div><div class="cap"><span class="ic">🎵</span><div class="tx"><div class="t1" id="title">Загрузка…</div><div class="t2" id="who"></div></div><b id="amt"></b><span class="bar" id="bar"></span></div></div>
+<div id="wrap"><div id="pbox"><div id="player"></div></div><div class="cap"><span class="ic">🎵</span><div class="tx"><div class="who" id="who"></div><div class="t1" id="title">Загрузка…</div></div><b id="amt"></b><span class="bar" id="bar"></span></div></div>
 <script src="/w/widget.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
@@ -55,7 +57,7 @@
     const item = queue.find(q => !gone.has(q.id)); if (!item) return;
     const id = ytId(item.media_url); if (!id) { cur = item; return finish('played'); }
     cur = item; startedAt = 0;
-    $('title').textContent = 'Загрузка…'; $('who').textContent = `Заказал(а): ${item.name}`; $('amt').textContent = fmt(item.amount);
+    $('title').textContent = 'Загрузка…'; $('who').innerHTML = `ЗАКАЗАЛ: <span>${KZ.esc(item.name || 'Аноним')}</span>`; $('amt').textContent = item.amount ? fmt(item.amount) : '';
     $('wrap').classList.add('on');
     try { player.setVolume(vol()); player.loadVideoById({ videoId: id, startSeconds: 0 }); player.playVideo(); } catch { }
     // если браузер не дал включить со звуком — включаем без звука и просим один клик
