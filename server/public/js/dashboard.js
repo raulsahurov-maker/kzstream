@@ -287,7 +287,7 @@ function render() {
   GOALSEL = s.goal.style || 'classic'; goalPickers();
   if (!$('#goalFrame').src) { $('#goalFrame').onload = () => setTimeout(postGoal, 400); $('#goalFrame').src = ME.urls.widgets.goal + '&demo'; } else postGoal();
   listEdit('#infoList', (s.info.lines || []).map(v => ({ v })), [['v', 'Текст строки']]);
-  val('i_label', s.info.label || 'INFO'); val('i_dir', s.info.dir || 'right'); val('i_speed', s.info.speed || 'normal'); val('i_show_last', s.info.show_last !== false); val('i_theme', s.info.theme);
+  val('i_label', s.info.label || 'INFO'); val('i_dir', s.info.dir || 'right'); val('i_speed', s.info.speed || 'normal'); val('i_show_last', s.info.show_last !== false); val('i_theme', s.info.theme); val('i_tstyle', s.info.tstyle || 'plate'); val('i_font', s.info.font || 'unbounded'); val('i_align', s.info.align || 'center'); infoMode(s.info.mode || 'marquee');
   if (!$('#infoFrame').src) { $('#infoFrame').onload = () => setTimeout(postInfo, 300); $('#infoFrame').src = ME.urls.widgets.info + '&demo'; } else postInfo();
   val('tm_sec', s.timer.sec_per_100); val('tm_theme', s.timer.theme);
   // рулетка
@@ -359,7 +359,7 @@ const collectors = {
     if (!ME.plan.shop && !goalFree(GOALSEL)) throw new Error('Стиль «' + GOAL_DESIGNS.find(d => d.id === GOALSEL).name + '» доступен с тарифа Lite. Бесплатно: Классика, Неон, Батарейка');
     return { goal: { title: val('g_title'), target: t, base: val('g_base'), theme: val('g_theme'), style: GOALSEL } };
   },
-  info: () => ({ info: { lines: readList('#infoList').map(r => r.v), interval: 8, label: val('i_label') || 'INFO', dir: val('i_dir'), speed: val('i_speed'), show_last: val('i_show_last'), theme: val('i_theme') } }),
+  info: () => ({ info: { lines: readList('#infoList').map(r => r.v), interval: 8, label: val('i_label') || 'INFO', dir: val('i_dir'), speed: val('i_speed'), show_last: val('i_show_last'), theme: val('i_theme'), mode: val('i_mode') || 'marquee', tstyle: val('i_tstyle'), font: val('i_font'), align: val('i_align') } }),
   timer: () => ({ timer: { sec_per_100: val('tm_sec'), theme: val('tm_theme') } }),
   roulette: () => ({ roulette: { enabled: val('r_enabled'), sound: val('r_sound'), min: val('r_min'), style: val('r_style'), tasks: readList('#taskList').map(r => r.v) } }),
   media: () => ({ media: { enabled: val('m_enabled'), min: val('m_min'), max_sec: val('m_max'), volume: +val('m_volume') } }),
@@ -388,6 +388,16 @@ document.addEventListener('click', e => {
 $('#t_styles').onclick = e => { const d = e.target.closest('.dz'); if (!d) return; TOPSEL.style = d.dataset.s; topPickers(); postTop(); if (d.classList.contains('locked')) toast('Это предпросмотр. Чтобы включить дизайн в эфире, подключите Lite', true); };
 $('#t_fonts').onclick = e => { const b = e.target.closest('button'); if (!b) return; TOPSEL.font = b.dataset.f; topPickers(); postTop(); if (!ME.plan.shop && b.dataset.f !== 'manrope') toast('Это предпросмотр. Шрифты доступны с тарифа Lite', true); };
 ['input', 'change'].forEach(ev => $('.topcfg').addEventListener(ev, postTop));
+function infoMode(m) {
+  val('i_mode', m);
+  document.querySelectorAll('#i_modeBox [data-im]').forEach(b => b.classList.toggle('on', b.dataset.im === m));
+  $('#i_staticOpts').style.display = m === 'static' ? '' : 'none';
+  ['i_label', 'i_dir', 'i_speed'].forEach(id => { const f = $('#' + id).closest('.field'); if (f) f.style.display = m === 'static' ? 'none' : ''; });
+  $('#infoFrame').style.height = m === 'static' ? '170px' : '82px';
+  postInfo();
+}
+$('#i_modeBox').addEventListener('click', e => { const b = e.target.closest('[data-im]'); if (b) infoMode(b.dataset.im); });
+['i_tstyle', 'i_font', 'i_align'].forEach(id => $('#' + id).addEventListener('change', () => postInfo()));
 function postInfo() { try { $('#infoFrame').contentWindow.postMessage({ kzInfo: collectors.info().info }, location.origin); } catch { } }
 ['input', 'change', 'click'].forEach(ev => $('.infocfg').addEventListener(ev, () => setTimeout(postInfo, 50)));
 $('#tVoicePlay').onclick = () => { try { voiceAudio?.pause(); } catch { } voiceAudio = new Audio('/api/tts/sample?voice=' + val('tVoice')); voiceAudio.play().catch(() => toast('Не удалось воспроизвести', true)); };

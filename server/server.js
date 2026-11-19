@@ -131,6 +131,7 @@ async function flushAndExit() { const t = Date.now(); while ((outbox.length || p
 process.on('SIGTERM', flushAndExit); process.on('SIGINT', flushAndExit);
 
 // ---------- настройки по умолчанию ----------
+const INFO_STYLES = ['plate', 'plain', 'neon', 'gold', 'glass', 'outline', 'gradient', 'fire'];
 const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud', 'vice', 'fire'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
 // стили цели сбора: первые три — бесплатно, остальные с тарифа Lite
 const GOAL_STYLES = ['classic', 'neon', 'battery', 'water', 'ring', 'thermo', 'gold', 'minimal'], GOAL_FREE = ['classic', 'neon', 'battery'];
@@ -612,7 +613,11 @@ app.put('/api/settings', auth, (req, res) => {
       if (b.info.label !== undefined) s.info.label = clampStr(b.info.label, 20);
       if (['slow', 'normal', 'fast'].includes(b.info.speed)) s.info.speed = b.info.speed;
       if (['right', 'left'].includes(b.info.dir)) s.info.dir = b.info.dir;
-      if (b.info.show_last !== undefined) s.info.show_last = !!b.info.show_last; }
+      if (b.info.show_last !== undefined) s.info.show_last = !!b.info.show_last;
+      if (['marquee', 'static'].includes(b.info.mode)) s.info.mode = b.info.mode;
+      if (INFO_STYLES.includes(b.info.tstyle)) s.info.tstyle = b.info.tstyle;
+      if (['left', 'center', 'right'].includes(b.info.align)) s.info.align = b.info.align;
+      if (TOP_FONTS.includes(b.info.font)) s.info.font = b.info.font; }
   }
   if (b.cards) for (const k of ['kaspi', 'halyk', 'freedom', 'twitch', 'instagram', 'youtube', 'blackrussia']) if (b.cards[k]) {
     s.cards[k] = { value: clampStr(b.cards[k].value, 60), name: clampStr(b.cards[k].name, 40) };

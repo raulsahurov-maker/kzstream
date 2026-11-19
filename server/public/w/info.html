@@ -13,11 +13,31 @@
   .it{display:inline-flex;align-items:center}
   .sep{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 26px;background:linear-gradient(120deg,var(--w-a),var(--w-b));box-shadow:0 0 10px var(--w-a)}
   .last b{background:linear-gradient(120deg,var(--w-a),var(--w-b));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:900}
+  /* ===== обычный текст ===== */
+  .st{display:none;flex-direction:column;gap:6px;width:max-content;max-width:calc(100vw - 20px);margin:0 auto;font-weight:800;font-size:30px;line-height:1.25;color:#fff}
+  .st.on{display:flex}
+  .st .ln{white-space:pre-wrap;word-break:break-word}
+  .st .ln.last{font-size:.8em;opacity:.95}
+  .al-left{text-align:left;margin-left:0}.al-right{text-align:right;margin-right:0}.al-center{text-align:center}
+  .f-manrope{font-family:Manrope,sans-serif}.f-montserrat{font-family:Montserrat,sans-serif}.f-unbounded{font-family:Unbounded,sans-serif}.f-oswald{font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.02em}.f-rubik{font-family:Rubik,sans-serif}.f-inter{font-family:Inter,sans-serif}
+  .ts-plate{padding:14px 24px;border-radius:16px;background:var(--w-bg);box-shadow:0 10px 30px rgba(0,0,0,.45);border:2px solid color-mix(in srgb,var(--w-a) 70%,transparent)}
+  .ts-plain .ln{text-shadow:0 2px 0 #000,0 0 3px #000,0 3px 12px rgba(0,0,0,.8)}
+  .ts-neon .ln{color:#fff;text-shadow:0 0 6px var(--w-a),0 0 14px var(--w-a),0 0 28px var(--w-a);animation:neon 2.4s ease-in-out infinite}
+  @keyframes neon{0%,100%{opacity:1}48%{opacity:1}50%{opacity:.75}52%{opacity:1}}
+  .ts-gold .ln{background:linear-gradient(180deg,#fff7c2,#ffd23f 45%,#c98a10);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #5a3a00) drop-shadow(0 0 10px rgba(255,200,60,.5))}
+  .ts-glass{padding:14px 24px;border-radius:18px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.35);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .ts-glass .ln{text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  .ts-outline .ln{color:#fff;-webkit-text-stroke:2px var(--w-a);paint-order:stroke fill;text-shadow:0 4px 0 rgba(0,0,0,.5)}
+  .ts-gradient .ln{background:linear-gradient(90deg,var(--w-a),var(--w-b),var(--w-a));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gmv 4s linear infinite;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+  @keyframes gmv{to{background-position:200% 0}}
+  .ts-fire .ln{background:linear-gradient(0deg,#ff3d00,#ff9a1f 45%,#ffe66b);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 8px rgba(255,120,20,.8));animation:flk 1.2s ease-in-out infinite alternate}
+  @keyframes flk{from{filter:drop-shadow(0 0 6px rgba(255,120,20,.6))}to{filter:drop-shadow(0 0 14px rgba(255,150,40,1))}}
 </style></head><body>
 <div class="bar" id="bar" style="display:none">
   <div class="badge"><i><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></i><span id="label">INFO</span></div>
   <div class="lane" id="lane"><div class="track" id="track"></div></div>
 </div>
+<div class="st" id="st" data-fit></div>
 <script src="/w/widget.js"></script>
 <script>
 (() => {
@@ -27,7 +47,20 @@
   const track = document.getElementById('track'), lane = document.getElementById('lane');
   const SPEED = { slow: 55, normal: 95, fast: 150 }; // пикселей в секунду
   let x = 0, w = 0, prev = 0, sig = '';
+  // режим «обычный текст»: все строки стоят на месте, оформление по стилю
+  function buildStatic() {
+    const st = document.getElementById('st');
+    const items = (S.lines || []).filter(Boolean).map(l => `<div class="ln">${esc(l)}</div>`);
+    if (S.show_last !== false && last) items.push(`<div class="ln last">Последний донат: ${esc(last.name)} — ${fmt(last.amount)}</div>`);
+    st.className = `st on ts-${S.tstyle || 'plate'} al-${S.align || 'center'} f-${S.font || 'unbounded'}`;
+    st.innerHTML = items.join('');
+  }
   function build() {
+    const isStatic = S.mode === 'static';
+    document.getElementById('bar').style.visibility = isStatic ? 'hidden' : '';
+    document.getElementById('bar').style.position = isStatic ? 'absolute' : '';
+    if (isStatic) { buildStatic(); return; }
+    document.getElementById('st').className = 'st';
     const items = (S.lines || []).filter(Boolean).map(l => `<span class="it">${esc(l)}</span>`);
     if (S.show_last !== false && last) items.push(`<span class="it last">Последний донат: ${esc(last.name)} — <b>&nbsp;${fmt(last.amount)}</b></span>`);
     const html = items.join('<span class="sep"></span>');

@@ -432,8 +432,9 @@
         <div class="cards-grid" id="cardsGrid"></div>
       </div>
       <div class="card infocfg" style="grid-column:1/-1">
-        <h3>Info-виджет <span class="lock" data-need="info">Lite</span></h3><p class="hint">Бегущая строка: впишите подробности (правила, ссылки, акции) — текст плавно уходит в сторону и заходит с другой, чтобы всё было видно.</p>
+        <h3>Info-виджет <span class="lock" data-need="info">Lite</span></h3><p class="hint">Бегущая строка или обычный текст со стилями: впишите подробности (правила, ссылки, акции). В режиме «Обычный текст» каждая строка — отдельная строчка на экране.</p>
         <div class="gl-prev" style="margin-bottom:14px"><div class="gl-cap">ПРЕВЬЮ · ТАК В ЭФИРЕ</div><iframe id="infoFrame" title="Превью info" style="height:82px"></iframe></div>
+        <div class="field"><label>Режим</label><div class="shape2" id="i_modeBox"><button type="button" data-im="marquee">➡️ Бегущая строка</button><button type="button" data-im="static">📝 Обычный текст</button></div><input type="hidden" id="i_mode"></div>
         <div class="list-edit" id="infoList"></div>
         <button class="btn btn-ghost btn-sm" id="addInfo" style="margin-bottom:12px">+ Строка</button>
         <div class="row">
@@ -441,7 +442,12 @@
           <div class="field"><label>Направление</label><select id="i_dir"><option value="right">Уходит вправо, приходит слева</option><option value="left">Уходит влево, приходит справа</option></select></div>
           <div class="field"><label>Скорость</label><select id="i_speed"><option value="slow">Медленно</option><option value="normal">Обычно</option><option value="fast">Быстро</option></select></div>
         </div>
-        <label class="check"><input type="checkbox" id="i_show_last"> Показывать последний донат в строке</label>
+        <div class="row" id="i_staticOpts">
+          <div class="field"><label>Стиль текста</label><select id="i_tstyle"><option value="plate">Плашка</option><option value="plain">Просто текст с тенью</option><option value="neon">Неон</option><option value="gold">Золото</option><option value="glass">Стекло</option><option value="outline">Контур</option><option value="gradient">Переливающийся</option><option value="fire">Огненный</option></select></div>
+          <div class="field"><label>Шрифт</label><select id="i_font"><option value="unbounded">Unbounded</option><option value="manrope">Manrope</option><option value="montserrat">Montserrat</option><option value="oswald">Oswald</option><option value="rubik">Rubik</option><option value="inter">Inter</option></select></div>
+          <div class="field"><label>Выравнивание</label><select id="i_align"><option value="center">По центру</option><option value="left">Слева</option><option value="right">Справа</option></select></div>
+        </div>
+        <label class="check"><input type="checkbox" id="i_show_last"> Показывать последний донат</label>
         <div class="field"><label>Цвета</label><select id="i_theme" data-themes></select></div>
         <button class="btn btn-primary" data-save="info">Сохранить</button>
       </div>
