@@ -336,6 +336,7 @@
   <!-- АЛЕРТЫ -->
   <section class="page" id="p-alerts">
     <div class="top"><h1>Алерты и озвучка</h1><button class="btn btn-primary" data-save="alerts">Сохранить</button></div>
+    <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Алерты и озвучка</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин 10 сек</div></div></div><video controls preload="none" playsinline poster="/video/w_alerts.jpg" src="/video/w_alerts.mp4"></video></div>
     <div class="card" style="margin-bottom:18px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>🎬 Видео-алерты по сумме</h3><button class="btn btn-primary btn-sm" id="vaSave">Сохранить видео-алерты</button></div>
       <p class="hint">Включите видео и укажите, <b>от скольки тенге</b> оно показывается. При донате выбирается видео с самой большой подходящей суммой: например «Дождь из денег» от 100 ₸, «Чемпион» от 1 000 ₸, «Психопат» от 5 000 ₸. Если у нескольких видео одинаковая сумма — выпадет случайное. Снизу видео — имя донатера и его текст, голос читает только текст.</p>
@@ -392,6 +393,7 @@
     <div class="grid g2" id="wlinks" data-wsec="links"></div>
     <div class="grid g2" id="wsecs">
       <div class="card topcfg" style="grid-column:1/-1" data-wsec="top">
+        <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: ТОП донатеров</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин</div></div></div><video controls preload="none" playsinline poster="/video/w_top.jpg" src="/video/w_top.mp4"></video></div>
         <h3>ТОП донатеров <span class="wb free">Бесплатно</span></h3><p class="hint">Конструктор виджета: выберите дизайн, шрифт и размеры — превью меняется сразу. На Free — дизайн «Классика» с небольшим логотипом KZStream.</p>
         <div class="top-grid">
           <div>
@@ -419,6 +421,7 @@
         </div>
       </div>
       <div class="card" style="grid-column:1/-1" data-wsec="goal">
+        <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Цель сбора</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин 10 сек</div></div></div><video controls preload="none" playsinline poster="/video/w_goal.jpg" src="/video/w_goal.mp4"></video></div>
         <div class="gl-head"><h3>Цель сбора <span class="wb free">Бесплатно</span></h3><span class="muted" style="font-size:13px">В эфире сейчас: <b id="goalLive" style="color:var(--accent2)">Классика</b></span></div>
         <p class="hint" id="goalNow"></p>
         <div class="gl-bar">
@@ -444,11 +447,13 @@
         <p class="muted" style="font-size:12.5px;margin-top:10px">Виджет в эфире переключится сам — ссылку в TikTok Live Studio менять не нужно. Цель — до 2 000 000 ₸. Классика, Неон и Батарейка — бесплатно, остальные стили — с тарифа Lite.</p>
       </div>
       <div class="card" style="grid-column:1/-1" id="cardsCfg" data-wsec="cards">
+        <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Карточки банков и соцсетей</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин</div></div></div><video controls preload="none" playsinline poster="/video/w_cards.jpg" src="/video/w_cards.mp4"></video></div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>Карточки: банки и соцсети</h3><button class="btn btn-primary btn-sm" id="cardsSave">Сохранить</button></div>
         <p class="hint">Каждая карточка — отдельный виджет: логотип слева, ваш номер или ник. Добавьте нужные в TikTok Live Studio по своей ссылке. Пустая карточка в эфире не показывается.</p>
         <div class="cards-grid" id="cardsGrid"></div>
       </div>
       <div class="card infocfg" style="grid-column:1/-1" data-wsec="info">
+        <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Info-виджет</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин</div></div></div><video controls preload="none" playsinline poster="/video/w_info.jpg" src="/video/w_info.mp4"></video></div>
         <h3>Info-виджет <span class="lock" data-need="info">Lite</span></h3><p class="hint">Бегущая строка или обычный текст со стилями: впишите подробности (правила, ссылки, акции). В режиме «Обычный текст» каждая строка — отдельная строчка на экране.</p>
         <div class="gl-prev" style="margin-bottom:14px"><div class="gl-cap">ПРЕВЬЮ · ТАК В ЭФИРЕ</div><iframe id="infoFrame" title="Превью info" style="height:82px"></iframe></div>
         <div class="field"><label>Режим</label><div class="shape2" id="i_modeBox"><button type="button" data-im="marquee">➡️ Бегущая строка</button><button type="button" data-im="static">📝 Обычный текст</button></div><input type="hidden" id="i_mode"></div>
@@ -469,6 +474,7 @@
         <button class="btn btn-primary" data-save="info">Сохранить</button>
       </div>
       <div class="card" style="grid-column:1/-1" data-wsec="timer">
+        <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Таймер</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин</div></div></div><video controls preload="none" playsinline poster="/video/w_timer.jpg" src="/video/w_timer.mp4"></video></div>
         <h3>Таймер (сабатон) <span class="lock" data-need="timer">Lite</span></h3><p class="hint">Донаты добавляют время к эфиру. Сейчас: <b id="timerNow">—</b></p>
         <div class="row"><div class="field"><label>Секунд за каждые 100 ₸</label><input type="number" id="tm_sec"></div><div class="field"><label>Тема</label><select id="tm_theme" data-themes></select></div></div>
         <button class="btn btn-ghost btn-sm" data-save="timer" style="margin-bottom:14px">Сохранить</button>
@@ -485,6 +491,7 @@
   <!-- РУЛЕТКА -->
   <section class="page" id="p-roulette">
     <div class="top"><h1>Рулетка с заданиями <span class="lock" data-need="roulette">Lite</span></h1><button class="btn btn-primary" data-save="roulette">Сохранить</button></div>
+    <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Рулетка</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин 10 сек</div></div></div><video controls preload="none" playsinline poster="/video/w_roulette.jpg" src="/video/w_roulette.mp4"></video></div>
     <div class="grid g2">
       <div class="card">
         <label class="check"><input type="checkbox" id="r_enabled"> Включить рулетку</label>
@@ -528,6 +535,7 @@
 
   <section class="page" id="p-media">
     <div class="top"><h1>Музыка и видео по ссылке</h1><button class="btn btn-primary" data-save="media">Сохранить</button></div>
+    <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Музыка и видео</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин</div></div></div><video controls preload="none" playsinline poster="/video/w_media.jpg" src="/video/w_media.mp4"></video></div>
     <div class="grid g2">
       <div class="card">
         <p class="hint">Зрители прикладывают ссылку YouTube к донату. Lite — 50 заказов в месяц, Pro — без ограничений.</p>
