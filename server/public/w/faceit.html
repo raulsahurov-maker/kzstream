@@ -34,10 +34,11 @@
   function draw() {
     const el = document.getElementById('fc');
     if (!P) { el.classList.remove('on'); el.innerHTML = ''; return; }
-    const S = { level: true, elo: true, kd: true, wr: true, hs: true, adr: false, matches: true, streak: false, last: true, flag: true, ...SH };
+    const S = { level: true, elo: true, today: true, kd: true, wr: true, hs: true, adr: false, matches: true, streak: false, last: true, flag: true, ...SH };
     const c = COL(P.level), pct = Math.max(.1, Math.min(1, P.level / 10)), L = 2 * Math.PI * 30 * .75;
     // показываем только то, что есть (если FACEIT не отдал цифру — плитку прячем)
-    const stats = [S.kd && P.kd != null && [n(P.kd, 2).replace(/0$/, ''), 'K/D'], S.wr && P.wr != null && [n(P.wr, 0) + '%', 'WINRATE'], S.hs && P.hs != null && [n(P.hs, 0) + '%', 'HS'], S.adr && P.adr != null && [n(P.adr, 1), 'ADR'],
+    const tw = (P.today_w || 0) + (P.today_l || 0);
+    const stats = [S.today && tw && [(P.today_elo > 0 ? '+' : '') + P.today_elo, 'ELO СЕГОДНЯ'], S.today && tw && [`${P.today_w}W-${P.today_l}L`, 'СЕГОДНЯ'], S.kd && P.kd != null && [n(P.kd, 2).replace(/0$/, ''), 'K/D'], S.wr && P.wr != null && [n(P.wr, 0) + '%', 'WINRATE'], S.hs && P.hs != null && [n(P.hs, 0) + '%', 'HS'], S.adr && P.adr != null && [n(P.adr, 1), 'ADR'],
       S.matches && P.matches != null && [n(P.matches, 0), 'МАТЧЕЙ'], S.streak && P.streak != null && [n(P.streak, 0), 'СЕРИЯ']].filter(Boolean);
     el.innerHTML = (S.level ? `<div class="lvl"><svg viewBox="0 0 74 74"><circle cx="37" cy="37" r="30" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="7" stroke-dasharray="${L} 999" stroke-linecap="round"/><circle cx="37" cy="37" r="30" fill="none" stroke="${c}" stroke-width="7" stroke-dasharray="${L * pct} 999" stroke-linecap="round"/></svg><b style="color:${P.level >= 10 ? '#fff' : c}">${P.level}</b></div>` : '')
       + `<div class="who"><div class="nm">${S.flag && P.country ? `<img src="https://flagcdn.com/48x36/${esc(P.country)}.png" alt="">` : ''}${esc(P.nick)}</div>${S.elo ? `<div class="elo">${P.elo}<small>ELO</small></div>` : ''}</div>`
@@ -49,7 +50,7 @@
     try { const r = await fetch(`/api/w/${encodeURIComponent(token)}/faceit`).then(r => r.json()); SH = r.show || SH; if (r.player) P = r.player; else if (!r.error) P = null; draw(); } catch { }
   }
   if (demo) {
-    P = { nick: 'donk', country: 'ru', level: 10, elo: 3030, kd: 1.1, wr: 52, hs: 60, matches: 4422, adr: 92.4, streak: 3, last: ['L', 'W', 'W', 'W', 'W'] };
+    P = { nick: 'donk', country: 'ru', level: 10, elo: 3030, today_w: 3, today_l: 1, today_elo: 48, kd: 1.1, wr: 52, hs: 60, matches: 4422, adr: 92.4, streak: 3, last: ['L', 'W', 'W', 'W', 'W'] };
     addEventListener('message', e => { if (e.origin !== location.origin || !e.data) return; if (e.data.kzFaceitShow) SH = e.data.kzFaceitShow; if ('kzFaceit' in e.data) P = e.data.kzFaceit || P; draw(); });
     draw(); return;
   }

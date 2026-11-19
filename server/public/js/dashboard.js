@@ -148,7 +148,7 @@ addEventListener('hashchange', () => setTimeout(fitPreviews, 60));
 setInterval(() => { if (MOB.matches) fitPreviews(); }, 1500);
 
 // ---------- FACEIT ----------
-const FC_OPTS = [['level', 'Уровень FACEIT'], ['elo', 'ELO'], ['kd', 'K/D'], ['wr', 'Winrate'], ['hs', 'HS %'], ['adr', 'ADR'], ['matches', 'Матчей'], ['streak', 'Серия побед'], ['last', 'Последние 5 матчей'], ['flag', 'Флаг страны']];
+const FC_OPTS = [['level', 'Уровень FACEIT'], ['elo', 'ELO'], ['today', 'Сегодня: ELO и W-L'], ['kd', 'K/D'], ['wr', 'Winrate'], ['hs', 'HS %'], ['adr', 'ADR'], ['matches', 'Матчей'], ['streak', 'Серия побед'], ['last', 'Последние 5 матчей'], ['flag', 'Флаг страны']];
 const FC_COL = l => l >= 10 ? '#fe1f00' : l >= 8 ? '#ff6309' : l >= 4 ? '#ffc800' : l >= 2 ? '#1ce400' : '#9aa0b0';
 let FCP = null;
 function fcShow() { const o = {}; document.querySelectorAll('#fcOpts input').forEach(i => o[i.dataset.k] = i.checked); return o; }

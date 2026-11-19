@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS users(
   plan TEXT DEFAULT 'free', plan_until INTEGER DEFAULT 0, token TEXT UNIQUE,
   settings TEXT DEFAULT '{}', paid_months INTEGER DEFAULT 0, freeze_used_at INTEGER DEFAULT 0, vip_bonus INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY, user_id INTEGER, created_at INTEGER);
+CREATE TABLE IF NOT EXISTS faceit_track(nick TEXT, at INTEGER, elo INTEGER, PRIMARY KEY(nick, at));
 CREATE TABLE IF NOT EXISTS donations(
   id INTEGER PRIMARY KEY, user_id INTEGER, name TEXT, amount INTEGER, message TEXT DEFAULT '',
   media_url TEXT DEFAULT '', voice_url TEXT DEFAULT '', source TEXT, status TEXT, sender TEXT DEFAULT '',
@@ -81,7 +82,7 @@ async function pushLoop() {
 const q = (sql) => { const st = db.prepare(sql); return {
   get: (...a) => clean(st.get(...a)), all: (...a) => st.all(...a).map(clean),
   run: (...a) => { const r = st.run(...a); if (remote) { outbox.push({ sql, args: a }); pushLoop(); } return r; } }; };
-const TABLES = ['users', 'sessions', 'donations', 'payments', 'files', 'file_data', 'ingest_log'];
+const TABLES = ['users', 'sessions', 'donations', 'payments', 'files', 'file_data', 'ingest_log', 'faceit_track'];
 async function initStorage() {
   if (!USE_TURSO) { console.log('Локальная база: ' + LOCAL_DB); return; }
   const { createClient } = require('@libsql/client');
@@ -161,7 +162,7 @@ function defaults(nick) {
     media: { enabled: true, min: 100, max_sec: 180, volume: 0.6 },
     info: { lines: ['Донаты через Kaspi — ссылка в описании!'], interval: 8, theme: 'default', label: 'INFO', speed: 'normal', dir: 'right', show_last: true },
     timer: { end_at: 0, paused_left: 0, running: false, sec_per_100: 30, theme: 'default' },
-    faceit: { nick: '', show: { level: true, elo: true, kd: true, wr: true, hs: true, adr: false, matches: true, streak: false, last: true, flag: true } },
+    faceit: { nick: '', show: { level: true, elo: true, today: true, kd: true, wr: true, hs: true, adr: false, matches: true, streak: false, last: true, flag: true } },
     hotkeys: [], webhooks: [],
   };
 }
@@ -835,24 +836,44 @@ app.get('/api/app/me/:token', (req, res) => {
 
 // ---------- FACEIT CS2 ----------
 const faceit = require('./lib/faceit');
+// История матчей без ключа: сервер запоминает ELO; рост ELO = победа (W), падение = поражение (L)
+function trackElo(d) {
+  const nick = d.nick.toLowerCase(), last = q('SELECT elo FROM faceit_track WHERE nick=? ORDER BY at DESC LIMIT 1').get(nick);
+  if (!last || last.elo !== d.elo) q('INSERT OR IGNORE INTO faceit_track(nick, at, elo) VALUES(?,?,?)').run(nick, now(), d.elo);
+}
+function withTrack(d) {
+  if (!d) return d;
+  try { trackElo(d); } catch { }
+  const pts = q('SELECT at, elo FROM faceit_track WHERE nick=? ORDER BY at DESC LIMIT 60').all(d.nick.toLowerCase());
+  const games = []; for (let i = 0; i < pts.length - 1; i++) { const diff = pts[i].elo - pts[i + 1].elo; if (diff) games.push({ at: pts[i].at, diff }); }
+  const day = periodStart('day'), today = games.filter(g => g.at >= day);
+  const out = { ...d, today_w: today.filter(g => g.diff > 0).length, today_l: today.filter(g => g.diff < 0).length, today_elo: today.reduce((s, g) => s + g.diff, 0), tracked: games.length };
+  if (!(d.last || []).length && games.length) out.last = games.slice(0, 5).map(g => g.diff > 0 ? 'W' : 'L');
+  return out;
+}
+// раз в 3 минуты обновляем ELO всех привязанных игроков, чтобы не пропускать матчи
+setInterval(async () => {
+  const nicks = new Set(); for (const u of q('SELECT settings FROM users').all()) { try { const n = JSON.parse(u.settings || '{}').faceit?.nick; if (n) nicks.add(n); } catch { } }
+  for (const n of nicks) { try { trackElo(await faceit.getPlayer(n, true)); } catch { } await new Promise(r => setTimeout(r, 1500)); }
+}, 3 * 60e3);
 app.post('/api/faceit/link', auth, async (req, res) => {
   try {
     const d = await faceit.getPlayer(req.body?.nick, true);
     const s = getSettings(req.user); s.faceit.nick = d.nick; saveSettings(req.user, s);
-    emit(req.user.id, 'faceit', d);
-    res.json({ ok: true, player: d });
+    emit(req.user.id, 'faceit', withTrack(d));
+    res.json({ ok: true, player: withTrack(d) });
   } catch (e) { res.status(e.code === 404 || e.code === 400 ? 400 : 502).json({ error: e.message }); }
 });
 app.post('/api/faceit/unlink', auth, (req, res) => { const s = getSettings(req.user); s.faceit.nick = ''; saveSettings(req.user, s); emit(req.user.id, 'faceit', null); res.json({ ok: true }); });
 app.get('/api/faceit/me', auth, async (req, res) => {
   const s = getSettings(req.user); if (!s.faceit.nick) return res.json({ player: null });
-  try { res.json({ player: await faceit.getPlayer(s.faceit.nick, req.query.fresh === '1') }); } catch (e) { res.status(502).json({ error: e.message }); }
+  try { res.json({ player: withTrack(await faceit.getPlayer(s.faceit.nick, req.query.fresh === '1')) }); } catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get('/api/w/:token/faceit', async (req, res) => {
   const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'Неверная ссылка' });
   const s = getSettings(u);
   if (!s.faceit.nick) return res.json({ player: null, show: s.faceit.show });
-  try { res.json({ player: await faceit.getPlayer(s.faceit.nick), show: s.faceit.show }); } catch (e) { res.status(502).json({ error: e.message, show: s.faceit.show }); }
+  try { res.json({ player: withTrack(await faceit.getPlayer(s.faceit.nick)), show: s.faceit.show }); } catch (e) { res.status(502).json({ error: e.message, show: s.faceit.show }); }
 });
 // диагностика доступа к FACEIT (без личных данных)
 app.get('/api/faceit/check', async (req, res) => { try { const d = await faceit.getPlayer(req.query.nick || 'donk', true); res.json({ ok: true, key: faceit.hasKey(), ...d, id: undefined, avatar: undefined, debug: faceit.debug() }); } catch (e) { res.json({ ok: false, key: faceit.hasKey(), error: e.message }); } });
