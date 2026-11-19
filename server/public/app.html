@@ -111,6 +111,9 @@
   .ck2{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--bg2);display:flex;flex-direction:column;gap:8px}
   .ck2 .hd2{display:flex;align-items:center;gap:10px;font-weight:800}.ck2 .hd2 i{width:30px;height:30px;border-radius:8px;overflow:hidden;display:grid;place-items:center;flex:none}
   @keyframes pvf{from{filter:brightness(.85);transform:scaleY(.85)}to{filter:brightness(1.2);transform:scaleY(1.1)}}
+  .vtut{margin:4px 0 18px;padding:14px;border-radius:16px;background:rgba(255,59,92,.06);border:1px solid rgba(255,59,92,.25)}
+  .vtut-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}.vtut-ic{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#FF3B5C,#FF7A45);display:grid;place-items:center;flex:none;font-size:14px}
+  .vtut video{width:100%;max-width:820px;display:block;border-radius:12px;background:#000;aspect-ratio:16/9}
   .wtabs{position:sticky;top:0;z-index:20;display:flex;gap:8px;flex-wrap:wrap;padding:10px 0 14px;margin-bottom:4px;background:var(--bg,#0b0c12)}
   .wtabs button{padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:var(--card,#14161f);color:var(--muted,#9aa0b4);font:inherit;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap}
   .wtabs button:hover{color:#fff}
@@ -284,6 +287,7 @@
     <div class="card" style="margin-bottom:18px">
       <div class="tabs" id="devTabs"><button class="on" data-d="android">Android</button><button data-d="ios">iPhone</button><button data-d="win">Windows</button></div>
       <div data-dp="android">
+        <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Android</b><div class="muted" style="font-size:13px">Только телефон, компьютер не нужен · 2 мин</div></div></div><video controls preload="none" playsinline poster="/video/android.jpg" src="/video/android.mp4"></video></div>
         <ol class="steps-ol">
           <li>Скачайте приложение KZStream для Android на странице <a href="/download" style="color:var(--accent)">«Скачать»</a> и установите APK.</li>
           <li>Откройте приложение и войдите тем же email и паролем, что на сайте.</li>
@@ -293,6 +297,8 @@
         </ol>
       </div>
       <div data-dp="ios" style="display:none">
+        <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: iPhone через Bluetooth</b><div class="muted" style="font-size:13px">iPhone + компьютер с Windows («Связь с телефоном») · 2,5 мин</div></div></div><video controls preload="none" playsinline poster="/video/iphone.jpg" src="/video/iphone.mp4"></video></div>
+        <div class="muted" style="margin:4px 0 14px;font-size:13.5px">Без компьютера можно через «Команды» — пошаговая инструкция ниже.</div>
         <div class="ios-head"><div class="ios-ic">⚡</div><div><b>iPhone через «Команды»</b><div class="muted" style="font-size:13.5px">Без установки приложений · iOS 27+ · 5 минут один раз</div></div></div>
         <div class="ios-steps">
           <div class="ios-st"><div class="ph"><div class="ph-top">Команды</div><div class="ph-tabs"><span>Мои команды</span><span class="on">Автоматизация</span></div><div class="ph-plus">+</div></div>
@@ -314,6 +320,7 @@
         </div>
       </div>
       <div data-dp="win" style="display:none">
+        <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Windows</b><div class="muted" style="font-size:13px">Компьютер + Android через «Связь с телефоном» · 2,5 мин</div></div></div><video controls preload="none" playsinline poster="/video/windows.jpg" src="/video/windows.mp4"></video></div>
         <ol class="steps-ol">
           <li>Подключите телефон к ПК через приложение Windows <b>«Связь с телефоном»</b> (Phone Link) и разрешите показ уведомлений Kaspi.</li>
           <li>Скачайте <b>KZStream для Windows</b> на странице <a href="/download" style="color:var(--accent)">«Скачать»</a> и запустите.</li>
