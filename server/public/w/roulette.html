@@ -50,7 +50,8 @@
   let queue = [], busy = false;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   let AC = null; const ac = () => AC || (AC = new (window.AudioContext || window.webkitAudioContext)());
-  function tone(f, t, d, type = 'square', v = .06) { try { const c = ac(), o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v, c.currentTime + t); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + t + d); o.connect(g).connect(c.destination); o.start(c.currentTime + t); o.stop(c.currentTime + t + d + .05); } catch { } }
+  let SND = true; const MUTE = new URLSearchParams(location.search).has('mute');
+  function tone(f, t, d, type = 'square', v = .06) { if (!SND || MUTE) return; try { const c = ac(), o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v, c.currentTime + t); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + t + d); o.connect(g).connect(c.destination); o.start(c.currentTime + t); o.stop(c.currentTime + t + d + .05); } catch { } }
   // тики замедляются, как у настоящей рулетки
   function ticks(ms) { let t = 0, gap = .05; while (t * 1000 < ms - 300) { tone(1200, t, .03); t += gap; gap *= 1.07; } }
   const win = () => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * .12, .35, 'triangle', .12)); };
@@ -96,7 +97,7 @@
 
   async function run() {
     if (busy || !queue.length) return; busy = true;
-    const r = queue.shift(); const st = document.getElementById('stage'), res = document.getElementById('res');
+    const r = queue.shift(); SND = r.sound !== false; const st = document.getElementById('stage'), res = document.getElementById('res');
     document.getElementById('who').innerHTML = `🎰 ${esc(r.name)} — <span class="grad">${fmt(r.amount)}</span>`;
     res.classList.remove('on'); res.textContent = '';
     await sleep(2500); // даём сначала показаться алерту

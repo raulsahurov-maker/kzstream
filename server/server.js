@@ -333,7 +333,7 @@ function finalizeDonation(u, d, opts = {}) {
     show: d.amount >= (s.alerts.min_alert || 0), at: now(),
   };
   emit(u.id, 'donation', event);
-  if (roulette) emit(u.id, 'roulette', { ...roulette, name, amount: d.amount });
+  if (roulette) emit(u.id, 'roulette', { ...roulette, name, amount: d.amount, sound: s.roulette.sound !== false });
   pushStats(u);
   // вебхуки (Pro)
   if (p.webhooks) for (const url of (s.webhooks || []).slice(0, 5)) {
@@ -585,6 +585,7 @@ app.put('/api/settings', auth, (req, res) => {
   }
   if (b.roulette) {
     if (!p.roulette && b.roulette.enabled) errors.push('Рулетка доступна с тарифа Lite');
+    if (b.roulette.sound !== undefined) s.roulette.sound = !!b.roulette.sound;
     if (b.roulette.enabled !== undefined) s.roulette.enabled = p.roulette && !!b.roulette.enabled;
     s.roulette.min = int(b.roulette.min, 1, 1e7, s.roulette.min);
     if (['wheel', 'slots', 'cards', 'box', 'case'].includes(b.roulette.style)) s.roulette.style = b.roulette.style;
@@ -693,7 +694,7 @@ app.post('/api/test/roulette', auth, (req, res) => {
   if (!effectivePlan(u).roulette) return res.status(403).json({ error: 'Рулетка доступна с тарифа Lite' });
   if (!s.roulette.tasks.length) return res.status(400).json({ error: 'Добавьте задания' });
   const idx = crypto.randomInt(s.roulette.tasks.length);
-  emit(u.id, 'roulette', { index: idx, task: s.roulette.tasks[idx], tasks: s.roulette.tasks, style: s.roulette.style, name: 'Тест', amount: s.roulette.min, test: true });
+  emit(u.id, 'roulette', { index: idx, task: s.roulette.tasks[idx], tasks: s.roulette.tasks, style: s.roulette.style, name: 'Тест', amount: s.roulette.min, test: true, sound: s.roulette.sound !== false });
   res.json({ ok: true, task: s.roulette.tasks[idx] });
 });
 app.post('/api/test/media', auth, (req, res) => {

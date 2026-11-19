@@ -279,7 +279,7 @@ function render() {
   if (!$('#infoFrame').src) { $('#infoFrame').onload = () => setTimeout(postInfo, 300); $('#infoFrame').src = ME.urls.widgets.info + '&demo'; } else postInfo();
   val('tm_sec', s.timer.sec_per_100); val('tm_theme', s.timer.theme);
   // рулетка
-  val('r_enabled', s.roulette.enabled); val('r_min', s.roulette.min); val('r_style', s.roulette.style);
+  val('r_enabled', s.roulette.enabled); val('r_sound', s.roulette.sound !== false); val('r_min', s.roulette.min); val('r_style', s.roulette.style);
   listEdit('#taskList', s.roulette.tasks.map(v => ({ v })), [['v', 'Задание']]);
   // медиа
   val('m_enabled', s.media.enabled); val('m_min', s.media.min); val('m_max', s.media.max_sec); val('m_volume', s.media.volume);
@@ -347,7 +347,7 @@ const collectors = {
   },
   info: () => ({ info: { lines: readList('#infoList').map(r => r.v), interval: 8, label: val('i_label') || 'INFO', dir: val('i_dir'), speed: val('i_speed'), show_last: val('i_show_last'), theme: val('i_theme') } }),
   timer: () => ({ timer: { sec_per_100: val('tm_sec'), theme: val('tm_theme') } }),
-  roulette: () => ({ roulette: { enabled: val('r_enabled'), min: val('r_min'), style: val('r_style'), tasks: readList('#taskList').map(r => r.v) } }),
+  roulette: () => ({ roulette: { enabled: val('r_enabled'), sound: val('r_sound'), min: val('r_min'), style: val('r_style'), tasks: readList('#taskList').map(r => r.v) } }),
   media: () => ({ media: { enabled: val('m_enabled'), min: val('m_min'), max_sec: val('m_max'), volume: +val('m_volume') } }),
   page: () => ({ page: { title: val('pg_title'), description: val('pg_description'), kaspi: val('pg_kaspi'), receiver: val('pg_receiver'), min_amount: val('pg_min'), cards: val('pg_cards'), avatar: val('pg_avatar'), banner: val('pg_banner'), color: val('pg_color'),
     socials: Object.fromEntries(['tiktok', 'instagram', 'telegram'].map(k => [k, val('s_' + k)])) } }),
