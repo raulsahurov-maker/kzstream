@@ -1,6 +1,7 @@
 // TikTok LIVE: подключение к эфиру по юзернейму (как TikFinity) — подписки, подарки, репосты → звук в виджете.
 // Подключение идёт с сервера KZStream, ничего устанавливать стримеру не нужно.
-let Lib = null;
+let Lib = null, WS = null;
+try { WS = require('ws'); } catch { }
 try { Lib = require('tiktok-live-connector'); } catch (e) { console.error('tiktok-live-connector не загружен:', e.message); }
 
 const EV = ['follow', 'gift', 'share'];
@@ -60,7 +61,52 @@ module.exports = function setupTikTok(app, d) {
     const x = { user, state: 'connecting', retry: null, tries: 0 }; conns.set(uid, x);
     emit(uid, 'tt_status', status(uid));
     if (!Lib) return setState(uid, 'error', 'Модуль TikTok не установлен на сервере');
+    const KEY = process.env.SIGN_API_KEY || process.env.EULER_API_KEY;
+    // облачное подключение Euler Stream: эфир находит и держит их сервер (TikTok не пускает дата-центры напрямую)
+    const cloud = () => {
+      if (conns.get(uid) !== x) return;
+      x.tries++;
+      const url = 'wss://ws.eulerstream.com?' + new URLSearchParams({ uniqueId: user, apiKey: KEY }).toString();
+      let ws; try { ws = new WS(url); } catch (e) { setState(uid, 'error', 'Не удалось открыть подключение: ' + e.message); return later(60); }
+      x.c = { disconnect: () => { try { ws.close(); } catch { } } };
+      let opened = false;
+      ws.on('open', () => { opened = true; });
+      ws.on('message', (buf, isBin) => {
+        let j; try { j = JSON.parse(buf.toString()); } catch { return; }
+        if (conns.get(uid) !== x) return;
+        if (x.state !== 'live') { x.tries = 0; setState(uid, 'live'); }
+        for (const it of (j.messages || [j])) {
+          const t = it.type || '', m = it.data || {};
+          if (t === 'roomInfo' || t === 'RoomInfoEvent') { const rid = m.roomInfo?.id || m.id || ''; if (rid && rid !== x.room) { likes.delete(uid); x.room = rid; emit(uid, 'tt_likes', []); } }
+          else if (t === 'WebcastChatMessage') chat(uid, who(m), m.comment);
+          else if (t === 'WebcastLikeMessage') { const u = userById(uid); if (u && isLite(u)) addLike(uid, who(m), m.likeCount); }
+          else if (t === 'WebcastGiftMessage') {
+            const gt = m.giftType ?? m.giftDetails?.giftType;
+            if (gt === 1 && !m.repeatEnd) continue;
+            fire(uid, 'gift', { ...who(m), gift: m.giftDetails?.giftName || m.gift?.name || 'подарок', count: m.repeatCount || 1 });
+          }
+          else if (t === 'WebcastSocialMessage') {
+            const k = m.common?.displayText?.key || '';
+            if (k.includes('follow')) fire(uid, 'follow', who(m)); else if (k.includes('share')) fire(uid, 'share', who(m));
+          }
+        }
+      });
+      ws.on('close', (code, reason) => {
+        if (conns.get(uid) !== x) return;
+        const r = String(reason || '');
+        console.error(`TikTok(cloud) @${user}: закрыто ${code} ${r.slice(0, 200)}`);
+        if (code === 4404) { setState(uid, 'waiting', 'Эфир не запущен — запустите LIVE, подключусь сам'); return later(45); }
+        if (code === 4005) { setState(uid, 'waiting', 'Эфир завершён — жду следующий'); return later(60); }
+        if (code === 4401 || code === 4403) { setState(uid, 'error', 'Ключ Euler Stream не подошёл или тариф не даёт подключение (' + code + ')'); return later(300); }
+        if (code === 4429) { setState(uid, 'waiting', 'Лимит подключений Euler Stream — пробую позже'); return later(120); }
+        if (code === 4400 && /unique|user/i.test(r)) { setState(uid, 'error', `Аккаунт @${user} не найден — проверьте юзернейм`); return later(300); }
+        setState(uid, opened && x.state === 'live' ? 'connecting' : 'waiting', (opened ? 'Связь с эфиром прервалась — переподключаюсь…' : 'Подключаюсь…') + (r ? ' (' + r.slice(0, 80) + ')' : ''));
+        later(Math.min(90, 10 * x.tries));
+      });
+      ws.on('error', e => console.error(`TikTok(cloud) @${user}: ошибка`, e.message));
+    };
     const go = async () => {
+      if (KEY && WS) return cloud();
       if (conns.get(uid) !== x) return;
       x.tries++;
       let c;
