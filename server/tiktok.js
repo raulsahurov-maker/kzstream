@@ -89,7 +89,7 @@ module.exports = function setupTikTok(app, d) {
         const msg = String((e && (e.message || e.exception?.message)) || e);
         console.error(`TikTok @${user}:`, (e && e.name) || '', msg.slice(0, 400), e && e.exception ? String(e.exception.message || e.exception).slice(0, 300) : '');
         x.lastErr = msg.slice(0, 200);
-        for (const sub of (e && e.errors) || []) console.error('   ↳', String(sub && (sub.message || sub)).slice(0, 300), sub && sub.response && sub.response.status || '');
+        for (const sub of (e && (e.errors || (e.config && e.config.requestErrs))) || []) console.error('   ↳', String(sub && (sub.message || sub)).slice(0, 300), sub && sub.response && sub.response.status || '');
         const offline = /offline|not.*live|isn't online|LIVE has ended|status 4|UserOfflineError/i.test(msg) || (e && /Offline/i.test(e.name || ''));
         const nouser = /not found|doesn't exist|user.*invalid|InvalidUniqueId/i.test(msg);
         if (nouser) return setState(uid, 'error', `Аккаунт @${user} не найден — проверьте юзернейм`);
