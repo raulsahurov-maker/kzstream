@@ -7,7 +7,7 @@ KZStream для Windows — версия 2.0.
   в эфире TikTok Live появляется алерт с озвучкой. Три способа подключения телефона:
     1) «Связь с телефоном» (Phone Link) — Android-телефон, уведомления приходят на ПК;
     2) приложение KZStream на Android — телефон отправляет донаты сам, ПК не обязателен;
-    3) iPhone по Bluetooth — через «Связь с телефоном» для iPhone.
+    3) iPhone по Bluetooth — напрямую (Apple ANCS), без «Связи с телефоном».
 - Выполняет хоткеи при донатах (тариф Pro).
 - Значок в трее, автозапуск с Windows, звук при донате, автообновление.
 
@@ -32,7 +32,7 @@ import webbrowser
 import requests
 
 APP_NAME = 'KZStream'
-VERSION = '2.2.1'
+VERSION = '2.3.0'
 DEFAULT_SERVER = 'https://kzstream.onrender.com'
 APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
@@ -55,6 +55,11 @@ try:
     HAS_WINSDK = True
 except Exception:  # pragma: no cover
     HAS_WINSDK = False
+
+try:
+    from iphone_bt import IphoneBT, HAS_BT
+except Exception:  # pragma: no cover
+    IphoneBT, HAS_BT = None, False
 
 
 def resource(name):
@@ -199,6 +204,7 @@ class Api:
         self.feed = []
         self.update_info = None
         self.paused = False
+        self.bt = IphoneBT(self.on_bt_notif, self.on_bt_status, self.log) if (IS_WIN and HAS_BT and IphoneBT) else None
 
     # --- связь с интерфейсом
     def push(self, kind, data):
@@ -218,7 +224,7 @@ class Api:
                 'server': c['server'], 'only_banks': c['only_banks'], 'autostart': c['autostart'], 'sound': c['sound'],
                 'tray': c['tray'], 'method': c['method'], 'notif': self.notif_status, 'winsdk': HAS_WINSDK,
                 'version': VERSION, 'stream': self.stream_ok, 'update': self.update_info, 'feed': self.feed[:30],
-                'paused': self.paused, 'live_since': c.get('live_since', 0)}
+                'paused': self.paused, 'live_since': c.get('live_since', 0), 'bt': self.bt_info(), 'seen_news': c.get('seen_news', '')}
 
     def login(self, email, password, server=None):
         srv = (server or self.cfg['server']).strip().rstrip('/')
@@ -237,6 +243,8 @@ class Api:
 
     def logout(self):
         self.running = False
+        if self.bt:
+            self.bt.disconnect()
         for k in ('token', 'link', 'nick', 'plan'):
             self.cfg.pop(k, None)
         save_cfg(self.cfg)
@@ -248,6 +256,8 @@ class Api:
             self.cfg[name] = bool(value)
         elif name == 'method' and value in ('phonelink', 'android', 'iphone'):
             self.cfg[name] = value
+        elif name == 'seen_news':
+            self.cfg[name] = str(value)
         elif name == 'server' and str(value).startswith('http'):
             self.cfg[name] = str(value).strip().rstrip('/')
         save_cfg(self.cfg)
@@ -311,7 +321,49 @@ class Api:
         now = time.time()
         return {'notif': self.notif_status, 'winsdk': HAS_WINSDK, 'phone_link': phone_link_running(),
                 'phone_seen': bool(self.last_phone_notif and now - self.last_phone_notif < 3600),
-                'kaspi_seen': bool(self.last_kaspi and now - self.last_kaspi < 86400), 'stream': self.stream_ok}
+                'kaspi_seen': bool(self.last_kaspi and now - self.last_kaspi < 86400), 'stream': self.stream_ok, 'bt': self.bt_info()}
+
+    # --- iPhone по Bluetooth (напрямую, без «Связи с телефоном»)
+    def bt_info(self):
+        if not self.bt:
+            return {'state': 'unsupported', 'supported': False}
+        return self.bt.info()
+
+    def bt_list(self):
+        if not self.bt:
+            return {'ok': False, 'error': 'Bluetooth недоступен в этой версии Windows'}
+        try:
+            devs = self.bt.call(self.bt.list_devices())
+            return {'ok': True, 'devices': devs, 'adapter': self.bt.adapter}
+        except Exception as e:
+            return {'ok': False, 'error': f'Не удалось получить список устройств ({e})'}
+
+    def bt_connect(self, device_id, name=''):
+        if not self.bt:
+            return {'ok': False, 'error': 'Bluetooth недоступен'}
+        self.cfg.update(bt_device=device_id, bt_name=name, method='iphone')
+        save_cfg(self.cfg)
+        self.bt.name = name
+        self.bt.connect(device_id)
+        self.log(f'Подключаюсь к «{name or "iPhone"}» по Bluetooth…')
+        return {'ok': True, **self.state()}
+
+    def bt_disconnect(self):
+        self.cfg.pop('bt_device', None)
+        save_cfg(self.cfg)
+        if self.bt:
+            self.bt.disconnect()
+        self.log('iPhone отключён от программы')
+        return self.state()
+
+    def on_bt_status(self, info):
+        self.push('bt', info)
+
+    def on_bt_notif(self, app_id, title, subtitle, message, uid):
+        self.last_phone_notif = time.time()
+        text = '\n'.join(x for x in (subtitle, message) if x)
+        app = 'Kaspi.kz' if 'kaspi' in (app_id or '').lower() else (app_id or 'iPhone')
+        self.process(app, title or app, text, f'ios-{uid}-{abs(hash(title + text)) % 10**8}')
 
     def test(self):
         code, j = self.post({'title': 'Kaspi.kz', 'text': 'Перевод 1 000 ₸ от Тест Т.\nПривет! Это тест из программы KZStream для Windows',
@@ -427,6 +479,9 @@ class Api:
         threading.Thread(target=self.events_thread, daemon=True).start()
         threading.Thread(target=lambda: (time.sleep(4), self.check_update(True)), daemon=True).start()
         self.log(f'Подключено к аккаунту {self.cfg.get("nick")}')
+        if self.bt and self.cfg.get('bt_device'):
+            self.bt.name = self.cfg.get('bt_name', '')
+            self.bt.connect(self.cfg['bt_device'])
 
     def set_notif(self, st):
         self.notif_status = st
@@ -487,11 +542,16 @@ class Api:
             texts = []
         if not texts:
             return
-        if any(p in app.lower() for p in PHONE_LINK_APPS):
+        via_phone_link = any(p in app.lower() for p in PHONE_LINK_APPS)
+        if via_phone_link:
             self.last_phone_notif = time.time()
+            if self.bt and self.bt.state == 'on':
+                return  # iPhone уже подключён напрямую — не дублируем донат
+        self.process(app, texts[0], '\n'.join(texts[1:]), f'win-{n.id}')
+
+    def process(self, app, title, text, key):
         if self.paused:
             return
-        title, text = texts[0], '\n'.join(texts[1:])
         full = f'{app}\n{title}\n{text}'
         if not MONEY.search(full):
             return
@@ -500,7 +560,7 @@ class Api:
             return
         if 'kaspi' in low or 'каспи' in low:
             self.last_kaspi = time.time()
-        code, j = self.post({'title': title, 'text': text, 'package': app, 'key': f'win-{n.id}'})
+        code, j = self.post({'title': title, 'text': text, 'package': app, 'key': key})
         if code == 200 and j.get('donation'):
             d = j['donation']
             self.log(f'💸 Донат пойман: {d["name"]} — {d["amount"]} ₸')
@@ -626,6 +686,22 @@ def selftest():
             problems.append(f'нет файла {name}')
     if IS_WIN and not HAS_WINSDK:
         problems.append('winsdk')
+    if IS_WIN:
+        try:
+            import iphone_bt as ib
+            if not ib.HAS_BT:
+                problems.append('bluetooth')
+            else:
+                need = [(ib.BluetoothLEDevice, ('from_id_async', 'from_bluetooth_address_async', 'get_device_selector_from_pairing_state')),
+                        (ib.BluetoothDevice, ('from_id_async', 'get_device_selector_from_pairing_state')),
+                        (ib.DeviceInformation, ('find_all_async',)), (ib.BluetoothAdapter, ('get_default_async',)),
+                        (ib.DataWriter, ('write_bytes', 'detach_buffer'))]
+                for cls, names in need:
+                    for nm in names:
+                        if not hasattr(cls, nm):
+                            problems.append(f'bt:{cls.__name__}.{nm}')
+        except Exception as e:
+            problems.append(f'bluetooth: {e}')
     if keyboard is None:
         problems.append('keyboard')
     try:

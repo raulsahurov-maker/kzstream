@@ -40,7 +40,7 @@ jobs:
       - name: Сборка программы (папка, без самораспаковки)
         working-directory: windows
         run: |
-          pyinstaller --noconfirm --onedir --windowed --name KZStream --icon icon.ico --version-file version_info.txt --add-data "ui.html;." --add-data "icon.ico;." --add-data "qrcode.js;." --hidden-import pystray._win32 --collect-submodules winsdk.windows.ui.notifications --collect-submodules webview kzstream_windows.py
+          pyinstaller --noconfirm --onedir --windowed --name KZStream --icon icon.ico --version-file version_info.txt --add-data "ui.html;." --add-data "icon.ico;." --add-data "qrcode.js;." --hidden-import pystray._win32 --collect-submodules winsdk.windows.ui.notifications --collect-submodules winsdk.windows.devices --collect-submodules winsdk.windows.storage.streams --hidden-import iphone_bt --collect-submodules webview kzstream_windows.py
       - name: Самопроверка (всё ли внутри)
         working-directory: windows
         shell: pwsh

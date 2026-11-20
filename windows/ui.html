@@ -128,6 +128,28 @@
   .mbox{width:min(460px,92vw);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
   .gwname{margin:18px 0;padding:22px;border-radius:16px;background:var(--bg2);border:1px dashed var(--line);text-align:center;font-family:Unbounded,"Segoe UI",sans-serif;font-weight:800;font-size:24px;min-height:84px}
   .gwname.win{border-style:solid;border-color:var(--warn);color:var(--warn);box-shadow:0 0 30px rgba(255,200,74,.25)}
+  .btm{width:min(560px,94vw);padding:0;overflow:hidden}
+  .btm .bth{display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line);background:linear-gradient(120deg,rgba(255,59,92,.14),transparent 70%)}
+  .btm .bth i{width:40px;height:40px;border-radius:12px;background:var(--grad);display:grid;place-items:center;font-style:normal;font-size:19px;box-shadow:0 8px 22px rgba(255,59,92,.35)}
+  .btm .bth h2{font-size:16.5px}.btm .bth small{display:block;color:var(--muted);font-size:12px;font-family:Manrope;font-weight:600;margin-top:2px}
+  .btm .bb{padding:16px 22px 20px}
+  .bsteps{list-style:none;counter-reset:b;display:grid;gap:7px;font-size:12.8px;color:#d4d7e6;line-height:1.4}
+  .bsteps li{position:relative;padding-left:30px}.bsteps li::before{counter-increment:b;content:counter(b);position:absolute;left:0;top:0;width:21px;height:21px;border-radius:7px;background:var(--card2);border:1px solid var(--line);display:grid;place-items:center;font:800 11px Unbounded}
+  .bsteps b{color:#fff}
+  .dlist{margin:14px 0 10px;border:1px solid var(--line);border-radius:14px;background:var(--bg2);min-height:150px;max-height:190px;overflow:auto;padding:6px}
+  .dv{display:flex;align-items:center;gap:11px;width:100%;padding:10px 12px;border-radius:10px;text-align:left;border:1px solid transparent}
+  .dv:hover{background:var(--card)}.dv.on{background:rgba(255,59,92,.1);border-color:var(--a)}
+  .dv .di{width:32px;height:32px;border-radius:9px;background:var(--card2);display:grid;place-items:center;font-size:16px;flex:none}
+  .dv b{flex:1;font-size:13.5px}.dv small{color:var(--dim);font-size:11.5px}
+  .dempty{display:grid;place-items:center;text-align:center;color:var(--dim);font-size:12.5px;min-height:136px;padding:10px;line-height:1.5}
+  .bnote{font-size:12px;color:var(--warn);background:rgba(255,200,74,.08);border:1px solid rgba(255,200,74,.2);border-radius:11px;padding:9px 12px;line-height:1.45}
+  .brow{display:flex;gap:10px;margin-top:12px}.brow .btn{flex:1}
+  .bstat{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);margin-bottom:12px;font-size:13px;font-weight:700}
+  .batt{margin-left:auto;font:800 12px Unbounded;color:var(--ok);white-space:nowrap;flex:none}
+  .news{list-style:none;display:grid;gap:10px;margin:14px 0 18px}
+  .news li{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;border-radius:13px;background:var(--bg2);border:1px solid var(--line)}
+  .news li i{font-style:normal;width:32px;height:32px;border-radius:9px;background:rgba(255,59,92,.14);display:grid;place-items:center;flex:none}
+  .news b{display:block;font-size:13.5px}.news span{color:var(--muted);font-size:12.3px}
   .fbar{display:flex;gap:10px;align-items:center;margin-top:14px;padding:10px 14px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-size:12px;color:var(--dim)}
   /* подключение */
   .methods{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -232,9 +254,9 @@
             <p class="hint2">Включайте, когда уже в эфире — ТОП эфира считается с этого момента</p>
           </div>
           <div class="card blk pl-c" id="plC">
-            <div class="bh"><b>Связь с телефоном</b><a class="vid" data-go="connect">▶ Инструкция</a></div>
-            <div class="stl" style="margin:2px 0 10px"><span class="dot" id="plDot"></span><span id="plS">проверяем…</span></div>
-            <button class="btn" style="width:100%" onclick="api('open_phone_link')">Открыть «Связь с телефоном»</button>
+            <div class="bh"><b id="plT">Связь с телефоном</b><a class="vid" data-go="connect">▶ Инструкция</a></div>
+            <div class="stl" style="margin:2px 0 10px"><span class="dot" id="plDot"></span><span id="plS">проверяем…</span><span class="batt" id="plBat"></span></div>
+            <button class="btn" style="width:100%" id="plBtn">Открыть «Связь с телефоном»</button>
             <a class="bt-link" id="btLink">Или подключить iPhone по Bluetooth</a>
           </div>
           <div class="qgrid">
@@ -264,13 +286,44 @@
       <div style="display:flex;gap:10px"><button class="btn p" style="flex:1" id="gwGo">🎲 Выбрать победителя</button><button class="btn" id="gwClose">Закрыть</button></div>
     </div></div>
 
+    <!-- iPHONE ПО BLUETOOTH -->
+    <div class="modal hide" id="btm"><div class="mbox btm">
+      <div class="bth"><i>📱</i><div><h2>Подключение iPhone по Bluetooth</h2><small>Без «Связи с телефоном» — программа подключается к iPhone сама</small></div></div>
+      <div class="bb">
+        <div class="bstat hide" id="btNow"><span class="dot" id="btNowDot"></span><span id="btNowT"></span><span class="batt" id="btNowB"></span><button class="btn sm" id="btOff" style="margin-left:10px">Отключить</button></div>
+        <ol class="bsteps">
+          <li>На iPhone откройте <b>Настройки → Bluetooth</b> и не закрывайте этот экран.</li>
+          <li>На компьютере нажмите <b>«Настройки Bluetooth»</b> → «Добавить устройство» → Bluetooth → выберите iPhone и подтвердите код на обоих устройствах.</li>
+          <li>Нажмите <b>«Обновить список»</b>, выберите iPhone и нажмите <b>«Подключить»</b>.</li>
+          <li>На iPhone появится запрос — нажмите <b>«Разрешить»</b>. Если не появился: Bluetooth → (i) у компьютера → включите <b>«Показывать уведомления»</b>.</li>
+        </ol>
+        <div class="dlist" id="btList"><div class="dempty">Нажмите «Обновить список»,<br>чтобы найти сопряжённый iPhone</div></div>
+        <div class="bnote" id="btNote">Сопряжённого iPhone нет? Нажмите «Настройки Bluetooth» и добавьте его. Если на компьютере нет Bluetooth — подойдёт любой USB-адаптер Bluetooth 5.0.</div>
+        <div class="brow"><button class="btn" onclick="api('open_bluetooth')">⚙ Настройки Bluetooth</button><button class="btn" id="btRef">↻ Обновить список</button></div>
+        <div class="brow"><button class="btn p" id="btGo" disabled>Подключить</button><button class="btn" id="btClose">Отмена</button></div>
+      </div>
+    </div></div>
+
+    <!-- ЧТО НОВОГО -->
+    <div class="modal hide" id="newsM"><div class="mbox">
+      <div style="text-align:center"><div class="mark" style="margin:0 auto 12px;width:46px;height:46px;font-size:20px">🚀</div>
+      <span class="tag ok">Новая версия</span><h2 style="font-size:19px;margin-top:10px">Что нового в KZStream</h2></div>
+      <ul class="news">
+        <li><i>📱</i><div><b>iPhone без «Связи с телефоном»</b><span>Программа подключается к iPhone напрямую по Bluetooth</span></div></li>
+        <li><i>🔋</i><div><b>Заряд телефона в программе</b><span>Видно прямо на главной, рядом со статусом</span></div></li>
+        <li><i>🔗</i><div><b>Связь не зависает</b><span>Программа сама переподключается, если связь оборвалась</span></div></li>
+        <li><i>⚡</i><div><b>Быстро и стабильно</b><span>Донаты Kaspi доходят до алерта за секунды</span></div></li>
+      </ul>
+      <div class="brow"><button class="btn p" id="newsBt">📱 Подключить iPhone</button><button class="btn" id="newsOk">Понятно</button></div>
+    </div></div>
+
     <!-- ПОДКЛЮЧЕНИЕ -->
     <section class="page" id="p-connect">
       <div class="ttl"><h2>Подключение телефона</h2></div>
       <div class="methods">
         <button class="m" data-m="phonelink"><span class="tag ok">Рекомендуем</span><div class="ic">💻</div><b>Связь с телефоном</b><span>Android → Windows. Уведомления Kaspi приходят на компьютер, программа их ловит.</span></button>
         <button class="m" data-m="android"><div class="ic">🤖</div><b>Приложение на Android</b><span>Телефон сам отправляет донаты. Компьютер не нужен — работает даже с выключенным ПК.</span></button>
-        <button class="m" data-m="iphone"><div class="ic">🍏</div><b>iPhone по Bluetooth</b><span>«Связь с телефоном» для iPhone: уведомления Kaspi приходят на ПК по Bluetooth.</span></button>
+        <button class="m" data-m="iphone"><span class="tag ok">Новое</span><div class="ic">🍏</div><b>iPhone по Bluetooth</b><span>Напрямую, без «Связи с телефоном»: программа сама подключается к iPhone и ловит Kaspi.</span></button>
       </div>
       <div class="how">
         <div class="card"><h3 id="mT"></h3><ol class="steps" id="mSteps"></ol></div>
@@ -336,12 +389,12 @@ const METHODS = {
     'Установите APK, войдите тем же email и паролем.',
     'Разрешите приложению доступ к уведомлениям и отключите для него экономию батареи.',
     'Всё — донаты отправляются прямо с телефона. Эта программа нужна только для хоткеев и звука.'] },
-  iphone: { name: 'iPhone (Bluetooth)', title: 'iPhone через Bluetooth', steps: [
-    'Включите Bluetooth на компьютере.<br><button class="btn sm" onclick="api(\'open_bluetooth\')">Параметры Bluetooth</button>',
-    'Откройте «Связь с телефоном» → выберите iPhone и следуйте подсказкам (сканируете QR-код камерой iPhone).<br><button class="btn sm" onclick="api(\'open_phone_link\')">Открыть «Связь с телефоном»</button>',
-    'На iPhone: Настройки → Bluetooth → ваш компьютер (ⓘ) → включите «Показывать уведомления». Уведомления Kaspi должны быть включены.',
-    'Разрешите KZStream читать уведомления Windows.<br><button class="btn sm" onclick="api(\'open_notif_settings\')">Параметры уведомлений Windows</button>',
-    'Нажмите «Тестовый донат». Совет: без компьютера можно ловить донаты на iPhone через «Команды» — инструкция в кабинете.'] },
+  iphone: { name: 'iPhone (Bluetooth)', title: 'iPhone по Bluetooth — напрямую', steps: [
+    'Включите Bluetooth на компьютере. Нет Bluetooth — подойдёт USB-адаптер Bluetooth 5.0.<br><button class="btn sm" onclick="api(\'open_bluetooth\')">Параметры Bluetooth</button>',
+    'Сопрягите iPhone с компьютером: «Добавить устройство» → Bluetooth → iPhone, подтвердите код.',
+    'Нажмите «Подключить iPhone», выберите его в списке и разрешите уведомления на iPhone.<br><button class="btn sm p" onclick="btOpen()">📱 Подключить iPhone</button>',
+    'На iPhone: Настройки → Уведомления → Kaspi.kz — уведомления включены, «Показ миниатюр» — «Всегда».',
+    'Нажмите «Тестовый донат». «Связь с телефоном» для iPhone больше не нужна — её можно закрыть.'] },
 };
 const WNAMES = { alerts: ['🔔', 'Алерты'], top: ['🏆', 'ТОП донатеров'], goal: ['🎯', 'Цель сбора'], roulette: ['🎰', 'Рулетка'], media: ['🎵', 'Музыка и видео'], info: ['ℹ️', 'Info-виджет'], timer: ['⏱', 'Таймер'] };
 
@@ -354,7 +407,8 @@ function showApp() {
   $('#ver').textContent = 'KZStream для Windows · ' + ST.version; $('#vLine').textContent = 'Версия ' + ST.version;
   $('#fNick').textContent = ST.nick; $('#fPlan').textContent = (ST.plan || 'free').toUpperCase(); $('#fVer').textContent = 'Версия: ' + ST.version; liveUi();
   $$('.sw').forEach(s => s.classList.toggle('on', !!ST[s.dataset.o]));
-  method(ST.method, true); hero(); if (ST.update) showUpd(ST.update);
+  method(ST.method, true); hero(); phoneUi({}); if (ST.update) showUpd(ST.update);
+  if (ST.seen_news !== '2.3') $('#newsM').classList.remove('hide');
   (ST.feed || []).slice().reverse().forEach(d => addDon(d, false));
   loadMe(); setInterval(loadMe, 60000); refreshChecks(); setInterval(refreshChecks, 5000);
 }
@@ -393,6 +447,7 @@ function hero() {
   let ok = false, t = 'Подключаемся…';
   if (ST.paused) t = 'Ловля остановлена';
   else if (m === 'android') { ok = st; t = st ? 'На связи — донаты ловит телефон' : 'Подключаемся к серверу…'; }
+  else if (m === 'iphone' && (ST.bt || {}).device) { const b = ST.bt; ok = b.state === 'on' && st; t = b.state === 'on' ? (st ? 'Ловлю донаты Kaspi с iPhone' : 'Ждём связь с сервером…') : BTS[b.state] || 'Подключаемся…'; }
   else if (n === 'denied') t = 'Нет доступа к уведомлениям';
   else if (n === 'unsupported' || n === 'error') t = 'Уведомления Windows недоступны';
   else if (n === 'ok' && st) { ok = true; t = 'Ловлю донаты Kaspi'; }
@@ -402,14 +457,53 @@ function hero() {
   $('#startDot').className = 'dot ' + (ok ? 'ok' : ST.paused ? 'no' : 'wait'); $('#startS').textContent = t;
   $('#navDot').style.background = ok ? 'var(--ok)' : ST.paused || n === 'denied' ? 'var(--b)' : '#555';
 }
+const BTS = { on: 'Подключён', connecting: 'Подключаюсь…', allow: 'Разрешите уведомления на iPhone', lost: 'Связь пропала — переподключаюсь…', no_adapter: 'Нет Bluetooth на компьютере', off: 'Не подключён', unsupported: 'Bluetooth недоступен' };
+function btText(b) { return (b.state === 'on' && b.name ? b.name + ' — ' : '') + (BTS[b.state] || 'Не подключён'); }
 function phoneUi(c) {
-  const ok = !!c.phone_link; $('#plC').classList.toggle('ok', ok);
-  $('#plDot').className = 'dot ' + (ok ? 'ok' : 'no'); $('#plS').textContent = ok ? 'Открыта' : 'Не открыта';
+  if (c && c.bt) ST.bt = c.bt;
+  const b = ST.bt || {}, ip = ST.method === 'iphone';
+  $('#plT').textContent = ip ? 'iPhone по Bluetooth' : 'Связь с телефоном';
+  $('#plBtn').textContent = ip ? (b.state === 'on' ? '📱 Управление подключением' : '📱 Подключить iPhone') : 'Открыть «Связь с телефоном»';
+  $('#plBtn').onclick = ip ? btOpen : () => api('open_phone_link');
+  $('#plBat').textContent = ip && b.state === 'on' && b.battery != null ? '🔋 ' + b.battery + '%' : '';
+  const ok = ip ? b.state === 'on' : !!(c && c.phone_link);
+  $('#plC').classList.toggle('ok', ok);
+  $('#plDot').className = 'dot ' + (ok ? 'ok' : ip && ['connecting', 'lost', 'allow'].includes(b.state) ? 'wait' : 'no');
+  $('#plS').textContent = ip ? btText(b) : ok ? 'Открыта' : 'Не открыта';
+  $('#btLink').classList.toggle('hide', ip);
+  btNow();
 }
+// ---------- iPhone по Bluetooth
+let btSel = null;
+function btNow() {
+  const b = ST.bt || {}; const show = b.device && b.state !== 'off';
+  $('#btNow').classList.toggle('hide', !show); if (!show) return;
+  $('#btNowDot').className = 'dot ' + (b.state === 'on' ? 'ok' : 'wait'); $('#btNowT').textContent = btText(b);
+  $('#btNowB').textContent = b.battery != null && b.state === 'on' ? '🔋 ' + b.battery + '%' : '';
+}
+function btOpen() { $('#btm').classList.remove('hide'); btNow(); btRefresh(); }
+async function btRefresh() {
+  $('#btList').innerHTML = '<div class="dempty">Ищу сопряжённые устройства…</div>'; $('#btGo').disabled = true; btSel = null;
+  const r = await api('bt_list');
+  if (!r.ok) { $('#btList').innerHTML = `<div class="dempty">${esc(r.error)}</div>`; return; }
+  if (r.adapter === false) { $('#btList').innerHTML = '<div class="dempty">На компьютере не найден Bluetooth 🙁<br>Включите его в параметрах или подключите USB-адаптер Bluetooth 5.0</div>'; return; }
+  const L = r.devices || [];
+  if (!L.length) { $('#btList').innerHTML = '<div class="dempty">Сопряжённых устройств нет.<br>Нажмите «Настройки Bluetooth» и добавьте iPhone</div>'; return; }
+  $('#btList').innerHTML = L.map((d, i) => `<button class="dv" data-dv="${i}"><span class="di">${d.apple ? '📱' : '🔵'}</span><b>${esc(d.name)}</b><small>${d.apple ? 'iPhone' : 'устройство'}</small></button>`).join('');
+  $('#btList').L = L; const first = L.findIndex(d => d.apple); if (first >= 0) btPick(first);
+}
+function btPick(i) { btSel = $('#btList').L[i]; $$('.dv').forEach(x => x.classList.toggle('on', +x.dataset.dv === i)); $('#btGo').disabled = false; }
+$('#btList').addEventListener('click', e => { const d = e.target.closest('[data-dv]'); if (d) btPick(+d.dataset.dv); });
+$('#btRef').onclick = btRefresh;
+$('#btClose').onclick = () => $('#btm').classList.add('hide');
+$('#btGo').onclick = async () => { if (!btSel) return; const r = await api('bt_connect', btSel.id, btSel.name); if (!r.ok) return toast(r.error, true); ST = { ...ST, ...r }; method('iphone', true); phoneUi({}); toast('Подключаюсь к ' + btSel.name + ' — разрешите уведомления на iPhone'); };
+$('#btOff').onclick = async () => { ST = { ...ST, ...(await api('bt_disconnect')) }; phoneUi({}); toast('iPhone отключён'); };
+$('#newsOk').onclick = () => { $('#newsM').classList.add('hide'); api('set_option', 'seen_news', '2.3'); };
+$('#newsBt').onclick = () => { $('#newsOk').click(); method('iphone'); btOpen(); };
 function method(m, silent) {
   ST.method = m; $$('.m').forEach(b => b.classList.toggle('on', b.dataset.m === m));
   const M = METHODS[m]; $('#mT').textContent = M.title; $('#mSteps').innerHTML = M.steps.map(s => `<li>${s}</li>`).join('');
-  if (m === 'android') apkQr(); stats(); hero(); refreshChecks();
+  if (m === 'android') apkQr(); stats(); hero(); phoneUi({}); refreshChecks();
   if (!silent) api('set_option', 'method', m);
 }
 async function refreshChecks() {
@@ -418,7 +512,13 @@ async function refreshChecks() {
   const row = (ok, t, sub, wait) => `<div class="chk"><span class="dot ${ok ? 'ok' : wait ? 'wait' : 'no'}"></span><div class="t">${t}${sub ? `<small>${sub}</small>` : ''}</div></div>`;
   const notifOk = c.notif === 'ok';
   let h = row(c.stream, 'Связь с сервером KZStream', c.stream ? 'на связи' : 'подключаемся…', !c.stream);
-  if (ST.method !== 'android') {
+  if (ST.method === 'iphone' && (ST.bt || {}).supported !== false) {
+    const b = c.bt || {};
+    h += row(b.adapter !== false, 'Bluetooth на компьютере', b.adapter === false ? 'не найден — включите или вставьте USB-адаптер' : 'есть');
+    h += row(b.state === 'on', 'iPhone подключён', b.state === 'on' ? (b.name || 'да') + (b.battery != null ? ' · 🔋 ' + b.battery + '%' : '') : BTS[b.state] || 'нажмите «Подключить iPhone»', ['connecting', 'lost'].includes(b.state));
+    h += row(c.phone_seen, 'Уведомления с iPhone приходят', c.phone_seen ? 'да, за последний час' : 'придут с первым уведомлением', !c.phone_seen);
+    h += row(c.kaspi_seen, 'Уведомление Kaspi замечено', c.kaspi_seen ? 'да, сегодня' : 'появится с первым переводом', !c.kaspi_seen);
+  } else if (ST.method !== 'android') {
     h += row(notifOk, 'Доступ к уведомлениям Windows', notifOk ? 'разрешён' : c.notif === 'denied' ? 'не разрешён — шаг выше' : c.notif === 'unsupported' ? 'не поддерживается' : 'проверяем…', c.notif === 'wait');
     h += row(c.phone_link, '«Связь с телефоном» запущена', c.phone_link ? 'работает' : 'откройте приложение');
     h += row(c.phone_seen, 'Уведомления с телефона приходят', c.phone_seen ? 'да, за последний час' : 'пока не было — придёт с первым уведомлением', !c.phone_seen);
@@ -449,6 +549,7 @@ window.kz = { on(kind, d) {
   if (kind === 'donation') { addDon(d, true); sum += +d.amount || 0; cnt++; stats(); clearTimeout(window._lm); window._lm = setTimeout(loadMe, 1500); }
   if (kind === 'notif') { ST.notif = d; hero(); refreshChecks(); }
   if (kind === 'stream') { ST.stream = d; hero(); }
+  if (kind === 'bt') { ST.bt = d; phoneUi({}); hero(); if ($('#p-connect').classList.contains('on')) refreshChecks(); }
   if (kind === 'update') showUpd(d);
   if (kind === 'upd_progress') { $('#updBar').classList.remove('hide'); $('#updBar i').style.width = d + '%'; $('#updGo').textContent = d + '%'; }
 } };
@@ -469,7 +570,7 @@ $('#startB').onclick = async () => { ST = { ...ST, ...(await api('toggle_catch')
 $('#liveB').onclick = async () => { ST = { ...ST, ...(await api(ST.live_since ? 'live_stop' : 'live_start')) }; liveUi(); loadMe(); toast(ST.live_since ? 'Эфир начат — удачного стрима!' : 'Эфир завершён'); };
 $('#clearB').onclick = async () => { if (!confirm('Очистить ТОП эфира и ленту донатов в программе? Донаты на сайте не удаляются.')) return; ST = { ...ST, ...(await api('clear_data')) }; $('#feed').innerHTML = ''; emptyFeed(); loadMe(); toast('Данные эфира очищены'); };
 $('#tsClear').onclick = () => $('#clearB').click();
-$('#btLink').onclick = () => { $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.p === 'connect')); $$('.page').forEach(x => x.classList.toggle('on', x.id === 'p-connect')); method('iphone'); };
+$('#btLink').onclick = () => { $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.p === 'connect')); $$('.page').forEach(x => x.classList.toggle('on', x.id === 'p-connect')); method('iphone'); btOpen(); };
 document.addEventListener('click', async e => { const b = e.target.closest('[data-skip]'); if (!b) return; const r = await api('skip', b.dataset.skip); toast(r.ok ? (b.dataset.skip === 'media' ? (r.skipped ? 'Видео пропущено — включается следующее' : 'Видео в очереди нет') : 'Озвучка пропущена') : 'Ошибка: ' + (r.error || 'нет связи'), !r.ok); });
 // розыгрыш среди донатеров эфира (или сегодняшних)
 $('#gwB').onclick = () => { $('#gw').classList.remove('hide'); $('#gwName').className = 'gwname'; $('#gwName').textContent = '?'; $('#gwSub').textContent = (ST.live_since ? 'Участвуют донатеры этого эфира' : 'Участвуют донатеры за сегодня') + ` — ${(ME.top_stream || []).length} чел.`; };

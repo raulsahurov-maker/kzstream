@@ -2,19 +2,20 @@
 <html lang="ru"><head><meta charset="UTF-8"><title>KZStream — FACEIT</title>
 <link rel="stylesheet" href="/w/w.css">
 <style>
-  .fc{display:flex;align-items:center;gap:18px;padding:14px 22px 14px 16px;border-radius:22px;background:rgba(8,8,12,.92);border:1px solid rgba(255,255,255,.07);box-shadow:0 12px 40px rgba(0,0,0,.45);color:#fff;font-family:Manrope,sans-serif;width:max-content;max-width:calc(100vw - 20px);opacity:0;transform:translateY(8px);transition:.4s}
+  .fc{display:flex;align-items:center;gap:18px;padding:14px 22px 14px 16px;border-radius:22px;background:rgba(8,8,12,.92);border:1px solid rgba(255,255,255,.07);box-shadow:0 12px 40px rgba(0,0,0,.45);color:#fff;font-family:Manrope,sans-serif;width:max-content;flex-wrap:nowrap;opacity:0;transform:translateY(8px);transition:.4s}
   .fc.on{opacity:1;transform:none}
+  .fc>*{flex:none}
   .lvl{position:relative;width:74px;height:74px;flex:none}
   .lvl svg{width:74px;height:74px;transform:rotate(135deg)}
   .lvl b{position:absolute;inset:0;display:grid;place-items:center;font-family:Unbounded,sans-serif;font-weight:800;font-size:28px}
-  .who{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .who{display:flex;flex-direction:column;gap:4px;flex:none}
   .nm{display:flex;align-items:center;gap:8px;font-weight:800;font-size:21px;white-space:nowrap}
   .nm img{width:24px;height:17px;border-radius:3px;object-fit:cover}
   .elo{font-family:Unbounded,sans-serif;font-weight:800;font-size:27px;color:#ff5500;line-height:1}
   .elo small{font-family:Manrope;font-size:12px;color:#9aa0b0;margin-left:6px;font-weight:800;letter-spacing:.05em}
   .sep{width:1px;align-self:stretch;background:rgba(255,255,255,.12);margin:4px 0}
-  .st{display:flex;gap:22px}
-  .s{display:flex;flex-direction:column;align-items:center;min-width:44px}
+  .st{display:flex;gap:22px;flex:none}
+  .s{display:flex;flex-direction:column;align-items:center;min-width:44px;flex:none;white-space:nowrap}
   .s b{font-family:Unbounded,sans-serif;font-weight:800;font-size:20px}
   .s span{font-size:11px;font-weight:800;color:#b5bccb;letter-spacing:.07em;margin-top:3px}
   .last{display:flex;gap:6px}
