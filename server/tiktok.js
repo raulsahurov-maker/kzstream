@@ -17,7 +17,7 @@ const DEF = {
 const clean = u => String(u || '').trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?tiktok\.com\/@?/i, '').split(/[/?#\s]/)[0].slice(0, 40);
 
 module.exports = function setupTikTok(app, d) {
-  const { auth, q, getSettings, saveSettings, userById, userByToken, emit, baseUrl, censor, canTts } = d;
+  const { auth, q, getSettings, saveSettings, userById, userByToken, emit, baseUrl, censor, canTts, isLite } = d;
   const conns = new Map(); // user_id -> { c, state, retry, since, user, err }
 
   const cfg = u => { const s = getSettings(u); const t = s.tiktok || {}; const o = { ...DEF, ...t }; for (const k of EV) o[k] = { ...DEF[k], ...(t[k] || {}) }; o.likes = { ...DEF.likes, ...(t.likes || {}) }; o.tts = { ...DEF.tts, ...(t.tts || {}) }; o.chat = { ...DEF.chat, ...(t.chat || {}) }; return o; };
@@ -69,7 +69,7 @@ module.exports = function setupTikTok(app, d) {
         x.c = c;
         c.on(Lib.WebcastEvent.FOLLOW, m => fire(uid, 'follow', who(m)));
         c.on(Lib.WebcastEvent.CHAT, m => chat(uid, who(m), m.comment));
-        c.on(Lib.WebcastEvent.LIKE, m => addLike(uid, who(m), m.likeCount));
+        c.on(Lib.WebcastEvent.LIKE, m => { const u = userById(uid); if (u && isLite(u)) addLike(uid, who(m), m.likeCount); });
         c.on(Lib.WebcastEvent.SHARE, m => fire(uid, 'share', who(m)));
         c.on(Lib.WebcastEvent.GIFT, m => {
           // серийные подарки (розы и т.п.) — звук один раз, в конце серии
@@ -111,7 +111,7 @@ module.exports = function setupTikTok(app, d) {
     conns.delete(uid); if (!quiet) emit(uid, 'tt_status', { state: 'off' });
   }
 
-  const pub = (u, req) => ({ tts_ok: canTts(u), settings: cfg(u), status: status(u.id), widget: `${baseUrl(req)}/w/tiktok.html?t=${u.token}`, likes_widget: `${baseUrl(req)}/w/likes.html?t=${u.token}` });
+  const pub = (u, req) => ({ tts_ok: canTts(u), lite: isLite(u), settings: cfg(u), status: status(u.id), widget: `${baseUrl(req)}/w/tiktok.html?t=${u.token}`, likes_widget: `${baseUrl(req)}/w/likes.html?t=${u.token}` });
   app.get('/api/tiktok', auth, (req, res) => res.json(pub(req.user, req)));
   app.put('/api/tiktok', auth, (req, res) => {
     const u = req.user, s = getSettings(u), b = req.body || {}, c = cfg(u);
@@ -151,6 +151,7 @@ module.exports = function setupTikTok(app, d) {
     res.json({ ok: true });
   });
   app.post('/api/tiktok/likes/test', auth, (req, res) => {
+    if (!isLite(req.user)) return res.status(403).json({ error: 'Топ лайкеров доступен с тарифа Lite' });
     const N = ['aruzhan_kz', 'Dias', 'Ерлан', 'Mira', 'Нурсултан', 'Aigerim', 'Bek'];
     for (let i = 0; i < 12; i++) { const k = N[Math.floor(Math.random() * N.length)]; addLike(req.user.id, { id: 'test_' + k, name: k }, 5 + Math.floor(Math.random() * 60)); }
     res.json({ ok: true });
@@ -165,7 +166,7 @@ module.exports = function setupTikTok(app, d) {
   });
   app.get('/api/w/:token/tiktok', (req, res) => {
     const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'Неверный токен' });
-    res.json({ settings: cfg(u), status: status(u.id), likes: likeTop(u.id) });
+    res.json({ settings: cfg(u), status: status(u.id), likes: isLite(u) ? likeTop(u.id) : [], locked: !isLite(u) });
   });
 
   // после перезапуска сервера — снова подключаем тех, у кого было включено

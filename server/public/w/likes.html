@@ -49,7 +49,7 @@
     const D = [{ name: 'aruzhan_kz', n: 1240 }, { name: 'Dias', n: 980 }, { name: 'Ерлан', n: 610 }, { name: 'Mira', n: 320 }, { name: 'Bek', n: 150 }];
     draw(D); setInterval(() => { const i = Math.floor(Math.random() * D.length); D[i].n += 50 + Math.floor(Math.random() * 400); D.sort((a, b) => b.n - a.n); draw(D); }, 2500); return;
   }
-  fetch('/api/w/' + token + '/tiktok').then(r => r.json()).then(j => { cfg(j.settings && j.settings.likes); draw(j.likes); }).catch(() => { });
+  fetch('/api/w/' + token + '/tiktok').then(r => r.json()).then(j => { if (j.locked) { document.getElementById('list').innerHTML = '<div class="em">🔒 Топ лайкеров — с тарифа Lite</div>'; return; } cfg(j.settings && j.settings.likes); draw(j.likes); }).catch(() => { });
   on('tt_likes', draw); on('tt_likes_cfg', c => { cfg(c); draw([...shown.entries()].map(([name, v]) => ({ name, n: v.n }))); });
   start();
 })();

@@ -37,7 +37,7 @@
     if (!$('#tts_voice').options.length) $('#tts_voice').innerHTML = VL.map(([id, nm, ds]) => `<option value="${id}">${nm}${ds ? ' — ' + ds : ''}</option>`).join('');
     $('#tts_on').checked = c.tts.on; $('#tts_voice').value = c.tts.voice; $('#tts_vol').value = c.tts.vol; $('#tts_vl').textContent = c.tts.vol + '%';
     $('#chat_on').checked = c.chat.on; $('#chat_name').checked = c.chat.name; $('#chat_prefix').value = c.chat.prefix; $('#chat_max').value = c.chat.max; $('#tt_w_chat').value = D.widget + '&ev=chat';
-    $('#ttLock').style.display = D.tts_ok ? 'none' : 'block';
+    $('#ttLock').style.display = D.tts_ok ? 'none' : 'block'; $('#lkLock').style.display = D.lite ? 'none' : 'block';
     $('#lk_w').value = D.likes_widget; $('#lk_title').value = c.likes.title; $('#lk_count').value = String(c.likes.count);
     if (!$('#lkPrev').src) $('#lkPrev').src = '/w/likes.html?demo&t=x';
     status(D.status);
