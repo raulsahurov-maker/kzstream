@@ -73,10 +73,12 @@ module.exports = function setupTikTok(app, d) {
         try { c && c.disconnect(); } catch { }
         if (conns.get(uid) !== x) return;
         const msg = String((e && (e.message || e.exception?.message)) || e);
+        console.error(`TikTok @${user}:`, (e && e.name) || '', msg.slice(0, 400), e && e.exception ? String(e.exception.message || e.exception).slice(0, 300) : '');
+        x.lastErr = msg.slice(0, 200);
         const offline = /offline|not.*live|isn't online|LIVE has ended|status 4|UserOfflineError/i.test(msg) || (e && /Offline/i.test(e.name || ''));
         const nouser = /not found|doesn't exist|user.*invalid|InvalidUniqueId/i.test(msg);
         if (nouser) return setState(uid, 'error', `Аккаунт @${user} не найден — проверьте юзернейм`);
-        setState(uid, 'waiting', offline ? 'Эфир не запущен — запустите LIVE, подключусь сам' : 'TikTok не ответил — пробую ещё раз…');
+        setState(uid, 'waiting', offline ? 'Эфир не запущен — запустите LIVE, подключусь сам' : 'TikTok не ответил — пробую ещё раз… (' + msg.slice(0, 90) + ')');
         later(offline ? 45 : Math.min(120, 20 * x.tries));
       }
     };
