@@ -234,6 +234,8 @@ function route() {
   $$('.menu a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + id));
   $('aside').classList.remove('open');
   if (id === 'donations') loadDonations();
+  // блок «Стиль алерта» один и тот же: на главной и в «Алерты и озвучка»
+  { const card = $('#alertStyles'), slot = id === 'alerts' ? $('#asSlotAlerts') : $('#asSlotHome'); if (card && slot && card.previousElementSibling !== slot) slot.after(card); }
   if (id === 'devices') loadIngest();
   if (id === 'billing') loadPayments();
   if (id === 'files') loadFiles();
@@ -404,7 +406,11 @@ function postInfo() { try { $('#infoFrame').contentWindow.postMessage({ kzInfo: 
 $('#tVoicePlay').onclick = () => { try { voiceAudio?.pause(); } catch { } voiceAudio = new Audio('/api/tts/sample?voice=' + val('tVoice')); voiceAudio.play().catch(() => toast('Не удалось воспроизвести', true)); };
 $('#asGrid').onclick = e => { const c = e.target.closest('.as'); if (!c) return; const st = ALERT_STYLES.find(x => x.id === c.dataset.as);
   if (!st.free && !ME.plan.shop) return toast('«' + st.name + '» — с тарифа Lite. Раздел «Тариф»', true);
-  if (st.id === 'meme' && !poolUrls().length) toast('Выберите или загрузите своё видео в «Мои алерты»', true);
+  if (st.id === 'meme' && !poolUrls().length) {
+    toast('Мем-алерт: выберите готовый ролик KZStream или загрузите своё видео 👇');
+    ['#libAlerts', '#myAlerts'].forEach(q => { const el = $(q); el.classList.remove('as-flash'); void el.offsetWidth; el.classList.add('as-flash'); });
+    $('#myAlerts').scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+  }
   saveAlerts({ layout: st.id }, 'Стиль «' + st.name + '» включён — отправьте тестовый донат'); };
 // готовые алерты: при наведении проигрываются без звука
 $('#libAlerts').addEventListener('mouseover', e => { const v = e.target.closest('.ma')?.querySelector('video'); if (v) v.play().catch(() => {}); });

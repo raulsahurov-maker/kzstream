@@ -10,10 +10,10 @@ const PLANS = {
     id: 'lite', name: 'Lite', price: 2690,
     storageMB: 50, maxDuration: 30, tts: true, ttsAdvanced: false, voice: true,
     nicks: true, ads: false, info: true, timer: true, shop: true, roulette: true,
-    tiktok: true, media: 50, hotkeys: false, webhooks: false, memes: false, freezeDays: 5,
+    tiktok: true, media: 500, hotkeys: false, webhooks: false, memes: false, freezeDays: 5,
   },
   pro: {
-    id: 'pro', name: 'Pro', price: 7190,
+    id: 'pro', name: 'Pro', price: 5000,
     storageMB: 100, maxDuration: 60, tts: true, ttsAdvanced: true, voice: true,
     nicks: true, ads: false, info: true, timer: true, shop: true, roulette: true,
     tiktok: true, media: Infinity, hotkeys: true, webhooks: true, memes: true, freezeDays: 10,

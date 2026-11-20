@@ -201,7 +201,7 @@
     .g2,.g3,.g4,.plans,.row{grid-template-columns:1fr}
   }
 </style>
-<style>.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}.ttlock{display:none;padding:10px 12px;border-radius:12px;background:rgba(255,197,49,.08);border:1px solid rgba(255,197,49,.25);color:#ffc531;font-weight:700;font-size:13px;margin-bottom:10px}.ttlock a{color:#fff}.ttev .copy-row{flex-wrap:wrap}.ttev .copy-row input{flex:1 1 100%}</style>
+<style>.as-flash{animation:asf 1.6s ease-out 2}@keyframes asf{0%{box-shadow:0 0 0 3px #fe2c55}100%{box-shadow:0 0 0 0 transparent}}.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}.ttlock{display:none;padding:10px 12px;border-radius:12px;background:rgba(255,197,49,.08);border:1px solid rgba(255,197,49,.25);color:#ffc531;font-weight:700;font-size:13px;margin-bottom:10px}.ttlock a{color:#fff}.ttev .copy-row{flex-wrap:wrap}.ttev .copy-row input{flex:1 1 100%}</style>
 </head>
 <body>
 <div class="mob-top"><a class="logo" href="/"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>KZStream</a><button class="btn btn-ghost btn-sm" onclick="document.querySelector('aside').classList.toggle('open')">Меню</button></div>
@@ -255,6 +255,7 @@
         <div class="field"><label>Голос озвучки для теста</label><div style="display:flex;gap:8px"><select id="tVoice" style="flex:1"></select><button class="btn btn-ghost" id="tVoicePlay" type="button" title="Прослушать">▶</button></div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="tSend">Отправить тестовый донат</button><button class="btn btn-ghost" id="tSound">🔊 Звук в превью: выкл</button></div>
       </div>
+      <div id="asSlotHome"></div>
       <div class="card" id="alertStyles">
         <h3>Стиль алерта</h3>
         <p class="hint">Выберите, как донат появится в эфире. Нажмите и сразу отправьте тестовый донат.</p>
@@ -347,6 +348,7 @@
   <section class="page" id="p-alerts">
     <div class="top"><h1>Алерты и озвучка</h1><button class="btn btn-primary" data-save="alerts">Сохранить</button></div>
     <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Алерты и озвучка</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин 10 сек</div></div></div><video controls preload="none" playsinline poster="/video/w_alerts.jpg" src="/video/w_alerts.mp4"></video></div>
+    <div id="asSlotAlerts" style="margin-bottom:18px"></div>
     <div class="card" style="margin-bottom:18px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>🎬 Видео-алерты по сумме</h3><button class="btn btn-primary btn-sm" id="vaSave">Сохранить видео-алерты</button></div>
       <p class="hint">Включите видео и укажите, <b>от скольки тенге</b> оно показывается. При донате выбирается видео с самой большой подходящей суммой: например «Дождь из денег» от 100 ₸, «Чемпион» от 1 000 ₸, «Психопат» от 5 000 ₸. Если у нескольких видео одинаковая сумма — выпадет случайное. Снизу видео — имя донатера и его текст, голос читает только текст.</p>

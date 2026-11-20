@@ -92,6 +92,11 @@ module.exports = function setupTikTok(app, d) {
         for (const sub of (e && (e.errors || (e.config && e.config.requestErrs))) || []) console.error('   ↳', String(sub && (sub.message || sub)).slice(0, 300), sub && sub.response && sub.response.status || '');
         const offline = /offline|not.*live|isn't online|LIVE has ended|status 4|UserOfflineError/i.test(msg) || (e && /Offline/i.test(e.name || ''));
         const nouser = /not found|doesn't exist|user.*invalid|InvalidUniqueId/i.test(msg);
+        const subs = ((e && (e.errors || (e.config && e.config.requestErrs))) || []).map(x => String(x && x.message || x)).join(' | ');
+        if (/lack of permission/i.test(subs) && /user_not_found|SIGI_STATE/i.test(subs)) {
+          setState(uid, 'waiting', 'TikTok не отдаёт эфир серверу KZStream — нужен ключ Euler Stream в настройках сервера (сообщите администратору). Пробую ещё раз…');
+          return later(120);
+        }
         if (nouser) return setState(uid, 'error', `Аккаунт @${user} не найден — проверьте юзернейм`);
         setState(uid, 'waiting', offline ? 'Эфир не запущен — запустите LIVE, подключусь сам' : 'TikTok не ответил — пробую ещё раз… (' + msg.slice(0, 90) + ')');
         later(offline ? 45 : Math.min(120, 20 * x.tries));
