@@ -201,7 +201,7 @@
     .g2,.g3,.g4,.plans,.row{grid-template-columns:1fr}
   }
 </style>
-<style>.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}</style>
+<style>.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}.ttev .copy-row{flex-wrap:wrap}.ttev .copy-row input{flex:1 1 100%}</style>
 </head>
 <body>
 <div class="mob-top"><a class="logo" href="/"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>KZStream</a><button class="btn btn-ghost btn-sm" onclick="document.querySelector('aside').classList.toggle('open')">Меню</button></div>
@@ -215,7 +215,7 @@
     <a href="#widgets"><span>📊</span>Виджеты</a>
     <a href="#roulette"><span>🎰</span>Рулетка<i class="mb">Lite</i></a>
     <a href="#media"><span>🎵</span>Музыка и видео<i class="mb">Lite</i></a>
-    <a href="#tiktok"><span>📱</span>TikTok<i class="mb" style="background:#fe2c55;color:#fff">Новое</i></a>
+    <a href="#tiktok"><span>📱</span>TikTok<i class="mb" data-new-until="2026-11-27" style="background:#ff5500;color:#fff">NEW</i></a>
     <a href="#faceit"><span>🎮</span>FACEIT<i class="mb" style="background:#ff5500;color:#fff">NEW</i></a>
     <a href="#page"><span>🌐</span>Страница доната</a>
     <a href="#donations"><span>💸</span>Донаты</a>
@@ -705,6 +705,18 @@
       </div>
     </div>
     <div class="grid g3" id="ttEv" style="margin-top:18px"></div>
+    <div class="card" style="margin-top:18px"><h3>❤️ Топ лайкеров эфира</h3>
+      <p class="hint">Отдельный виджет: кто больше всех лайкнул в этом эфире. Обновляется сам, места меняются плавно. С новым эфиром топ начинается заново.</p>
+      <div class="grid g2" style="gap:16px">
+        <iframe id="lkPrev" style="width:100%;height:330px;border:0;border-radius:12px;background:repeating-conic-gradient(#1a1c26 0 25%,#13151e 0 50%) 0 0/18px 18px"></iframe>
+        <div>
+          <div class="field"><label>Заголовок</label><input id="lk_title" maxlength="40"></div>
+          <div class="field"><label>Сколько мест показывать</label><select id="lk_count"><option>3</option><option>5</option><option>7</option><option>10</option></select></div>
+          <div class="field"><label>Ссылка для TikTok Live Studio</label><div class="copy-row"><input readonly id="lk_w"><button class="btn btn-ghost btn-sm" data-copy="lk_w">Копировать</button></div></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="lkTest">🧪 Тестовые лайки</button><button class="btn btn-ghost btn-sm" id="lkReset">↺ Сбросить топ</button></div>
+        </div>
+      </div>
+    </div>
     <div class="card" style="margin-top:18px"><h3>🎧 Свои звуки</h3><p class="hint">Хотите звук Яндекс Такси или любой мем? Загрузите mp3 в «Хранилище», и он появится в списке звуков у каждого события (раздел «Свои звуки»).</p><a class="btn btn-ghost" href="#files">📁 Открыть хранилище</a></div>
   </section>
 
@@ -743,5 +755,6 @@
 <script src="/js/dashboard.js"></script>
 <script src="/w/sfx.js"></script>
 <script src="/js/tiktok.js"></script>
+<script>document.querySelectorAll("[data-new-until]").forEach(b => { if (Date.now() > new Date(b.dataset.newUntil + "T23:59:59+05:00").getTime()) b.remove(); });</script>
 </body>
 </html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — топ лайкеров</title>
+<link rel="stylesheet" href="/w/w.css">
+<style>
+  .lk{width:340px;border-radius:18px;overflow:hidden;background:rgba(12,12,18,.9);border:1px solid rgba(255,255,255,.08);box-shadow:0 12px 34px rgba(0,0,0,.5);font-family:Manrope,sans-serif;color:#fff}
+  .hd{position:relative;display:flex;align-items:center;gap:10px;padding:13px 16px;background:linear-gradient(100deg,#fe2c55,#ff6a88 55%,#25f4ee 140%);font:800 16px Unbounded,Manrope,sans-serif;letter-spacing:.02em;overflow:hidden}
+  .hd::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.3) 45%,transparent 60%);transform:translateX(-120%);animation:sh 4s ease-in-out infinite}
+  @keyframes sh{40%,100%{transform:translateX(120%)}}
+  .hd i{font-style:normal;font-size:20px;animation:beat 1s ease-in-out infinite}
+  @keyframes beat{30%{transform:scale(1.3)}60%{transform:scale(.95)}}
+  #list{padding:8px;display:flex;flex-direction:column;gap:6px}
+  .r{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:12px;background:rgba(255,255,255,.04);animation:in .45s ease-out both}
+  .r.keep{animation:none}.r.mv{transition:translate .8s cubic-bezier(.22,1,.36,1)}
+  .r.up{animation:glow 1.3s ease-out;position:relative;z-index:2}
+  @keyframes in{from{opacity:0;transform:translateX(-12px)}}
+  @keyframes glow{0%{background:rgba(254,44,85,.45)}100%{background:rgba(255,255,255,.04)}}
+  .r .p{width:26px;text-align:center;font:800 15px Unbounded,Manrope;color:#9aa0b8;flex:none}
+  .r:nth-child(1) .p{color:#ffd23f}.r:nth-child(2) .p{color:#d6dbe6}.r:nth-child(3) .p{color:#e39b5b}
+  .r:nth-child(1){background:linear-gradient(90deg,rgba(254,44,85,.22),rgba(255,255,255,.04))}
+  .r:nth-child(1).keep:not(.up){background:linear-gradient(90deg,rgba(254,44,85,.22),rgba(255,255,255,.04))}
+  .r .a{width:34px;height:34px;border-radius:50%;background:#25f4ee center/cover;display:grid;place-items:center;font-size:16px;flex:none;box-shadow:0 0 0 2px #fe2c55}
+  .r b{flex:1;min-width:0;font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .r .n{font:800 15px Unbounded,Manrope;color:#ff6a88;white-space:nowrap}
+  .r .n.cnt{animation:bump .5s}@keyframes bump{50%{scale:1.2}}
+  .em{padding:16px;text-align:center;color:#a9adc2;font-size:13.5px;font-weight:700}
+</style></head><body>
+<div class="lk" data-fit><div class="hd"><i>❤️</i><span id="ttl">ТОП ЛАЙКЕРОВ</span></div><div id="list"><div class="em">Ставьте лайки — попадёте в топ!</div></div></div>
+<script src="/w/widget.js"></script>
+<script>
+(() => {
+  const { on, start, esc, token } = KZ, Q = new URLSearchParams(location.search);
+  let N = 5, shown = new Map();
+  const f = n => n >= 1e4 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace('.0', '') + 'K' : String(n);
+  function count(el, a, b) { const t0 = performance.now(); el.classList.remove('cnt'); void el.offsetWidth; el.classList.add('cnt'); const st = t => { const k = Math.min(1, (t - t0) / 1000); el.textContent = '❤ ' + f(Math.round(a + (b - a) * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(st); }; requestAnimationFrame(st); }
+  function draw(rows) {
+    rows = (rows || []).slice(0, N); const L = document.getElementById('list');
+    const old = new Map([...L.querySelectorAll('.r')].map(r => [r.dataset.k, r.offsetTop])), prev = shown; shown = new Map();
+    if (!rows.length) { L.innerHTML = '<div class="em">Ставьте лайки — попадёте в топ!</div>'; return; }
+    L.innerHTML = rows.map((r, i) => { const k = esc(r.name), p = prev.get(r.name), was = p && old.has(k);
+      return `<div class="r ${was ? 'keep' : ''} ${was && i < p.pos ? 'up' : ''}" data-k="${k}" style="animation-delay:${was ? 0 : i * .05}s"><span class="p">${i + 1}</span><span class="a" ${r.avatar ? `style="background-image:url('${esc(r.avatar)}')"` : ''}>${r.avatar ? '' : '👤'}</span><b>${esc(r.name)}</b><span class="n">❤ ${f(was ? p.n : r.n)}</span></div>`; }).join('');
+    rows.forEach((r, i) => shown.set(r.name, { pos: i, n: r.n }));
+    const mv = [];
+    L.querySelectorAll('.r').forEach(el => { const k = el.dataset.k, p = prev.get(el.querySelector('b').textContent), nw = shown.get(el.querySelector('b').textContent);
+      if (p && old.has(k)) { const dy = old.get(k) - el.offsetTop; if (dy) { el.style.translate = `0 ${dy}px`; mv.push(el); } if (p.n !== nw.n) count(el.querySelector('.n'), p.n, nw.n); } });
+    if (mv.length) { void L.offsetHeight; requestAnimationFrame(() => mv.forEach(el => { el.classList.add('mv'); el.style.translate = '0 0'; })); }
+  }
+  const cfg = c => { if (!c) return; N = Math.max(1, Math.min(10, +c.count || 5)); document.getElementById('ttl').textContent = c.title || 'ТОП ЛАЙКЕРОВ'; };
+  if (Q.has('demo')) {
+    const D = [{ name: 'aruzhan_kz', n: 1240 }, { name: 'Dias', n: 980 }, { name: 'Ерлан', n: 610 }, { name: 'Mira', n: 320 }, { name: 'Bek', n: 150 }];
+    draw(D); setInterval(() => { const i = Math.floor(Math.random() * D.length); D[i].n += 50 + Math.floor(Math.random() * 400); D.sort((a, b) => b.n - a.n); draw(D); }, 2500); return;
+  }
+  fetch('/api/w/' + token + '/tiktok').then(r => r.json()).then(j => { cfg(j.settings && j.settings.likes); draw(j.likes); }).catch(() => { });
+  on('tt_likes', draw); on('tt_likes_cfg', c => { cfg(c); draw([...shown.entries()].map(([name, v]) => ({ name, n: v.n }))); });
+  start();
+})();
+</script></body></html>

@@ -10,6 +10,7 @@ const DEF = {
   gift: { on: true, sound: 'coin', vol: 70, tts: false, text: '{user} отправил {gift}!' },
   share: { on: false, sound: 'boing', vol: 70, tts: false, text: '{user} поделился эфиром!' },
   popup: true,
+  likes: { count: 5, title: 'ТОП ЛАЙКЕРОВ' },
 };
 const clean = u => String(u || '').trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?tiktok\.com\/@?/i, '').split(/[/?#\s]/)[0].slice(0, 40);
 
@@ -17,7 +18,7 @@ module.exports = function setupTikTok(app, d) {
   const { auth, q, getSettings, saveSettings, userById, userByToken, emit, baseUrl } = d;
   const conns = new Map(); // user_id -> { c, state, retry, since, user, err }
 
-  const cfg = u => { const s = getSettings(u); const t = s.tiktok || {}; const o = { ...DEF, ...t }; for (const k of EV) o[k] = { ...DEF[k], ...(t[k] || {}) }; return o; };
+  const cfg = u => { const s = getSettings(u); const t = s.tiktok || {}; const o = { ...DEF, ...t }; for (const k of EV) o[k] = { ...DEF[k], ...(t[k] || {}) }; o.likes = { ...DEF.likes, ...(t.likes || {}) }; return o; };
   const status = uid => { const x = conns.get(uid); return x ? { state: x.state, user: x.user, err: x.err || '', since: x.since || 0 } : { state: 'off' }; };
   const setState = (uid, state, err) => { const x = conns.get(uid); if (!x) return; x.state = state; x.err = err || ''; if (state === 'live') x.since = Date.now(); emit(uid, 'tt_status', status(uid)); };
 
@@ -28,6 +29,16 @@ module.exports = function setupTikTok(app, d) {
     const x = conns.get(uid);
     if (type === 'follow' && x) { x.seen = x.seen || new Set(); if (x.seen.has(data.id)) return; x.seen.add(data.id); }
     emit(uid, 'tt', { type, user: data.name, id: data.id, avatar: data.avatar || '', gift: data.gift || '', count: data.count || 1, cfg: e, popup: c.popup });
+  }
+  // топ лайкеров текущего эфира (обнуляется, когда начинается новый эфир)
+  const likes = new Map(); // uid -> Map(id -> {name, avatar, n})
+  const likeTimers = new Map();
+  function likeTop(uid, n = 10) { const m = likes.get(uid); return m ? [...m.values()].sort((a, b) => b.n - a.n).slice(0, n) : []; }
+  function addLike(uid, w, cnt) {
+    if (!likes.has(uid)) likes.set(uid, new Map());
+    const m = likes.get(uid), k = w.id || w.name, o = m.get(k) || { name: w.name, avatar: w.avatar, n: 0 };
+    o.n += Math.max(1, cnt || 1); o.name = w.name; m.set(k, o);
+    if (!likeTimers.has(uid)) likeTimers.set(uid, setTimeout(() => { likeTimers.delete(uid); emit(uid, 'tt_likes', likeTop(uid)); }, 1500));
   }
   const who = m => { const us = m.user || {}; return { id: us.uniqueId || us.userId || '', name: us.nickname || us.uniqueId || 'Зритель', avatar: (us.profilePicture && us.profilePicture.url && us.profilePicture.url[0]) || '' }; };
 
@@ -44,6 +55,7 @@ module.exports = function setupTikTok(app, d) {
         c = new Lib.TikTokLiveConnection(user, { processInitialData: false, enableExtendedGiftInfo: false, fetchRoomInfoOnConnect: true });
         x.c = c;
         c.on(Lib.WebcastEvent.FOLLOW, m => fire(uid, 'follow', who(m)));
+        c.on(Lib.WebcastEvent.LIKE, m => addLike(uid, who(m), m.likeCount));
         c.on(Lib.WebcastEvent.SHARE, m => fire(uid, 'share', who(m)));
         c.on(Lib.WebcastEvent.GIFT, m => {
           // серийные подарки (розы и т.п.) — звук один раз, в конце серии
@@ -54,6 +66,8 @@ module.exports = function setupTikTok(app, d) {
         c.on(Lib.WebcastEvent.STREAM_END, () => { if (conns.get(uid) === x) { setState(uid, 'waiting', 'Эфир завершён — жду следующий'); later(60); } });
         await c.connect();
         if (conns.get(uid) !== x) { try { c.disconnect(); } catch { } return; }
+        const rid = c.roomId || (c.roomInfo && c.roomInfo.id) || '';
+        if (rid !== x.room) { likes.delete(uid); x.room = rid; emit(uid, 'tt_likes', []); }
         x.tries = 0; setState(uid, 'live');
       } catch (e) {
         try { c && c.disconnect(); } catch { }
@@ -75,12 +89,13 @@ module.exports = function setupTikTok(app, d) {
     conns.delete(uid); if (!quiet) emit(uid, 'tt_status', { state: 'off' });
   }
 
-  const pub = (u, req) => ({ settings: cfg(u), status: status(u.id), widget: `${baseUrl(req)}/w/tiktok.html?t=${u.token}` });
+  const pub = (u, req) => ({ settings: cfg(u), status: status(u.id), widget: `${baseUrl(req)}/w/tiktok.html?t=${u.token}`, likes_widget: `${baseUrl(req)}/w/likes.html?t=${u.token}` });
   app.get('/api/tiktok', auth, (req, res) => res.json(pub(req.user, req)));
   app.put('/api/tiktok', auth, (req, res) => {
     const u = req.user, s = getSettings(u), b = req.body || {}, c = cfg(u);
     if (b.user !== undefined) c.user = clean(b.user);
     if (b.popup !== undefined) c.popup = !!b.popup;
+    if (b.likes) { c.likes.count = Math.max(1, Math.min(10, +b.likes.count || 5)); if (typeof b.likes.title === 'string') c.likes.title = b.likes.title.slice(0, 40); emit(u.id, 'tt_likes_cfg', c.likes); }
     for (const k of EV) if (b[k]) {
       const e = b[k], o = c[k];
       if (e.on !== undefined) o.on = !!e.on;
@@ -105,6 +120,12 @@ module.exports = function setupTikTok(app, d) {
     c.enabled = false; s.tiktok = c; saveSettings(u, s); stop(u.id);
     res.json({ ok: true, ...pub(userById(u.id), req) });
   });
+  app.post('/api/tiktok/likes/test', auth, (req, res) => {
+    const N = ['aruzhan_kz', 'Dias', 'Ерлан', 'Mira', 'Нурсултан', 'Aigerim', 'Bek'];
+    for (let i = 0; i < 12; i++) { const k = N[Math.floor(Math.random() * N.length)]; addLike(req.user.id, { id: 'test_' + k, name: k }, 5 + Math.floor(Math.random() * 60)); }
+    res.json({ ok: true });
+  });
+  app.post('/api/tiktok/likes/reset', auth, (req, res) => { likes.delete(req.user.id); emit(req.user.id, 'tt_likes', []); res.json({ ok: true }); });
   // проверка звука без эфира
   app.post('/api/tiktok/test', auth, (req, res) => {
     const type = EV.includes(req.body && req.body.type) ? req.body.type : 'follow';
@@ -114,7 +135,7 @@ module.exports = function setupTikTok(app, d) {
   });
   app.get('/api/w/:token/tiktok', (req, res) => {
     const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'Неверный токен' });
-    res.json({ settings: cfg(u), status: status(u.id) });
+    res.json({ settings: cfg(u), status: status(u.id), likes: likeTop(u.id) });
   });
 
   // после перезапуска сервера — снова подключаем тех, у кого было включено

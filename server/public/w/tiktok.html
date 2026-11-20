@@ -47,9 +47,11 @@
   document.addEventListener('click', () => { document.getElementById('hint').style.display = 'none'; KZSfx.play('ding', 1); }, { once: true });
   if (demo) {
     const D = [{ type: 'follow', user: 'aruzhan_kz', gift: '', count: 1, cfg: { sound: '', vol: 0, text: '' } }, { type: 'gift', user: 'Dias', gift: 'Роза', count: 5, cfg: { sound: '', vol: 0 } }, { type: 'share', user: 'Ерлан', cfg: { sound: '', vol: 0 } }];
-    let i = 0; show(D[0]); setInterval(() => show(D[++i % 3]), 2600); return;
+    const O = (Q.get('ev') || '').split(',').filter(Boolean), DD = O.length ? D.filter(x => O.includes(x.type)) : D; let i = 0; show(DD[0]); setInterval(() => show(DD[++i % DD.length]), 2600); return;
+    show(D[0]); setInterval(() => show(D[++i % 3]), 2600); return;
   }
-  on('tt', show);
+  const ONLY = (Q.get('ev') || '').split(',').filter(Boolean);
+  on('tt', e => { if (!ONLY.length || ONLY.includes(e.type)) show(e); });
   start();
 })();
 </script></body></html>

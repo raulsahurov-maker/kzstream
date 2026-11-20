@@ -25,6 +25,7 @@
       <div class="field"><label>Громкость <b data-vl></b></label><input type="range" min="0" max="100" step="5" data-f="vol"></div>
       <label class="check"><input type="checkbox" data-f="tts"> 🗣 Озвучить текст (Lite/Pro)</label>
       <div class="field"><label>Текст</label><input data-f="text" maxlength="120"></div>
+      <div class="field"><label>Отдельная ссылка только для этого события</label><div class="copy-row"><input readonly id="tt_w_${k}" value="${D.widget}&ev=${k}"><button class="btn btn-ghost btn-sm" data-copy="tt_w_${k}">Копировать</button></div></div>
       <button class="btn btn-ghost btn-sm" data-test style="width:100%">🧪 Тест в эфире</button></div>`).join('');
     for (const [k] of EV) {
       const box = $(`[data-ev="${k}"]`), e = c[k];
@@ -32,10 +33,12 @@
       box.querySelector('[data-vl]').textContent = e.vol + '%'; box.querySelector('[data-f=tts]').checked = e.tts; box.querySelector('[data-f=text]').value = e.text;
       if (box.querySelector('[data-f=sound]').value !== e.sound && e.sound) box.querySelector('[data-f=sound]').insertAdjacentHTML('afterbegin', `<option value="${e.sound}">🎧 свой звук</option>`), box.querySelector('[data-f=sound]').value = e.sound;
     }
+    $('#lk_w').value = D.likes_widget; $('#lk_title').value = c.likes.title; $('#lk_count').value = String(c.likes.count);
+    if (!$('#lkPrev').src) $('#lkPrev').src = '/w/likes.html?demo&t=x';
     status(D.status);
   }
   function collect() {
-    const b = { popup: $('#tt_popup').checked };
+    const b = { popup: $('#tt_popup').checked, likes: { title: $('#lk_title').value, count: +$('#lk_count').value } };
     for (const [k] of EV) { const x = $(`[data-ev="${k}"]`); b[k] = { on: x.querySelector('[data-f=on]').checked, sound: x.querySelector('[data-f=sound]').value, vol: +x.querySelector('[data-f=vol]').value, tts: x.querySelector('[data-f=tts]').checked, text: x.querySelector('[data-f=text]').value }; }
     return b;
   }
@@ -46,12 +49,14 @@
   document.addEventListener('change', e => { if (e.target.closest('#p-tiktok') && e.target.id !== 'tt_user') saveSoon(); });
   document.addEventListener('input', e => {
     const r = e.target.closest('[data-ev] [data-f=vol]'); if (r) r.closest('[data-ev]').querySelector('[data-vl]').textContent = r.value + '%';
-    if (e.target.closest('[data-ev] [data-f=text]')) saveSoon();
+    if (e.target.closest('[data-ev] [data-f=text]') || e.target.id === 'lk_title') saveSoon();
   });
   document.addEventListener('click', async e => {
     const p = e.target.closest('[data-ev] [data-play]'); if (p) { const x = p.closest('[data-ev]'); KZSfx.play(x.querySelector('[data-f=sound]').value, x.querySelector('[data-f=vol]').value); return; }
     const t = e.target.closest('[data-ev] [data-test]'); if (t) { await req('/api/tiktok', 'PUT', collect()).catch(() => { }); await req('/api/tiktok/test', 'POST', { type: t.closest('[data-ev]').dataset.ev }); toast('Отправил тестовое событие в виджет — звук сыграет в TikTok Live Studio'); return; }
   });
+  $('#lkTest').onclick = () => req('/api/tiktok/likes/test', 'POST').then(() => toast('Отправил тестовые лайки в виджет'));
+  $('#lkReset').onclick = () => req('/api/tiktok/likes/reset', 'POST').then(() => toast('Топ лайкеров сброшен'));
   $('#ttGo').onclick = async () => { try { const r = await req('/api/tiktok/start', 'POST', { user: $('#tt_user').value }); D = r; render(); toast('Запущено — начните LIVE в TikTok, подключусь сам'); } catch (e) { toast(e.message, true); } };
   $('#ttStop').onclick = async () => { const r = await req('/api/tiktok/stop', 'POST'); D = r; render(); };
   // живой статус
