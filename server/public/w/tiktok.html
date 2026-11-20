@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — события TikTok</title>
+<link rel="stylesheet" href="/w/w.css">
+<style>
+  #stack{position:fixed;left:50%;top:14px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;width:max-content}
+  .tt{display:flex;align-items:center;gap:12px;padding:10px 20px 10px 10px;border-radius:999px;background:rgba(14,14,20,.88);border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 30px rgba(0,0,0,.45);color:#fff;font-family:Manrope,sans-serif;animation:tin .5s cubic-bezier(.2,1.4,.4,1) both}
+  .tt.out{animation:tout .45s ease-in both}
+  @keyframes tin{from{opacity:0;transform:translateY(-20px) scale(.85)}}
+  @keyframes tout{to{opacity:0;transform:translateY(-14px) scale(.9)}}
+  .tt .av{width:46px;height:46px;border-radius:50%;background:#25f4ee center/cover;display:grid;place-items:center;font-size:22px;flex:none;box-shadow:0 0 0 3px #fe2c55}
+  .tt b{font-size:18px;font-weight:800;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+  .tt span{font-size:14px;color:#bfc3d6;font-weight:700}
+  .tt i{font-style:normal;font-size:24px;margin-left:4px;animation:pop 1s ease-in-out infinite alternate}
+  @keyframes pop{to{transform:scale(1.25) rotate(8deg)}}
+  .tt.follow{box-shadow:0 10px 30px rgba(254,44,85,.35)}
+  .tt.gift{box-shadow:0 10px 30px rgba(255,197,49,.35)}
+  .tt.share{box-shadow:0 10px 30px rgba(37,244,238,.3)}
+  #hint{display:none;position:fixed;inset:auto 0 10px;text-align:center;color:#fff;font:700 13px Manrope;opacity:.75}
+</style></head><body>
+<div id="stack"></div>
+<div id="hint">Нажмите один раз, чтобы включить звук</div>
+<script src="/w/widget.js"></script>
+<script src="/w/sfx.js"></script>
+<script>
+(() => {
+  const { on, start, esc } = KZ, Q = new URLSearchParams(location.search);
+  const ICON = { follow: '❤️', gift: '🎁', share: '🔁' }, ACT = { follow: 'подписался!', gift: 'отправил подарок', share: 'поделился эфиром' };
+  const queue = []; let busy = false; const demo = Q.has('demo');
+  function txt(e) { return (e.cfg.text || '').replace('{user}', e.user).replace('{gift}', e.gift + (e.count > 1 ? ' ×' + e.count : '')); }
+  function show(e) {
+    queue.push(e); if (!busy) next();
+  }
+  function next() {
+    const e = queue.shift(); if (!e) { busy = false; return; } busy = true;
+    KZSfx.play(e.cfg.sound, e.cfg.vol);
+    if (e.cfg.tts && KZ.token) setTimeout(() => { try { const a = new Audio('/api/tts?t=' + encodeURIComponent(KZ.token) + '&text=' + encodeURIComponent(txt(e))); a.volume = Math.min(1, (e.cfg.vol || 80) / 100); a.play().catch(() => { }); } catch { } }, 900);
+    if (e.popup !== false) {
+      const el = document.createElement('div'); el.className = 'tt ' + e.type;
+      const sub = e.type === 'gift' ? 'отправил ' + esc(e.gift) + (e.count > 1 ? ' ×' + e.count : '') : ACT[e.type];
+      el.innerHTML = `<div class="av" ${e.avatar ? `style="background-image:url('${esc(e.avatar)}')"` : ''}>${e.avatar ? '' : '👤'}</div><div><b>${esc(e.user)}</b><span>${sub}</span></div><i>${ICON[e.type]}</i>`;
+      document.getElementById('stack').prepend(el);
+      setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 500); }, 4200);
+    }
+    setTimeout(next, queue.length > 5 ? 600 : 1600);
+  }
+  // браузерные источники в Live Studio обычно разрешают звук; в обычном браузере — нужен клик
+  document.addEventListener('click', () => { document.getElementById('hint').style.display = 'none'; KZSfx.play('ding', 1); }, { once: true });
+  if (demo) {
+    const D = [{ type: 'follow', user: 'aruzhan_kz', gift: '', count: 1, cfg: { sound: '', vol: 0, text: '' } }, { type: 'gift', user: 'Dias', gift: 'Роза', count: 5, cfg: { sound: '', vol: 0 } }, { type: 'share', user: 'Ерлан', cfg: { sound: '', vol: 0 } }];
+    let i = 0; show(D[0]); setInterval(() => show(D[++i % 3]), 2600); return;
+  }
+  on('tt', show);
+  start();
+})();
+</script></body></html>

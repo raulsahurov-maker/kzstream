@@ -201,6 +201,7 @@
     .g2,.g3,.g4,.plans,.row{grid-template-columns:1fr}
   }
 </style>
+<style>.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}</style>
 </head>
 <body>
 <div class="mob-top"><a class="logo" href="/"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>KZStream</a><button class="btn btn-ghost btn-sm" onclick="document.querySelector('aside').classList.toggle('open')">Меню</button></div>
@@ -214,6 +215,7 @@
     <a href="#widgets"><span>📊</span>Виджеты</a>
     <a href="#roulette"><span>🎰</span>Рулетка<i class="mb">Lite</i></a>
     <a href="#media"><span>🎵</span>Музыка и видео<i class="mb">Lite</i></a>
+    <a href="#tiktok"><span>📱</span>TikTok<i class="mb" style="background:#fe2c55;color:#fff">Новое</i></a>
     <a href="#faceit"><span>🎮</span>FACEIT<i class="mb" style="background:#ff5500;color:#fff">NEW</i></a>
     <a href="#page"><span>🌐</span>Страница доната</a>
     <a href="#donations"><span>💸</span>Донаты</a>
@@ -686,6 +688,26 @@
   </section>
 
   <!-- СОТРУДНИЧЕСТВО -->
+  <section class="page" id="p-tiktok">
+    <div class="top"><h1>TikTok LIVE</h1></div>
+    <div class="grid g2">
+      <div class="card"><h3>🔗 Подключение к эфиру</h3>
+        <p class="hint">Впишите свой юзернейм TikTok и нажмите «Запустить». Когда вы начнёте LIVE, KZStream сам подключится к эфиру: на каждую подписку, подарок или репост сыграет звук. Ничего устанавливать не нужно.</p>
+        <div class="field"><label>Юзернейм TikTok</label><div style="display:flex;gap:8px"><span style="display:grid;place-items:center;padding:0 12px;border-radius:12px;background:var(--card2,#1b1d2a);font-weight:800">@</span><input id="tt_user" placeholder="ваш_ник" style="flex:1" autocomplete="off"></div></div>
+        <div class="ttst" id="ttSt"><span class="dot" id="ttDot"></span><span id="ttTxt">Не запущено</span></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" id="ttGo">▶ Запустить</button><button class="btn btn-ghost" id="ttStop" style="display:none">■ Остановить</button></div>
+      </div>
+      <div class="card"><h3>📺 Виджет событий для TikTok Live Studio</h3>
+        <p class="hint">Добавьте ссылку в TikTok Live Studio («Добавить источник» → «Ссылка»). Через него играют звуки и всплывают «@ник подписался!». Без этого виджета звуков в эфире не будет.</p>
+        <iframe id="ttPrev" style="width:100%;height:150px;border:0;border-radius:12px;background:repeating-conic-gradient(#1a1c26 0 25%,#13151e 0 50%) 0 0/18px 18px;margin-bottom:12px"></iframe>
+        <div class="copy-row"><input readonly id="tt_w"><button class="btn btn-ghost btn-sm" data-copy="tt_w">Копировать</button></div>
+        <label class="check" style="margin-top:10px"><input type="checkbox" id="tt_popup"> Показывать плашку «@ник подписался!» на экране</label>
+      </div>
+    </div>
+    <div class="grid g3" id="ttEv" style="margin-top:18px"></div>
+    <div class="card" style="margin-top:18px"><h3>🎧 Свои звуки</h3><p class="hint">Хотите звук Яндекс Такси или любой мем? Загрузите mp3 в «Хранилище», и он появится в списке звуков у каждого события (раздел «Свои звуки»).</p><a class="btn btn-ghost" href="#files">📁 Открыть хранилище</a></div>
+  </section>
+
   <section class="page" id="p-partner">
     <div class="top"><h1>Сотрудничество</h1></div>
     <div class="grid g2">
@@ -719,5 +741,7 @@
 
 <script src="/js/qrcode.js"></script>
 <script src="/js/dashboard.js"></script>
+<script src="/w/sfx.js"></script>
+<script src="/js/tiktok.js"></script>
 </body>
 </html>
