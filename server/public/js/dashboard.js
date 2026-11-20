@@ -688,3 +688,5 @@ function mLaySet(base) {
   const pv = q('#mLayPrev'); pv.style.display = mLay ? '' : 'none'; const ps = '/w/media.html?demo&l=bar'; if (mLay && !pv.src.endsWith(ps)) pv.src = ps;
 }
 document.addEventListener('click', e => { const b = e.target.closest('#mLay [data-ml]'); if (!b) return; mLay = b.dataset.ml; try { localStorage.setItem('kz_mlay', mLay); } catch { } mLaySet(); });
+// превью плашки «Музыка — цена» меняется сразу, пока вводят сумму
+document.addEventListener('input', e => { if (e.target.id !== 'm_min') return; const v = Math.max(1, Math.round(+e.target.value || 0)); const f = document.getElementById('mpPrev'); clearTimeout(f._t); f._t = setTimeout(() => { f.src = '/w/mprice.html?demo&min=' + v; }, 300); });
