@@ -33,12 +33,19 @@
       box.querySelector('[data-vl]').textContent = e.vol + '%'; box.querySelector('[data-f=tts]').checked = e.tts; box.querySelector('[data-f=text]').value = e.text;
       if (box.querySelector('[data-f=sound]').value !== e.sound && e.sound) box.querySelector('[data-f=sound]').insertAdjacentHTML('afterbegin', `<option value="${e.sound}">🎧 свой звук</option>`), box.querySelector('[data-f=sound]').value = e.sound;
     }
+    const VL = typeof VOICE_LIST !== 'undefined' ? VOICE_LIST : [['dmitry', 'Дмитрий', '']];
+    if (!$('#tts_voice').options.length) $('#tts_voice').innerHTML = VL.map(([id, nm, ds]) => `<option value="${id}">${nm}${ds ? ' — ' + ds : ''}</option>`).join('');
+    $('#tts_on').checked = c.tts.on; $('#tts_voice').value = c.tts.voice; $('#tts_vol').value = c.tts.vol; $('#tts_vl').textContent = c.tts.vol + '%';
+    $('#chat_on').checked = c.chat.on; $('#chat_name').checked = c.chat.name; $('#chat_prefix').value = c.chat.prefix; $('#chat_max').value = c.chat.max; $('#tt_w_chat').value = D.widget + '&ev=chat';
+    $('#ttLock').style.display = D.tts_ok ? 'none' : 'block';
     $('#lk_w').value = D.likes_widget; $('#lk_title').value = c.likes.title; $('#lk_count').value = String(c.likes.count);
     if (!$('#lkPrev').src) $('#lkPrev').src = '/w/likes.html?demo&t=x';
     status(D.status);
   }
   function collect() {
-    const b = { popup: $('#tt_popup').checked, likes: { title: $('#lk_title').value, count: +$('#lk_count').value } };
+    const b = { popup: $('#tt_popup').checked, likes: { title: $('#lk_title').value, count: +$('#lk_count').value },
+      tts: { on: $('#tts_on').checked, voice: $('#tts_voice').value, vol: +$('#tts_vol').value },
+      chat: { on: $('#chat_on').checked, name: $('#chat_name').checked, prefix: $('#chat_prefix').value, max: +$('#chat_max').value || 150 } };
     for (const [k] of EV) { const x = $(`[data-ev="${k}"]`); b[k] = { on: x.querySelector('[data-f=on]').checked, sound: x.querySelector('[data-f=sound]').value, vol: +x.querySelector('[data-f=vol]').value, tts: x.querySelector('[data-f=tts]').checked, text: x.querySelector('[data-f=text]').value }; }
     return b;
   }
@@ -49,12 +56,15 @@
   document.addEventListener('change', e => { if (e.target.closest('#p-tiktok') && e.target.id !== 'tt_user') saveSoon(); });
   document.addEventListener('input', e => {
     const r = e.target.closest('[data-ev] [data-f=vol]'); if (r) r.closest('[data-ev]').querySelector('[data-vl]').textContent = r.value + '%';
-    if (e.target.closest('[data-ev] [data-f=text]') || e.target.id === 'lk_title') saveSoon();
+    if (e.target.closest('[data-ev] [data-f=text]') || ['lk_title', 'chat_prefix', 'chat_max'].includes(e.target.id)) saveSoon();
+    if (e.target.id === 'tts_vol') $('#tts_vl').textContent = e.target.value + '%';
   });
   document.addEventListener('click', async e => {
     const p = e.target.closest('[data-ev] [data-play]'); if (p) { const x = p.closest('[data-ev]'); KZSfx.play(x.querySelector('[data-f=sound]').value, x.querySelector('[data-f=vol]').value); return; }
     const t = e.target.closest('[data-ev] [data-test]'); if (t) { await req('/api/tiktok', 'PUT', collect()).catch(() => { }); await req('/api/tiktok/test', 'POST', { type: t.closest('[data-ev]').dataset.ev }); toast('Отправил тестовое событие в виджет — звук сыграет в TikTok Live Studio'); return; }
   });
+  let smp; $('#ttsPlay').onclick = () => { try { smp && smp.pause(); smp = new Audio('/api/tts/sample?voice=' + $('#tts_voice').value); smp.volume = +$('#tts_vol').value / 100; smp.play(); } catch { } };
+  $('#chatTest').onclick = async () => { try { await req('/api/tiktok', 'PUT', collect()); await req('/api/tiktok/chat/test', 'POST'); toast($('#tts_on').checked ? 'Отправил тестовое сообщение чата — голос прочитает его в виджете' : 'Озвучка выключена главным выключателем', !$('#tts_on').checked); } catch (e) { toast(e.message, true); } };
   $('#lkTest').onclick = () => req('/api/tiktok/likes/test', 'POST').then(() => toast('Отправил тестовые лайки в виджет'));
   $('#lkReset').onclick = () => req('/api/tiktok/likes/reset', 'POST').then(() => toast('Топ лайкеров сброшен'));
   $('#ttGo').onclick = async () => { try { const r = await req('/api/tiktok/start', 'POST', { user: $('#tt_user').value }); D = r; render(); toast('Запущено — начните LIVE в TikTok, подключусь сам'); } catch (e) { toast(e.message, true); } };

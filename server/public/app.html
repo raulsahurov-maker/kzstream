@@ -201,7 +201,7 @@
     .g2,.g3,.g4,.plans,.row{grid-template-columns:1fr}
   }
 </style>
-<style>.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}.ttev .copy-row{flex-wrap:wrap}.ttev .copy-row input{flex:1 1 100%}</style>
+<style>.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}.ttlock{display:none;padding:10px 12px;border-radius:12px;background:rgba(255,197,49,.08);border:1px solid rgba(255,197,49,.25);color:#ffc531;font-weight:700;font-size:13px;margin-bottom:10px}.ttlock a{color:#fff}.ttev .copy-row{flex-wrap:wrap}.ttev .copy-row input{flex:1 1 100%}</style>
 </head>
 <body>
 <div class="mob-top"><a class="logo" href="/"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>KZStream</a><button class="btn btn-ghost btn-sm" onclick="document.querySelector('aside').classList.toggle('open')">Меню</button></div>
@@ -702,6 +702,24 @@
         <iframe id="ttPrev" style="width:100%;height:150px;border:0;border-radius:12px;background:repeating-conic-gradient(#1a1c26 0 25%,#13151e 0 50%) 0 0/18px 18px;margin-bottom:12px"></iframe>
         <div class="copy-row"><input readonly id="tt_w"><button class="btn btn-ghost btn-sm" data-copy="tt_w">Копировать</button></div>
         <label class="check" style="margin-top:10px"><input type="checkbox" id="tt_popup"> Показывать плашку «@ник подписался!» на экране</label>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card"><h3>🗣 Озвучка</h3><p class="hint">Главный выключатель голоса для TikTok: выключите — не будет озвучки ни событий, ни чата (звуки останутся). Что именно озвучивать, выбирается галочками «Озвучить текст» у событий и в блоке чата.</p>
+        <div class="ttlock" id="ttLock">🔒 Озвучка доступна на тарифах Lite и Pro. <a href="#billing">Подключить</a></div>
+        <label class="check"><input type="checkbox" id="tts_on"> Озвучка включена</label>
+        <div class="field"><label>Голос</label><div style="display:flex;gap:8px"><select id="tts_voice" style="flex:1"></select><button class="btn btn-ghost btn-sm" id="ttsPlay">▶</button></div></div>
+        <div class="field"><label>Громкость голоса <b id="tts_vl"></b></label><input type="range" id="tts_vol" min="0" max="100" step="5"></div>
+      </div>
+      <div class="card"><h3>💬 Озвучка чата</h3><p class="hint">Голос читает сообщения из чата эфира по очереди. Ссылки и мат вырезаются (цензура из настроек алертов).</p>
+        <label class="check"><input type="checkbox" id="chat_on"> Озвучивать чат</label>
+        <label class="check"><input type="checkbox" id="chat_name"> Называть ник («aruzhan пишет: …»)</label>
+        <div class="grid g2" style="gap:10px">
+          <div class="field"><label>Только сообщения с символа</label><input id="chat_prefix" maxlength="5" placeholder="пусто — все сообщения"></div>
+          <div class="field"><label>Макс. длина (символов)</label><input type="number" id="chat_max" min="20" max="300"></div>
+        </div>
+        <div class="field"><label>Отдельная ссылка только для чата</label><div class="copy-row"><input readonly id="tt_w_chat"><button class="btn btn-ghost btn-sm" data-copy="tt_w_chat">Копировать</button></div></div>
+        <button class="btn btn-ghost btn-sm" id="chatTest" style="width:100%">🧪 Тест озвучки чата</button>
       </div>
     </div>
     <div class="grid g3" id="ttEv" style="margin-top:18px"></div>

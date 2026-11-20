@@ -1137,7 +1137,7 @@ for (const prefix of ['/update', '/downloads']) {
 }
 app.use(express.static(PUB, { extensions: ['html'] }));
 // TikTok LIVE: подписки, подарки, репосты → звуки (вкладка «TikTok» в кабинете)
-require('./tiktok')(app, { auth, q, getSettings, saveSettings, userById, userByToken, emit, baseUrl });
+require('./tiktok')(app, { auth, q, getSettings, saveSettings, userById, userByToken, emit, baseUrl, censor, canTts: u => !!effectivePlan(u).tts });
 app.use((req, res) => res.status(404).sendFile(path.join(PUB, '404.html')));
 
 const listen = () => app.listen(PORT, () => console.log(`KZStream запущен: http://localhost:${PORT}`));
