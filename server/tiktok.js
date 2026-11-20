@@ -74,7 +74,7 @@ module.exports = function setupTikTok(app, d) {
       ws.on('message', (buf, isBin) => {
         let j; try { j = JSON.parse(buf.toString()); } catch { return; }
         if (conns.get(uid) !== x) return;
-        if (x.state !== 'live') { x.tries = 0; setState(uid, 'live'); }
+        if (x.state !== 'live') { x.tries = 0; x.off = 0; setState(uid, 'live'); }
         for (const it of (j.messages || [j])) {
           const t = it.type || '', m = it.data || {};
           if (t === 'roomInfo' || t === 'RoomInfoEvent') { const rid = m.roomInfo?.id || m.id || ''; if (rid && rid !== x.room) { likes.delete(uid); x.room = rid; emit(uid, 'tt_likes', []); } }
@@ -95,7 +95,7 @@ module.exports = function setupTikTok(app, d) {
         if (conns.get(uid) !== x) return;
         const r = String(reason || '');
         console.error(`TikTok(cloud) @${user}: закрыто ${code} ${r.slice(0, 200)}`);
-        if (code === 4404) { setState(uid, 'waiting', 'Эфир не запущен — запустите LIVE, подключусь сам'); return later(45); }
+        if (code === 4404) { x.off = (x.off || 0) + 1; setState(uid, 'waiting', 'Эфир не запущен — запустите LIVE, подключусь сам'); return later(x.off <= 10 ? 60 : 180); }
         if (code === 4005) { setState(uid, 'waiting', 'Эфир завершён — жду следующий'); return later(60); }
         if (code === 4401 || code === 4403) { setState(uid, 'error', 'Ключ Euler Stream не подошёл или тариф не даёт подключение (' + code + ')'); return later(300); }
         if (code === 4429) { setState(uid, 'waiting', 'Лимит подключений Euler Stream — пробую позже'); return later(120); }
