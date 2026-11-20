@@ -95,7 +95,7 @@ module.exports = function setupTikTok(app, d) {
         if (conns.get(uid) !== x) return;
         const r = String(reason || '');
         console.error(`TikTok(cloud) @${user}: закрыто ${code} ${r.slice(0, 200)}`);
-        if (code === 4404) { x.off = (x.off || 0) + 1; setState(uid, 'waiting', 'Эфир не запущен — запустите LIVE, подключусь сам'); return later(x.off <= 10 ? 60 : 180); }
+        if (code === 4404) { x.off = (x.off || 0) + 1; setState(uid, 'waiting', 'TikTok не видит эфир @' + user + ' — запустите LIVE с этого аккаунта, подключусь сам'); return later(x.off <= 10 ? 60 : 180); }
         if (code === 4005) { setState(uid, 'waiting', 'Эфир завершён — жду следующий'); return later(60); }
         if (code === 4401 || code === 4403) { setState(uid, 'error', 'Ключ Euler Stream не подошёл или тариф не даёт подключение (' + code + ')'); return later(300); }
         if (code === 4429) { setState(uid, 'waiting', 'Лимит подключений Euler Stream — пробую позже'); return later(120); }

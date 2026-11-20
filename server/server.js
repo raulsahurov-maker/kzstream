@@ -67,6 +67,7 @@ const MIGRATIONS = [
   ['ALTER TABLE users ADD COLUMN promo_spent INTEGER DEFAULT 0', null],
   ['ALTER TABLE payments ADD COLUMN kind TEXT DEFAULT \'plan\'', null],
   ['ALTER TABLE payments ADD COLUMN promo TEXT DEFAULT \'\'', null],
+  ['ALTER TABLE users ADD COLUMN badges TEXT DEFAULT \'\'', null],
 ];
 for (const [alter, after] of MIGRATIONS) { try { db.exec(alter); if (after) db.exec(after); } catch { /* поле уже есть */ } }
 // обёртка: убираем служебное поле _metadata, которое добавляет libsql
@@ -813,7 +814,7 @@ app.post('/api/freeze', auth, (req, res) => {
 // --- админка ---
 app.get('/api/admin/overview', admin, (req, res) => {
   res.json({
-    users: q(`SELECT u.id,u.nick,u.email,u.plan,u.plan_until,u.paid_months,u.created_at,u.is_admin,u.balance,u.promo_used,
+    users: q(`SELECT u.id,u.nick,u.email,u.plan,u.plan_until,u.paid_months,u.created_at,u.is_admin,u.balance,u.promo_used,u.badges,
       (SELECT COUNT(*) FROM donations d WHERE d.user_id=u.id AND d.status='done') dons,
       (SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.user_id=u.id AND d.status='done') total FROM users u ORDER BY u.id DESC LIMIT 500`).all(),
     payments: q(`SELECT p.*, u.nick, u.email FROM payments p JOIN users u ON u.id=p.user_id ORDER BY (p.status='pending') DESC, p.id DESC LIMIT 200`).all(),
@@ -857,15 +858,20 @@ app.post('/api/admin/users/:id', admin, (req, res) => {
   if (req.body.plan === 'free') q(`UPDATE users SET plan='free', plan_until=0 WHERE id=?`).run(u.id);
   else if (PLANS[req.body.plan]) grantPlan(u.id, req.body.plan, int(req.body.days, 1, 3650, 30));
   if (req.body.balance_add) q('UPDATE users SET balance=MAX(0, balance+?) WHERE id=?').run(int(req.body.balance_add, -1e7, 1e7, 0), u.id);
+  if (Array.isArray(req.body.badges)) q('UPDATE users SET badges=? WHERE id=?').run(req.body.badges.filter(b => BADGES[b]).join(','), u.id);
   if (req.body.is_admin !== undefined) q('UPDATE users SET is_admin=? WHERE id=?').run(req.body.is_admin ? 1 : 0, u.id);
   res.json({ ok: true });
 });
 
 // --- публичная страница доната ---
+// галочки, которые выдаёт администратор (видны всем на странице стримера)
+const BADGES = { partner: ['🤝', 'Партнёр KZStream', '#2f8cff'], verified: ['✔', 'Проверенный стример', '#2bd67b'], team: ['⭐', 'Команда KZStream', '#ff3b5c'], top: ['👑', 'Топ-стример', '#ffc531'] };
+const userBadges = u => String(u.badges || '').split(',').filter(b => BADGES[b]).map(b => ({ id: b, icon: BADGES[b][0], name: BADGES[b][1], color: BADGES[b][2] }));
+app.get('/api/badges', (req, res) => res.json(Object.entries(BADGES).map(([id, [icon, name, color]]) => ({ id, icon, name, color }))));
 app.get('/api/page/:nick', (req, res) => {
   const u = userByNick(req.params.nick); if (!u) return res.status(404).json({ error: 'Стример не найден' });
   const s = getSettings(u), p = effectivePlan(u);
-  res.json({ nick: u.nick, page: s.page, ads: p.ads,
+  res.json({ nick: u.nick, page: s.page, ads: p.ads, badges: userBadges(u),
     goal: { title: s.goal.title, sum: goalSum(u, s), target: s.goal.target },
     top: topList(u, { ...s, top: { period: 'month', count: 5 } }),
     media: s.media.enabled ? { min: s.media.min } : null, roulette: s.roulette.enabled ? { min: s.roulette.min } : null,
