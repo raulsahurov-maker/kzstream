@@ -16,12 +16,35 @@
   .cap .t1{font-size:15px;font-weight:700;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
   .cap b{font-family:Unbounded,sans-serif;font-weight:800;font-size:26px;white-space:nowrap;color:#ffd23f;text-shadow:0 0 8px #ff9a3c,0 0 20px rgba(255,180,60,.8)}
   .bar{position:absolute;left:0;bottom:0;height:3px;background:#fff;opacity:.8;width:0}
+  /* ---- вид «Плашка» (как плеер музыки): &l=bar ---- */
+  body.bar #wrap{inset:auto 10px auto 10px;top:10px;display:block}
+  body.bar .cap,body.bar #pbox{display:none}
+  .mb{display:none}
+  body.bar .mb{display:block;font-family:Manrope,sans-serif;color:#fff}
+  .mb .row1{display:flex;gap:12px;align-items:stretch}
+  .mb .th{position:relative;width:118px;height:118px;flex:none;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 8px 26px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.08)}
+  body.bar #pbox{display:block;position:absolute;inset:0;border-radius:0;background:#000}
+  body.bar #player{left:50%;width:210px;height:118px;transform:translateX(-50%)}
+  .mb .rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+  .mb .panel{background:rgba(10,10,14,.88);border:1px solid rgba(255,255,255,.07);border-radius:14px;box-shadow:0 8px 26px rgba(0,0,0,.45)}
+  .mb .ttl{display:flex;align-items:center;height:54px;overflow:hidden}
+  .mb .mq{flex:1;min-width:0;overflow:hidden;white-space:nowrap;padding:0 16px;-webkit-mask:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent)}
+  .mb .mq span{display:inline-block;font:800 21px Oswald,Manrope,sans-serif;letter-spacing:.02em;text-transform:uppercase;padding-right:60px}
+  .mb .mq.run span{animation:mq var(--mqd,12s) linear infinite}
+  @keyframes mq{to{transform:translateX(-50%)}}
+  .mb .dn{flex:none;max-width:42%;padding:0 18px;border-left:2px solid #ffc531;height:60%;display:flex;align-items:center;font:800 19px Oswald,Manrope,sans-serif;text-transform:uppercase;color:#ffc531;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mb .wv{display:flex;align-items:center;gap:14px;height:54px;padding:0 16px;font:800 15px Oswald,Manrope,sans-serif;color:#e8e8e8}
+  .mb .bars{flex:1;height:28px;display:flex;align-items:center;justify-content:space-between;gap:2px;overflow:hidden}
+  .mb .bars i{flex:1;min-width:2px;max-width:6px;border-radius:2px;background:rgba(255,197,49,.35);height:30%;transition:height .25s}
+  .mb .bars i.p{background:#ffc531;box-shadow:0 0 6px rgba(255,197,49,.6)}
+  .mb .pg{margin-top:10px;height:9px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden}
+  .mb .pg b{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb100,#ffd25a);border-radius:9px;box-shadow:0 0 10px rgba(255,197,49,.7);transition:width .5s linear}
   #tap{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.65);color:#fff;font:800 20px Manrope;display:none;place-items:center;cursor:pointer;text-align:center}
   #msg{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:var(--w-bg);padding:8px 14px;border-radius:10px;font-weight:800;font-size:14px;display:none;z-index:8}
 </style></head><body>
 <div id="tap">🔊 Нажмите один раз, чтобы видео включались со звуком<br><span style="font-size:14px;opacity:.75">В TikTok Live Studio и OBS это обычно не нужно</span></div>
 <div id="msg"></div>
-<div id="wrap"><div id="pbox"><div id="player"></div></div><div class="cap"><span class="ic">🎵</span><div class="tx"><div class="who" id="who"></div><div class="t1" id="title">Загрузка…</div></div><b id="amt"></b><span class="bar" id="bar"></span></div></div>
+<div id="wrap"><div class="mb"><div class="row1"><div class="th" id="th"></div><div class="rt"><div class="panel ttl"><div class="mq" id="mq"><span id="mqT">Загрузка…</span></div><div class="dn" id="dn"></div></div><div class="panel wv"><span id="tc">0:00</span><div class="bars" id="bars"></div><span id="td">0:00</span></div></div></div><div class="pg"><b id="pg"></b></div></div><div id="pbox"><div id="player"></div></div><div class="cap"><span class="ic">🎵</span><div class="tx"><div class="who" id="who"></div><div class="t1" id="title">Загрузка…</div></div><b id="amt"></b><span class="bar" id="bar"></span></div></div>
 <script src="/w/widget.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
@@ -29,6 +52,20 @@
   const { on, start, fmt, token } = KZ;
   const $ = s => document.getElementById(s);
   let S = null, queue = [], cur = null, player = null, ready = false, limitT = null, startedAt = 0, gone = new Set(), unlocked = false, tick = null, watchT = null;
+  const BAR = new URLSearchParams(location.search).get('l') === 'bar';
+  if (BAR) { document.body.classList.add('bar'); $('th').appendChild($('pbox')); $('bars').innerHTML = '<i></i>'.repeat(70); }
+  const mmss = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+  function setTitle(t) {
+    $('title').textContent = t; if (!BAR) return;
+    const mq = $('mq'); $('mqT').textContent = t; mq.classList.remove('run');
+    requestAnimationFrame(() => { const sp = $('mqT'); if (sp.offsetWidth > mq.clientWidth) { sp.textContent = t + '\u2003\u2003\u2003' + t; mq.style.setProperty('--mqd', Math.max(8, t.length * .35) + 's'); mq.classList.add('run'); } });
+  }
+  function barTick(cur, dur) {
+    if (!BAR) return; const k = dur ? Math.min(1, cur / dur) : 0;
+    $('tc').textContent = mmss(cur); $('td').textContent = mmss(dur); $('pg').style.width = k * 100 + '%';
+    const L = $('bars').children, n = L.length, playing = (() => { try { return player.getPlayerState() === YT.PlayerState.PLAYING; } catch { return false; } })();
+    for (let i = 0; i < n; i++) { const h = playing ? 18 + Math.abs(Math.sin(i * 1.7 + cur * 3.1)) * 62 + Math.random() * 20 : 18; L[i].style.height = Math.min(100, h) + '%'; L[i].classList.toggle('p', i / n <= k); }
+  }
   const ytId = u => (String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/) || [])[1];
   const post = (path, body) => fetch('/api/w/' + token + '/media/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
   function note(t) { const m = $('msg'); m.textContent = t; m.style.display = 'block'; clearTimeout(note.t); note.t = setTimeout(() => m.style.display = 'none', 3500); }
@@ -41,7 +78,7 @@
         onStateChange: e => {
           if (e.data === YT.PlayerState.PLAYING && cur) {
             clearTimeout(watchT);
-            if (!startedAt) { startedAt = Date.now(); const t = (player.getVideoData() || {}).title || ''; $('title').textContent = t || 'Видео по донату'; post('playing', { id: cur.id, title: t }); }
+            if (!startedAt) { startedAt = Date.now(); const t = (player.getVideoData() || {}).title || ''; setTitle(t || 'Видео по донату'); post('playing', { id: cur.id, title: t }); }
             if (!unlocked) { try { player.unMute(); player.setVolume(vol()); } catch { } setTimeout(() => { try { if (player.isMuted()) showTap(); else unlocked = true; } catch { } }, 600); }
           }
           if (e.data === YT.PlayerState.ENDED) finish('played');
@@ -57,14 +94,14 @@
     const item = queue.find(q => !gone.has(q.id)); if (!item) return;
     const id = ytId(item.media_url); if (!id) { cur = item; return finish('played'); }
     cur = item; startedAt = 0;
-    $('title').textContent = 'Загрузка…'; $('who').innerHTML = `ЗАКАЗАЛ: <span>${KZ.esc(item.name || 'Аноним')}</span>`; $('amt').textContent = item.amount ? fmt(item.amount) : '';
+    setTitle('Загрузка…'); if (BAR) { $('dn').textContent = item.name || 'Аноним'; barTick(0, 0); } $('who').innerHTML = `ЗАКАЗАЛ: <span>${KZ.esc(item.name || 'Аноним')}</span>`; $('amt').textContent = item.amount ? fmt(item.amount) : '';
     $('wrap').classList.add('on');
     try { player.setVolume(vol()); player.loadVideoById({ videoId: id, startSeconds: 0 }); player.playVideo(); } catch { }
     // если браузер не дал включить со звуком — включаем без звука и просим один клик
     clearTimeout(watchT);
     watchT = setTimeout(() => { try { if (cur && player.getPlayerState() !== YT.PlayerState.PLAYING) { player.mute(); player.playVideo(); setTimeout(() => { if (cur && player.getPlayerState() === YT.PlayerState.PLAYING) showTap(); }, 1200); } } catch { } }, 2500);
     clearTimeout(limitT); limitT = setTimeout(() => finish('played'), (S.max_sec || 180) * 1000 + 4000);
-    clearInterval(tick); tick = setInterval(() => { try { const d = Math.min(player.getDuration() || 0, S.max_sec || 180); if (d) $('bar').style.width = Math.min(100, player.getCurrentTime() / d * 100) + '%'; } catch { } }, 500);
+    clearInterval(tick); tick = setInterval(() => { try { const d = Math.min(player.getDuration() || 0, S.max_sec || 180); if (d) $('bar').style.width = Math.min(100, player.getCurrentTime() / d * 100) + '%'; barTick(player.getCurrentTime(), d); } catch { } }, 300);
   }
   function finish(how) {
     clearTimeout(limitT); clearTimeout(watchT); clearInterval(tick); $('bar').style.width = 0;
@@ -79,6 +116,11 @@
     queue = (list || []).filter(q => !gone.has(q.id));
     if (cur && !queue.some(q => q.id === cur.id)) finish('removed'); // убрали из кабинета
     else next();
+  }
+  if (new URLSearchParams(location.search).has('demo')) { // превью в кабинете: без видео
+    document.documentElement.style.background = document.body.style.background = '#0b0c12'; $('wrap').classList.add('on'); setTitle('Ирина Кайратовна — Bol Menimen'); $('dn').textContent = 'Нұрбахыт Б.'; $('who').innerHTML = 'ЗАКАЗАЛ: <span>Нұрбахыт Б.</span>'; $('amt').textContent = fmt(1000); $('title').textContent = 'Ирина Кайратовна — Bol Menimen';
+    if (BAR) { $('th').innerHTML = '<div style="position:absolute;inset:0;display:grid;place-items:center;font-size:44px;background:linear-gradient(135deg,#2b2140,#0d0b14)">🎵</div>'; let t = 105; player = { getPlayerState: () => 1 }; window.YT = window.YT || { PlayerState: { PLAYING: 1 } }; setInterval(() => { t = t >= 230 ? 0 : t + .3; barTick(t, 230); }, 300); }
+    return;
   }
   on('state', st => { S = st.settings.media; setQueue(st.media); });
   on('settings', s => { S = s.media; try { if (ready) player.setVolume(vol()); } catch { } if (!S.enabled && cur) finish('removed'); else next(); });

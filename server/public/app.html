@@ -546,7 +546,7 @@
     <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Музыка и видео</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин</div></div></div><video controls preload="none" playsinline poster="/video/w_media.jpg" src="/video/w_media.mp4"></video></div>
     <div class="grid g2">
       <div class="card">
-        <p class="hint">Зрители прикладывают ссылку YouTube к донату. Lite — 50 заказов в месяц, Pro — без ограничений.</p>
+        <p class="hint">Зрители прикладывают ссылку YouTube к донату. Lite — 500 заказов в месяц, Pro — без ограничений.</p>
         <label class="check"><input type="checkbox" id="m_enabled"> Принимать заказы</label>
         <div class="row"><div class="field"><label>Мин. сумма, ₸</label><input type="number" id="m_min"></div><div class="field"><label>Макс. длительность, сек</label><input type="number" id="m_max"></div></div>
         <div class="field"><label>Громкость</label><input type="range" id="m_volume" min="0" max="1" step="0.05"></div>
@@ -560,8 +560,14 @@
         <div class="feed" id="mediaQueue"></div>
         <button class="btn btn-danger" id="mediaSkip" style="margin-top:12px">⏭ Пропустить текущее</button></div>
       <div class="card" style="grid-column:1/-1"><h3>Плеер</h3><p class="hint">Добавьте ссылку плеера в TikTok Live Studio («Добавить источник» → «Ссылка») — видео будут включаться сами по очереди. Здесь можно включить тот же плеер для проверки (в эфире он не нужен дважды).</p>
+        <div class="field" style="margin-bottom:10px"><label>Вид плеера</label><div class="shape2" id="mLay"><button type="button" data-ml="" class="on">🎬 Видео</button><button type="button" data-ml="bar">🎵 Плашка музыки</button></div></div>
+        <iframe id="mLayPrev" style="width:100%;height:150px;border:0;border-radius:14px;background:#0b0c12;display:none;margin-bottom:10px"></iframe>
         <div class="copy-row" style="margin-bottom:10px"><input readonly id="mPlayerUrl"><button class="btn btn-ghost" data-copy="mPlayerUrl">Копировать</button><button class="btn btn-ghost" id="mHere">▶ Включить плеер здесь</button></div>
         <div id="mHereBox" style="display:none;position:relative;aspect-ratio:16/9;max-height:460px;border-radius:16px;overflow:hidden;background:#000"><iframe id="mHereFrame" allow="autoplay; encrypted-media" style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>
+      </div>
+      <div class="card" style="grid-column:1/-1"><h3>🎶 Плашка «Музыка — цена»</h3><p class="hint">Показывает зрителям, сколько стоит заказать музыку: крутящаяся пластинка и минимальная сумма из настроек выше. Добавьте её в TikTok Live Studio как отдельный источник «Ссылка».</p>
+        <iframe id="mpPrev" style="width:100%;max-width:440px;height:130px;border:0;border-radius:14px;background:#0b0c12;margin-bottom:10px;display:block"></iframe>
+        <div class="copy-row"><input readonly id="mPriceUrl"><button class="btn btn-ghost" data-copy="mPriceUrl">Копировать</button></div>
       </div>
     </div>
   </section>

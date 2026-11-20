@@ -22,6 +22,16 @@
   .sm{white-space:nowrap;font-weight:900;font-variant-numeric:tabular-nums}
   .row.first{font-weight:900;transform:scale(1.02);margin:2px 0;animation:in .5s both,glow 2.8s infinite ease-in-out}
   @keyframes in{from{opacity:0;transform:translateX(-14px)}}
+  /* плавная перестановка: строки, которые уже были, не «въезжают» заново */
+  .row.keep{animation:none}
+  .row.first.keep{animation:glow 2.8s infinite ease-in-out}
+  .st-classic .row.first.keep{animation:none}
+  .row.mv{transition:translate .9s cubic-bezier(.22,1,.36,1)}
+  .row.up{animation:rise 1.4s ease-out;position:relative;z-index:3}
+  .row.first.up{animation:rise 1.4s ease-out,glow 2.8s 1.4s infinite ease-in-out}
+  @keyframes rise{0%{filter:brightness(1.7) drop-shadow(0 0 14px rgba(255,210,63,.9))}100%{filter:none}}
+  .sm.cnt{animation:bump .5s ease-out}
+  @keyframes bump{50%{scale:1.18}}
   @keyframes glow{0%,100%{box-shadow:0 0 18px var(--glow)}50%{box-shadow:0 0 32px var(--glow)}}
   .empty{font-size:calc(var(--fs)*.9);padding:.5em 0;text-align:center;min-height:3.6em;display:flex;align-items:center;justify-content:center}
   .empty .e1{opacity:.75;animation:fadeIn .6s both}
@@ -154,8 +164,9 @@
   .st-cs2{--glow:rgba(255,140,0,.5)}
   .st-cs2 .box{position:relative;overflow:hidden;border-radius:calc(var(--r) * .4);padding:0 0 14px;border:2px solid #ff8a00;
     background:
-      repeating-linear-gradient(-60deg,transparent 0 40px,rgba(255,138,0,.07) 40px 44px),
-      linear-gradient(115deg,#1b1d22 0 55%,#2a1c0c 55% 100%);
+      linear-gradient(180deg,rgba(14,15,19,.25),rgba(14,15,19,.55) 50%,rgba(14,15,19,.7)),
+      url(/img/top/cs2bg.jpg) 30% center/cover no-repeat,
+      #1b1d22;
     box-shadow:0 0 24px rgba(255,138,0,.35),0 16px 40px rgba(0,0,0,.6)}
   .st-cs2 .box::before{content:"";position:absolute;right:-40px;top:0;bottom:0;width:120px;background:linear-gradient(115deg,transparent 0 30%,#ff8a00 30% 42%,transparent 42% 55%,rgba(255,138,0,.5) 55% 60%,transparent 60%);opacity:.55;pointer-events:none}
   .st-cs2 .hd{position:relative;margin:0 0 12px;padding:14px 20px;color:#14100a;
@@ -168,7 +179,7 @@
     font-family:Oswald,Unbounded,sans-serif;font-weight:700;font-style:italic;text-transform:uppercase;letter-spacing:.08em;font-size:calc(var(--fs)*1.55);
     clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%);text-align:left}
   .st-cs2 .list{padding:0 12px;gap:7px}
-  .st-cs2 .row{position:relative;border-radius:calc(var(--ri) * .3);background:linear-gradient(90deg,rgba(40,42,48,.95),rgba(26,27,31,.92));border:1px solid rgba(255,255,255,.08);border-left:4px solid #ff8a00;color:#f2f2f2;
+  .st-cs2 .row{position:relative;border-radius:calc(var(--ri) * .3);background:linear-gradient(90deg,rgba(30,32,38,.82),rgba(20,21,25,.7));border:1px solid rgba(255,255,255,.08);border-left:4px solid #ff8a00;color:#f2f2f2;
     font-family:Oswald,Manrope,sans-serif;text-transform:uppercase;letter-spacing:.03em;clip-path:polygon(0 0,100% 0,calc(100% - 10px) 100%,0 100%)}
   .st-cs2 .row .pos{display:none}
   .st-cs2 .row .lv{display:inline-block;flex:none;width:calc(var(--fs)*2.6);height:calc(var(--fs)*2.6);margin-right:10px}
@@ -206,11 +217,35 @@
   const LVC = l => l >= 10 ? '#fe1f00' : l >= 8 ? '#ff6309' : l >= 4 ? '#ffc800' : l >= 2 ? '#1ce400' : '#eeeeee';
   function lvSvg(l) { const L = 2 * Math.PI * 15 * .75, c = LVC(l);
     return `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#1a1a1a"/><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4" stroke-dasharray="${L} 999" transform="rotate(135 20 20)"/><circle cx="20" cy="20" r="15" fill="none" stroke="${c}" stroke-width="4" stroke-dasharray="${L * l / 10} 999" transform="rotate(135 20 20)"/><text x="20" y="25.5" text-anchor="middle" font-family="Oswald,Arial" font-weight="700" font-size="${l >= 10 ? 14 : 16}" fill="${c}">${l}</text></svg>`; }
+  // плавно: кто обогнал — едет вверх, остальные съезжают, сумма «досчитывается»
+  const key = n => String(n || '').trim().toLowerCase();
+  let shown = new Map(); // key -> {pos, total}
+  function countUp(el, from, to) {
+    if (from === to) { el.textContent = fmt(to); return; }
+    const t0 = performance.now(), dur = 1300; el.classList.remove('cnt'); void el.offsetWidth; el.classList.add('cnt');
+    const step = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(from + (to - from) * e)); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
   function draw() {
     const rows = demo ? DEMO.slice(0, Math.min(10, Math.max(1, +set.count || 5))) : top;
-    document.getElementById('list').innerHTML = rows.length
-      ? rows.map((t, i) => `<div class="row ${i === 0 ? 'first' : ''}" style="animation-delay:${i * .06}s"><div class="l"><span class="pos">${i + 1}</span><span class="lv">${lvSvg(Math.max(1, 10 - i))}</span><span class="nm">${esc(t.name)}</span></div><span class="sm">${fmt(t.total)}</span></div>`).join('')
+    const list = document.getElementById('list');
+    const old = new Map([...list.querySelectorAll('.row[data-k]')].map(r => [r.dataset.k, r.offsetTop]));
+    const prev = shown; shown = new Map();
+    list.innerHTML = rows.length
+      ? rows.map((t, i) => { const k = key(t.name), p = prev.get(k), was = old.has(k) && p;
+          return `<div class="row ${i === 0 ? 'first' : ''} ${was ? 'keep' : ''} ${was && i < p.pos ? 'up' : ''}" data-k="${esc(k)}" style="animation-delay:${was ? 0 : i * .06}s"><div class="l"><span class="pos">${i + 1}</span><span class="lv">${lvSvg(Math.max(1, 10 - i))}</span><span class="nm">${esc(t.name)}</span></div><span class="sm">${fmt(was ? p.total : t.total)}</span></div>`; }).join('')
       : `<div class="empty">${promo ? PROMO : '<span class="e1">Пока донатов нет — станьте первым!</span>'}</div>`;
+    rows.forEach((t, i) => shown.set(key(t.name), { pos: i, total: +t.total || 0 }));
+    const moved = [];
+    list.querySelectorAll('.row[data-k]').forEach(r => {
+      const k = r.dataset.k, p = prev.get(k), now = shown.get(k);
+      if (p && old.has(k)) {
+        const dy = old.get(k) - r.offsetTop;
+        if (dy) { r.style.translate = `0 ${dy}px`; moved.push(r); }
+        if (p.total !== now.total) countUp(r.querySelector('.sm'), p.total, now.total);
+      }
+    });
+    if (moved.length) { void list.offsetHeight; requestAnimationFrame(() => moved.forEach(r => { r.classList.add('mv'); r.style.translate = '0 0'; })); }
   }
   // пока донатов нет: каждые 30 сек на 7 сек показываем рекламу KZStream
   const PROMO = `<div class="promo"><div class="pl"><span class="pm"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span><span class="pt">KZStream</span></div><div class="ps">Лучший донат-сервис для TikTok Live</div></div>`;

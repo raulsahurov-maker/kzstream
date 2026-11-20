@@ -514,7 +514,7 @@ app.get('/api/me', auth, (req, res) => {
     stats: { ...stats, today, month, year, tests: tests.c, tests_sum: tests.s },
     urls: {
       page: `${b}/d/${u.nick}`, ingest: `${b}/api/ingest/${u.token}`,
-      widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit', 'card', 'promo'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
+      widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit', 'card', 'promo', 'mprice'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
     },
     pay: { kaspi: PAY_KASPI, name: PAY_NAME, telegram: PAY_TELEGRAM },
     balance: u.balance || 0, promo: { mine: u.nick.toUpperCase(), used: u.promo_used || '', active: !!u.promo_used && !u.promo_spent, discount: PROMO_OFF,

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — цена музыки</title>
+<link rel="stylesheet" href="/w/w.css">
+<style>
+  .mp{display:flex;align-items:center;gap:16px;width:max-content;padding:12px 26px 12px 14px;border-radius:14px;background:linear-gradient(100deg,#ff2d8a 0%,#c21cff 55%,#7b2cff 100%);box-shadow:0 10px 30px rgba(194,28,255,.45),inset 0 1px 0 rgba(255,255,255,.35);position:relative;overflow:hidden;color:#fff;font-family:Oswald,Unbounded,sans-serif;opacity:0;transform:translateY(8px);transition:.4s}
+  .mp.on{opacity:1;transform:none}
+  .mp::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.28) 45%,transparent 60%);transform:translateX(-120%);animation:sh 4.5s ease-in-out infinite}
+  @keyframes sh{40%,100%{transform:translateX(120%)}}
+  .vn{position:relative;width:76px;height:76px;flex:none}
+  .vn .d{position:absolute;inset:0;border-radius:50%;background:repeating-radial-gradient(circle,#111 0 2px,#1d1d1d 2px 4px);box-shadow:0 4px 14px rgba(0,0,0,.5);animation:spin 3s linear infinite}
+  .vn .d::after{content:"";position:absolute;inset:30%;border-radius:50%;background:radial-gradient(circle,#111 0 9%,#ffc531 10% 100%)}
+  .vn .d::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 20deg,transparent 0 15%,rgba(255,255,255,.18) 18%,transparent 22% 65%,rgba(255,255,255,.12) 68%,transparent 72%)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .vn .nt{position:absolute;right:-8px;top:-6px;font-size:20px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));animation:nt 2s ease-in-out infinite}
+  @keyframes nt{50%{transform:translateY(-6px) rotate(10deg)}}
+  .tx b{display:block;font-weight:700;font-size:30px;letter-spacing:.06em;line-height:1;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+  .tx span{display:block;font-weight:700;font-size:40px;line-height:1.1;color:#ffd84a;text-shadow:0 2px 0 rgba(120,0,60,.5),0 0 18px rgba(255,216,74,.45)}
+  .eq{display:flex;align-items:flex-end;gap:4px;height:40px;margin-left:18px;align-self:flex-end}
+  .eq i{width:6px;border-radius:3px 3px 0 0;background:linear-gradient(#fff2b0,#ffb36b);animation:eq 1s ease-in-out infinite alternate}
+  .eq i:nth-child(1){animation-duration:.7s}.eq i:nth-child(2){animation-duration:1.1s}.eq i:nth-child(3){animation-duration:.8s}.eq i:nth-child(4){animation-duration:1.3s}.eq i:nth-child(5){animation-duration:.9s}
+  @keyframes eq{from{height:20%}to{height:100%}}
+</style></head><body>
+<div class="mp" id="mp" data-fit><div class="vn"><div class="d"></div><span class="nt">🎵</span></div><div class="tx"><b id="lb">МУЗЫКА</b><span id="pr"></span></div><div class="eq"><i></i><i></i><i></i><i></i><i></i></div></div>
+<script src="/w/widget.js"></script>
+<script>
+(() => {
+  const { on, start, fmt } = KZ, Q = new URLSearchParams(location.search), $ = id => document.getElementById(id);
+  if (Q.get('label')) $('lb').textContent = Q.get('label').slice(0, 20);
+  function show(m) { if (!m || !m.enabled) { $('mp').classList.remove('on'); return; } $('pr').textContent = fmt(m.min); requestAnimationFrame(() => $('mp').classList.add('on')); }
+  if (Q.has('demo')) { show({ enabled: true, min: +(Q.get('min') || 300) }); return; }
+  on('state', st => show(st.settings.media));
+  on('settings', s => s.media && show(s.media));
+  start();
+})();
+</script></body></html>

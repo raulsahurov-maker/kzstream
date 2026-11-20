@@ -307,7 +307,7 @@ function render() {
   // превью и тесты
   if (!$('#prevFrame').src) { let hid = false; try { hid = localStorage.kzPvHide === '1'; } catch { } if (hid) pvShow(false); else $('#prevFrame').src = ME.urls.widgets.alerts + '&preview'; }
   if (!$('#rFrame').src) $('#rFrame').src = ME.urls.widgets.roulette + '&preview';
-  $('#rOpen').href = ME.urls.widgets.roulette; $('#mOpen').href = ME.urls.widgets.media; val('mPlayerUrl', ME.urls.widgets.media);
+  $('#rOpen').href = ME.urls.widgets.roulette; mLaySet(ME.urls.widgets.media); val('mPriceUrl', ME.urls.widgets.mprice || ME.urls.widgets.media.replace('/media.html', '/mprice.html')); if (!$('#mpPrev').src) $('#mpPrev').src = '/w/mprice.html?demo&min=' + (ME.settings ? ME.settings.media.min : 300);
   themePickers();
   // сотрудничество: рекламный виджет
   val('w_promo', ME.urls.widgets.promo); if (!$('#promoFrame').src) $('#promoFrame').src = ME.urls.widgets.promo;
@@ -676,3 +676,15 @@ setInterval(sizePickers, 1500);
   let t = 'links'; try { t = localStorage.kzWTab || 'links'; } catch { }
   show(t);
 })();
+
+// вид плеера музыки: видео или плашка
+let mLay = ''; try { mLay = localStorage.getItem('kz_mlay') || ''; } catch { }
+let mBase = '';
+function mLaySet(base) {
+  if (base) mBase = base; if (!mBase) return;
+  const u = mBase + (mLay ? '&l=' + mLay : ''), q = s => document.querySelector(s);
+  q('#mOpen').href = u; q('#mPlayerUrl').value = u;
+  document.querySelectorAll('#mLay button').forEach(b => b.classList.toggle('on', b.dataset.ml === mLay));
+  const pv = q('#mLayPrev'); pv.style.display = mLay ? '' : 'none'; const ps = '/w/media.html?demo&l=bar'; if (mLay && !pv.src.endsWith(ps)) pv.src = ps;
+}
+document.addEventListener('click', e => { const b = e.target.closest('#mLay [data-ml]'); if (!b) return; mLay = b.dataset.ml; try { localStorage.setItem('kz_mlay', mLay); } catch { } mLaySet(); });
