@@ -85,6 +85,37 @@
   .s-minimal .ttl{font-size:15px;opacity:.9;text-shadow:0 2px 8px rgba(0,0,0,.8)}
   .s-minimal .big{font-family:Unbounded;font-weight:800;font-size:30px;text-shadow:0 2px 10px rgba(0,0,0,.8)}.s-minimal .big span{font-size:16px;opacity:.7}
   .s-minimal .line{margin-top:8px;height:6px;border-radius:6px;background:rgba(255,255,255,.18)}
+  /* ===== «К мечте»: человечек бежит к цели ===== */
+  .s-dream .g{width:560px;padding:14px 18px 12px;border-radius:20px;background:linear-gradient(180deg,rgba(18,20,34,.92),rgba(10,11,20,.92));border:1px solid rgba(255,255,255,.08);box-shadow:0 12px 34px rgba(0,0,0,.5)}
+  .s-dream .top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:4px}
+  .s-dream .ttl{font:800 17px Unbounded,Manrope;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .s-dream .pc{font:800 17px Unbounded;color:#ffd23f}
+  .s-dream .field{position:relative;height:118px}
+  .s-dream .road{position:absolute;left:0;right:92px;bottom:16px;height:12px;border-radius:12px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.16) 0 16px,transparent 16px 26px)}
+  .s-dream .trail{position:absolute;left:0;bottom:16px;height:12px;border-radius:12px;width:0;background:linear-gradient(90deg,var(--w-a,#ff3b5c),var(--w-b,#ffb800));box-shadow:0 0 14px color-mix(in srgb,var(--w-b,#ffb800) 60%,transparent);transition:width 2.4s cubic-bezier(.3,.8,.3,1)}
+  .s-dream .runner{position:absolute;bottom:24px;left:0;width:66px;height:86px;margin-left:-20px;transition:left 2.4s cubic-bezier(.3,.8,.3,1);z-index:2}
+  .s-dream .runner svg{width:100%;height:100%;overflow:visible;animation:bob .5s ease-in-out infinite}
+  .s-dream .runner .lg1,.s-dream .runner .ar2{transform-origin:33px 44px;animation:sw1 .5s ease-in-out infinite}
+  .s-dream .runner .lg2,.s-dream .runner .ar1{transform-origin:33px 44px;animation:sw2 .5s ease-in-out infinite}
+  .s-dream .runner .ar1,.s-dream .runner .ar2{transform-origin:33px 30px}
+  .s-dream.moving .runner svg,.s-dream.moving .runner .lg1,.s-dream.moving .runner .lg2,.s-dream.moving .runner .ar1,.s-dream.moving .runner .ar2{animation-duration:.28s}
+  .s-dream .runner .dust{position:absolute;left:-6px;bottom:-4px;width:26px;height:10px;border-radius:50%;background:rgba(255,255,255,.25);filter:blur(3px);opacity:0}
+  .s-dream.moving .runner .dust{animation:dust .28s linear infinite}
+  @keyframes bob{50%{transform:translateY(-4px)}}
+  @keyframes sw1{0%,100%{transform:rotate(32deg)}50%{transform:rotate(-30deg)}}
+  @keyframes sw2{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(32deg)}}
+  @keyframes dust{0%{opacity:.8;transform:translateX(0) scale(.6)}100%{opacity:0;transform:translateX(-24px) scale(1.4)}}
+  .s-dream .dream{position:absolute;right:0;bottom:4px;width:92px;text-align:center}
+  .s-dream .dream .ic{width:80px;height:80px;margin:0 auto;border-radius:50%;display:grid;place-items:center;font-size:44px;background:radial-gradient(circle,rgba(255,210,63,.35),rgba(255,210,63,.05) 70%);box-shadow:0 0 24px rgba(255,210,63,.45);animation:dglow 2s ease-in-out infinite}
+  .s-dream .dream b{display:block;margin-top:2px;font:800 11px Manrope;color:#ffd23f;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+  @keyframes dglow{50%{transform:scale(1.08);box-shadow:0 0 40px rgba(255,210,63,.75)}}
+  .s-dream .nums{display:flex;justify-content:space-between;font:800 15px Unbounded,Manrope;color:#fff}.s-dream .nums span:last-child{color:#a7abc0}
+  .s-dream .g.done .runner svg{animation:win .6s ease-in-out infinite}
+  .s-dream .g.done .runner .lg1,.s-dream .g.done .runner .lg2{animation:none}
+  .s-dream .g.done .runner .ar1{animation:none;transform:rotate(150deg)}.s-dream .g.done .runner .ar2{animation:none;transform:rotate(-150deg)}
+  @keyframes win{50%{transform:translateY(-16px)}}
+  .s-dream .conf{position:absolute;width:7px;height:11px;top:-10px;border-radius:2px;animation:cf 1.8s ease-in forwards}
+  @keyframes cf{to{transform:translateY(150px) rotate(540deg);opacity:0}}
   .s-minimal .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--w-a),var(--w-b));transition:width 1.4s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 10px var(--w-a)}
 </style></head><body>
 <div class="g" id="g" data-fit></div>
@@ -115,9 +146,23 @@
         <div><div class="ttl" data-title></div><div class="nums"><b data-sum></b> / <span data-target></span></div></div></div>`,
     thermo: () => `<div class="wrap"><div class="th"><div class="tube"><div class="merc" data-h></div></div><div class="bulb" data-pc></div><div class="ticks">${'<i></i>'.repeat(10)}</div></div>
         <div class="info"><div class="ttl" data-title></div><div class="num" data-sum></div><div class="of">из <span data-target></span></div></div></div>`,
+    dream: () => `<div class="top"><span class="ttl" data-title></span><span class="pc" data-pc></span></div>
+      <div class="field"><div class="road"></div><div class="trail" data-trail></div>
+        <div class="runner" data-run><span class="dust"></span><svg viewBox="0 0 66 86">
+          <g class="lg2" stroke="#2b2f4a" stroke-width="7" stroke-linecap="round" fill="none"><path d="M33 44 L29 62 L35 78"/></g>
+          <g class="ar2" stroke="#2b2f4a" stroke-width="6" stroke-linecap="round" fill="none"><path d="M33 30 L26 42 L32 50"/></g>
+          <path d="M33 20 C42 22 42 42 33 46 C25 42 25 22 33 20Z" fill="var(--w-a,#ff3b5c)"/>
+          <g class="lg1" stroke="#3a3f63" stroke-width="7" stroke-linecap="round" fill="none"><path d="M33 44 L38 62 L32 78"/><path d="M32 78 L40 79" stroke-width="6"/></g>
+          <g class="ar1" stroke="#ffcf9e" stroke-width="6" stroke-linecap="round" fill="none"><path d="M33 30 L41 40 L35 48"/></g>
+          <circle cx="34" cy="12" r="9" fill="#ffcf9e"/><path d="M25 10 C26 2 42 1 43 9 C38 7 31 8 25 10Z" fill="#2b1b12"/><circle cx="38" cy="12" r="1.4" fill="#222"/>
+        </svg></div>
+        <div class="dream"><div class="ic" data-dic></div><b data-dname></b></div></div>
+      <div class="nums"><span data-sum></span><span data-target></span></div>`,
     minimal: () => `<div class="ttl" data-title></div><div class="big"><span data-sum-raw></span> <span>/ <i data-target style="font-style:normal"></i></span></div><div class="line"><div class="fill" data-w></div></div>`,
   };
 
+  const DREAMS = { pc: ['🖥️', 'Компьютер'], phone: ['📱', 'Телефон'], car: ['🚗', 'Машина'], house: ['🏠', 'Дом'], travel: ['✈️', 'Путешествие'], game: ['🎮', 'Игра'], mic: ['🎤', 'Микрофон'], mouse: ['🖱️', 'Мышка'], headphones: ['🎧', 'Наушники'], event: ['🎟️', 'Мероприятие'] };
+  let DREAM = 'pc', moveT;
   function build(st) {
     style = T[st] ? st : 'classic';
     document.body.className = 's-' + style;
@@ -133,6 +178,15 @@
     document.querySelectorAll('[data-pc]').forEach(e => e.textContent = Math.floor(p) + '%');
     document.querySelectorAll('[data-w]').forEach(e => e.style.width = (style === 'neon' ? `calc(${p}% - 4px)` : p + '%'));
     document.querySelectorAll('[data-h]').forEach(e => e.style.height = (style === 'water' ? Math.max(p, 2) : p) + '%');
+    const run = $('[data-run]');
+    if (run) {
+      const d = DREAMS[DREAM] || DREAMS.pc; $('[data-dic]').textContent = d[0]; $('[data-dname]').textContent = d[1];
+      const k = Math.min(p, 100) / 100, pos = `calc((100% - 112px) * ${k} + 4px)`;
+      if (run.style.left !== pos) { document.body.classList.add('moving'); clearTimeout(moveT); moveT = setTimeout(() => document.body.classList.remove('moving'), 2400); }
+      run.style.left = pos; $('[data-trail]').style.width = `calc((100% - 92px) * ${k})`;
+      if (p >= 100 && !run.dataset.won) { run.dataset.won = 1; for (let i = 0; i < 30; i++) { const c = document.createElement('i'); c.className = 'conf'; c.style.left = (40 + Math.random() * 60) + '%'; c.style.background = `hsl(${Math.random() * 360},90%,60%)`; c.style.animationDelay = Math.random() * .8 + 's'; $('.field').appendChild(c); setTimeout(() => c.remove(), 3000); } }
+      if (p < 100) delete run.dataset.won;
+    }
     const arc = $('[data-arc]'); if (arc) arc.style.strokeDashoffset = 339.3 * (1 - p / 100);
     // батарейка: 10 делений, цвет от красного к зелёному
     const cells = document.querySelectorAll('.cell');
@@ -155,7 +209,7 @@
       if (e.origin !== location.origin || !e.data) return;
       if (e.data.kzGoal) {
         const n = e.data.kzGoal, oldT = G.target;
-        set = { ...set, ...n }; theme(set.theme || 'default');
+        set = { ...set, ...n }; theme(set.theme || 'default'); if (set.dream) DREAM = set.dream;
         G.title = set.title || 'Цель сбора'; G.target = Math.max(1, +set.target || 1);
         if (oldT !== G.target) { G.sum = Math.round(G.target * 0.65); shown = G.sum; }
         if (set.style !== style) build(set.style); else draw();
@@ -169,10 +223,10 @@
   }
   on('state', st => {
     theme(st.settings.goal.theme); $('#ad').style.display = st.plan.ads ? '' : 'none';
-    G = { ...st.goal }; shown = G.sum;
+    G = { ...st.goal }; shown = G.sum; DREAM = st.settings.goal.dream || 'pc';
     if (st.settings.goal.style !== style) build(st.settings.goal.style); else draw();
   });
-  on('settings', s => { theme(s.goal.theme); if (s.goal.style !== style) build(s.goal.style); });
+  on('settings', s => { theme(s.goal.theme); DREAM = s.goal.dream || DREAM; if (s.goal.style !== style) build(s.goal.style); else draw(); });
   on('stats', d => { G = { ...G, ...d.goal }; draw(); });
   start();
 })();

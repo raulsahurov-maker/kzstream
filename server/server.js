@@ -137,7 +137,8 @@ process.on('SIGTERM', flushAndExit); process.on('SIGINT', flushAndExit);
 const INFO_STYLES = ['plate', 'plain', 'neon', 'gold', 'glass', 'outline', 'gradient', 'fire'];
 const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud', 'vice', 'fire', 'cs2', 'xmas'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
 // стили цели сбора: первые три — бесплатно, остальные с тарифа Lite
-const GOAL_STYLES = ['classic', 'neon', 'battery', 'water', 'ring', 'thermo', 'gold', 'minimal'], GOAL_FREE = ['classic', 'neon', 'battery'];
+const GOAL_STYLES = ['classic', 'neon', 'battery', 'dream', 'water', 'ring', 'thermo', 'gold', 'minimal'], GOAL_FREE = ['classic', 'neon', 'battery', 'dream'];
+const DREAMS = ['pc', 'phone', 'car', 'house', 'travel', 'game', 'mic', 'mouse', 'headphones', 'event'];
 const GOAL_MAX = 2000000;
 // стили алертов: classic и meme (свои видео/гифки) — бесплатно, денежный дождь и монетка — с Lite
 const ALERT_LAYOUTS = ['classic', 'meme', 'money', 'coin'], ALERT_FREE = ['classic', 'meme'];
@@ -611,6 +612,7 @@ app.put('/api/settings', auth, (req, res) => {
     s.goal.base = int(b.goal.base, 0, GOAL_MAX, s.goal.base);
     if (b.goal.style !== undefined) { if (!GOAL_STYLES.includes(b.goal.style)) errors.push('Неизвестный стиль цели'); else if (!p.shop && !GOAL_FREE.includes(b.goal.style)) errors.push('Этот стиль цели доступен с тарифа Lite'); else s.goal.style = b.goal.style; }
     if (b.goal.reset) s.goal.start_at = now();
+    if (DREAMS.includes(b.goal.dream)) s.goal.dream = b.goal.dream;
     if (b.goal.theme && THEMES.includes(b.goal.theme)) s.goal.theme = p.shop ? b.goal.theme : 'default';
   }
   if (b.top) {

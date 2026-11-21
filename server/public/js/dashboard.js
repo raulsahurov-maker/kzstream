@@ -31,6 +31,7 @@ function postTop() { try { $('#topFrame').contentWindow.postMessage({ kzTop: col
 
 // ---------- цель сбора: стили ----------
 const GOAL_DESIGNS = [
+  { id: 'dream', name: '🏃 К мечте', desc: 'Человечек бежит к мечте: компьютер, машина, дом… Чем больше донатов — тем ближе.', pv: `<div style="width:100%;position:relative;height:40px"><div style="position:absolute;left:0;right:22px;bottom:6px;height:5px;border-radius:5px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.25) 0 6px,transparent 6px 10px)"></div><div style="position:absolute;left:0;width:55%;bottom:6px;height:5px;border-radius:5px;background:linear-gradient(90deg,#ff3b5c,#ffb800)"></div><span style="position:absolute;left:46%;bottom:9px;font-size:18px">🏃</span><span style="position:absolute;right:0;bottom:2px;font-size:20px">🖥️</span></div>` },
   { id: 'classic', name: 'Классика KZStream', desc: 'Фирменная красно-оранжевая полоса с бегущими линиями, название внутри.', pv: `<div style="width:100%;height:24px;border-radius:6px;border:1.5px solid #ff3b5c;background:#0e0f1a;position:relative;overflow:hidden;box-shadow:0 0 10px rgba(255,59,92,.4)"><div style="position:absolute;inset:0 35% 0 0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.18) 0 5px,transparent 5px 10px),linear-gradient(90deg,#ff3b5c,#ff7a45)"></div><div style="position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 5px;font:800 7px Unbounded;color:#fff"><span>94 250</span><span>МИКРОФОН</span><span>145 000</span></div></div>` },
   { id: 'neon', name: 'Неон-трубка', desc: 'Тонкая светящаяся полоса, процент сверху.', pv: `<div style="width:100%"><div style="display:flex;justify-content:space-between;font:800 7px Unbounded;color:#e9e6ff"><span>МИКРОФОН</span><span style="color:#ff4fd8">65%</span></div><div style="height:8px;margin:5px 0;border-radius:8px;border:1.5px solid rgba(62,230,196,.6);box-shadow:0 0 8px rgba(62,230,196,.5);position:relative"><div style="position:absolute;inset:1px 35% 1px 1px;border-radius:8px;background:linear-gradient(90deg,#3ee6c4,#8b6cff,#ff4fd8);box-shadow:0 0 8px #8b6cff"></div></div><div style="display:flex;justify-content:space-between;font:800 6.5px Manrope;color:#bfe9ff"><span>94 250 ₸</span><span>145 000 ₸</span></div></div>` },
   { id: 'battery', name: 'Батарейка', desc: '10 делений, цвет меняется от красного к зелёному.', pv: `<div style="width:100%"><div style="display:flex;justify-content:space-between;font:800 7px Unbounded;color:#fff"><span>МИКРОФОН</span><span>65%</span></div><div style="display:flex;align-items:center;margin-top:5px"><div style="flex:1;display:grid;grid-template-columns:repeat(10,1fr);gap:2px;padding:2px;border:2px solid #ddd;border-radius:4px;height:20px">${[...Array(10)].map((_, i) => `<i style="border-radius:2px;background:${i < 7 ? 'hsl(78,90%,52%)' : 'rgba(255,255,255,.08)'}"></i>`).join('')}</div><div style="width:3px;height:9px;background:#ddd;border-radius:0 2px 2px 0"></div></div></div>` },
@@ -40,21 +41,25 @@ const GOAL_DESIGNS = [
   { id: 'gold', name: 'Золото', desc: 'Премиальная золотая полоса с бегущими линиями.', pv: `<div style="width:100%;height:24px;border-radius:5px;border:1.5px solid #d4af37;background:#0b0a08;position:relative;overflow:hidden"><div style="position:absolute;inset:0 35% 0 0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.2) 0 5px,transparent 5px 10px),linear-gradient(#fcf6ba,#d4af37 45%,#aa771c)"></div><div style="position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 5px;font:800 7px Unbounded;color:#fff;text-shadow:0 1px 3px #000"><span>94 250</span><span>МИКРОФОН</span><span style="color:#fcf6ba">145 000</span></div></div>` },
   { id: 'minimal', name: 'Минимал', desc: 'Только текст и тонкая линия — без фона, не закрывает кадр.', pv: `<div style="width:100%;color:#fff"><div style="font:800 6.5px Unbounded;opacity:.85">МИКРОФОН</div><div style="font:800 11px Unbounded">94 250 ₸ <span style="font-size:7px;opacity:.6">/ 145 000 ₸</span></div><div style="height:3px;border-radius:3px;background:rgba(255,255,255,.2);margin-top:4px"><div style="width:65%;height:100%;border-radius:3px;background:linear-gradient(90deg,#ff3b5c,#ff7a45)"></div></div></div>` },
 ];
-let GOALSEL = 'classic';
+let GOALSEL = 'classic', GDREAM = 'pc', GDREAM_INIT = 0;
+const DREAM_LIST = [['pc', '🖥️', 'Компьютер'], ['phone', '📱', 'Телефон'], ['car', '🚗', 'Машина'], ['house', '🏠', 'Дом'], ['travel', '✈️', 'Путешествие'], ['game', '🎮', 'Игра'], ['mic', '🎤', 'Микрофон'], ['mouse', '🖱️', 'Мышка'], ['headphones', '🎧', 'Наушники'], ['event', '🎟️', 'Мероприятие']];
 const goalFree = id => (ME.goal_free || ['classic', 'neon', 'battery']).includes(id);
 function goalPickers() {
   const saved = ME.settings.goal.style || 'classic';
   $('#g_styles').innerHTML = GOAL_DESIGNS.map(d => { const locked = !ME.plan.shop && !goalFree(d.id);
     return `<div class="gs ${GOALSEL === d.id ? 'on' : ''}" data-g="${d.id}"><div class="gpv">${d.pv}</div><div><b>${d.name}</b>${saved === d.id ? '<span class="tg live">В ЭФИРЕ</span>' : ''}${locked ? '<span class="tg lk">🔒 Lite</span>' : ''}<p>${d.desc}</p></div></div>`; }).join('');
   $('#goalLive').textContent = (GOAL_DESIGNS.find(d => d.id === saved) || GOAL_DESIGNS[0]).name;
-  $('#g_theme_field').style.display = ['classic', 'ring', 'minimal'].includes(GOALSEL) ? '' : 'none';
+  $('#g_theme_field').style.display = ['classic', 'ring', 'minimal', 'dream'].includes(GOALSEL) ? '' : 'none';
+  if (!GDREAM_INIT) { GDREAM = ME.settings.goal.dream || 'pc'; GDREAM_INIT = 1; }
+  $('#g_dream_field').style.display = GOALSEL === 'dream' ? '' : 'none';
+  $('#g_dreams').innerHTML = DREAM_LIST.map(([k, i, n]) => `<button type="button" data-dr="${k}" class="${GDREAM === k ? 'on' : ''}"><i>${i}</i>${n}</button>`).join('');
   goalDirty();
 }
 function goalDirty() {
-  const g = ME.settings.goal, dirty = GOALSEL !== (g.style || 'classic') || val('g_title') !== g.title || +val('g_target') !== +g.target || +val('g_base') !== +g.base || val('g_theme') !== g.theme;
+  const g = ME.settings.goal, dirty = GOALSEL !== (g.style || 'classic') || val('g_title') !== g.title || +val('g_target') !== +g.target || +val('g_base') !== +g.base || val('g_theme') !== g.theme || (GOALSEL === 'dream' && GDREAM !== (g.dream || 'pc'));
   const b = $('#goalSaved'); b.textContent = dirty ? '● Не сохранено' : '✓ Сохранено'; b.style.color = dirty ? '#ffc84a' : '#3ee6c4';
 }
-function postGoal(extra) { $('#goalFrame').style.height = ({ water: 430, thermo: 400, ring: 210, battery: 170 }[GOALSEL] || 150) + 'px'; setTimeout(fitPreviews, 30); try { $('#goalFrame').contentWindow.postMessage(extra || { kzGoal: { style: GOALSEL, title: val('g_title') || 'Цель сбора', target: Math.min(2000000, +val('g_target') || 1), theme: val('g_theme') } }, location.origin); } catch { } }
+function postGoal(extra) { $('#goalFrame').style.height = ({ water: 430, thermo: 400, ring: 210, battery: 170, dream: 230 }[GOALSEL] || 150) + 'px'; setTimeout(fitPreviews, 30); try { $('#goalFrame').contentWindow.postMessage(extra || { kzGoal: { style: GOALSEL, dream: GDREAM, title: val('g_title') || 'Цель сбора', target: Math.min(2000000, +val('g_target') || 1), theme: val('g_theme') } }, location.origin); } catch { } }
 
 // ---------- голоса озвучки ----------
 const VOICE_LIST = [
@@ -392,7 +397,7 @@ const collectors = {
     const t = +val('g_target');
     if (!t || t < 1 || t > 2000000) throw new Error('Цель сбора — от 1 до 2 000 000 ₸');
     if (!ME.plan.shop && !goalFree(GOALSEL)) throw new Error('Стиль «' + GOAL_DESIGNS.find(d => d.id === GOALSEL).name + '» доступен с тарифа Lite. Бесплатно: Классика, Неон, Батарейка');
-    return { goal: { title: val('g_title'), target: t, base: val('g_base'), theme: val('g_theme'), style: GOALSEL } };
+    return { goal: { title: val('g_title'), target: t, base: val('g_base'), theme: val('g_theme'), style: GOALSEL, dream: GDREAM } };
   },
   info: () => ({ info: { lines: readList('#infoList').map(r => r.v), interval: 8, label: val('i_label') || 'INFO', dir: val('i_dir'), speed: val('i_speed'), show_last: val('i_show_last'), theme: val('i_theme'), mode: val('i_mode') || 'marquee', tstyle: val('i_tstyle'), font: val('i_font'), align: val('i_align') } }),
   timer: () => ({ timer: { sec_per_100: val('tm_sec'), theme: val('tm_theme') } }),
@@ -501,6 +506,7 @@ document.addEventListener('change', async e => {
 });
 document.addEventListener('click', e => { const u = e.target.closest('[data-unset]'); if (!u) return; val(u.dataset.unset, ''); if (u.dataset.unsave) { topCustUi(); postTop(); save(u.dataset.unsave); return; } pagePreviews(); save('page'); });
 $('#goalReset').onclick = () => { if (!confirm('Сбросить прогресс цели? Собранная сумма начнётся с нуля (донаты не удаляются).')) return; save('goal', { reset: true }); postGoal({ kzGoalReset: 1 }); };
+$('#g_dreams').onclick = e => { const b = e.target.closest('[data-dr]'); if (!b) return; GDREAM = b.dataset.dr; goalPickers(); postGoal(); $('#goalSaved').textContent = '● Не сохранено'; $('#goalSaved').style.color = '#ffc84a'; };
 $('#g_styles').onclick = e => { const d = e.target.closest('.gs'); if (!d) return; GOALSEL = d.dataset.g; goalPickers(); postGoal(); if (!ME.plan.shop && !goalFree(GOALSEL)) toast('Это предпросмотр. Стиль включится в эфире с тарифом Lite', true); };
 ['g_title', 'g_target', 'g_base', 'g_theme'].forEach(id => ['input', 'change'].forEach(ev => $('#' + id).addEventListener(ev, () => { postGoal(); goalDirty(); })));
 $('#goalTest').onclick = () => { const a = [500, 1000, 2000, 5000, 10000][Math.floor(Math.random() * 5)]; postGoal({ kzGoalBump: a }); toast('Превью: +' + fmt(a) + ' (в эфир не отправляется)'); };
@@ -763,7 +769,8 @@ function ldUi() {
   const extra = (LD.c !== 'ffa01c' ? '&c=' + LD.c : '') + (LD.th ? '&th=' + LD.th : '') + (LD.f ? '&f=' + LD.f : '');
   const inp = q('#ld_w'), sz = (inp.value.match(/&s=\d+/) || [''])[0];
   inp.value = ME.urls.widgets.lastdon + extra + sz;
-  const pv = '/w/lastdon.html?demo&t=x' + extra; if (!q('#ldPrev').src.endsWith(pv)) q('#ldPrev').src = pv;
+  // превью — ваш настоящий последний донат (обновляется сам, когда придёт новый)
+  const pv = ME.urls.widgets.lastdon + extra + '&preview'; if (q('#ldPrev').src !== pv) q('#ldPrev').src = pv;
   try { localStorage.kzLd = JSON.stringify(LD); } catch { }
 }
 document.addEventListener('click', e => {
