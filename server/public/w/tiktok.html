@@ -67,7 +67,12 @@
   }
   const ONLY = (Q.get('ev') || '').split(',').filter(Boolean);
   on('tt', e => { if (!ONLY.length || ONLY.includes(e.type)) show(e); });
-  on('tt_chat', m => { if (!ONLY.length || ONLY.includes('chat')) say(m.say, m.voice, m.vol); });
+  // если в Live Studio добавлено несколько виджетов KZStream — читает только один (без повторов)
+  function claim(id) {
+    try { const k = 'kzsay:' + id; if (localStorage.getItem(k)) return false; localStorage.setItem(k, Date.now()); setTimeout(() => localStorage.removeItem(k), 60000); } catch { }
+    return true;
+  }
+  on('tt_chat', m => { if (ONLY.length && !ONLY.includes('chat')) return; setTimeout(() => { if (claim(m.id || m.say)) say(m.say, m.voice, m.vol); }, ONLY.includes('chat') ? 0 : 150); });
   start();
 })();
 </script></body></html>

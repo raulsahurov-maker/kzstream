@@ -36,7 +36,7 @@
     const VL = typeof VOICE_LIST !== 'undefined' ? VOICE_LIST : [['dmitry', 'Дмитрий', '']];
     if (!$('#tts_voice').options.length) $('#tts_voice').innerHTML = VL.map(([id, nm, ds]) => `<option value="${id}">${nm}${ds ? ' — ' + ds : ''}</option>`).join('');
     $('#tts_on').checked = c.tts.on; $('#tts_voice').value = c.tts.voice; $('#tts_vol').value = c.tts.vol; $('#tts_vl').textContent = c.tts.vol + '%';
-    $('#chat_on').checked = c.chat.on; $('#chat_name').checked = c.chat.name; $('#chat_prefix').value = c.chat.prefix; $('#chat_max').value = c.chat.max; $('#tt_w_chat').value = D.widget + '&ev=chat';
+    document.querySelectorAll('#chatWho [data-cw]').forEach(b => b.classList.toggle('on', b.dataset.cw === (c.chat.who || 'all'))); $('#chat_on').checked = c.chat.on; $('#chat_name').checked = c.chat.name; $('#chat_prefix').value = c.chat.prefix; $('#chat_max').value = c.chat.max; $('#tt_w_chat').value = D.widget + '&ev=chat';
     $('#ttLock').style.display = D.tts_ok ? 'none' : 'block'; $('#lkLock').style.display = D.lite ? 'none' : 'block';
     $('#lk_w').value = D.likes_widget; $('#lk_title').value = c.likes.title; $('#lk_count').value = String(c.likes.count);
     if (!$('#lkPrev').src) $('#lkPrev').src = '/w/likes.html?demo&t=x';
@@ -45,7 +45,7 @@
   function collect() {
     const b = { popup: $('#tt_popup').checked, likes: { title: $('#lk_title').value, count: +$('#lk_count').value },
       tts: { on: $('#tts_on').checked, voice: $('#tts_voice').value, vol: +$('#tts_vol').value },
-      chat: { on: $('#chat_on').checked, name: $('#chat_name').checked, prefix: $('#chat_prefix').value, max: +$('#chat_max').value || 150 } };
+      chat: { who: ($('#chatWho .on') || {}).dataset?.cw || 'all', on: $('#chat_on').checked, name: $('#chat_name').checked, prefix: $('#chat_prefix').value, max: +$('#chat_max').value || 150 } };
     for (const [k] of EV) { const x = $(`[data-ev="${k}"]`); b[k] = { on: x.querySelector('[data-f=on]').checked, sound: x.querySelector('[data-f=sound]').value, vol: +x.querySelector('[data-f=vol]').value, tts: x.querySelector('[data-f=tts]').checked, text: x.querySelector('[data-f=text]').value }; }
     return b;
   }
@@ -60,6 +60,7 @@
     if (e.target.id === 'tts_vol') $('#tts_vl').textContent = e.target.value + '%';
   });
   document.addEventListener('click', async e => {
+    const cw = e.target.closest('#chatWho [data-cw]'); if (cw) { document.querySelectorAll('#chatWho [data-cw]').forEach(b => b.classList.toggle('on', b === cw)); saveSoon(); return; }
     const p = e.target.closest('[data-ev] [data-play]'); if (p) { const x = p.closest('[data-ev]'); KZSfx.play(x.querySelector('[data-f=sound]').value, x.querySelector('[data-f=vol]').value); return; }
     const t = e.target.closest('[data-ev] [data-test]'); if (t) { await req('/api/tiktok', 'PUT', collect()).catch(() => { }); await req('/api/tiktok/test', 'POST', { type: t.closest('[data-ev]').dataset.ev }); toast('Отправил тестовое событие в виджет — звук сыграет в TikTok Live Studio'); return; }
   });

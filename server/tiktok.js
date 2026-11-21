@@ -13,7 +13,7 @@ const DEF = {
   popup: true,
   likes: { count: 5, title: 'ТОП ЛАЙКЕРОВ' },
   tts: { on: true, voice: 'dmitry', vol: 90 },
-  chat: { on: false, name: true, max: 150, prefix: '', links: false },
+  chat: { on: false, name: true, max: 150, prefix: '', links: false, who: 'all' },
 };
 const clean = u => String(u || '').trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?tiktok\.com\/@?/i, '').split(/[/?#\s]/)[0].slice(0, 40);
 
@@ -44,17 +44,20 @@ module.exports = function setupTikTok(app, d) {
     if (!likeTimers.has(uid)) likeTimers.set(uid, setTimeout(() => { likeTimers.delete(uid); emit(uid, 'tt_likes', likeTop(uid)); }, 1500));
   }
   // озвучка чата: каждое сообщение зрителя читается голосом (очередь в виджете)
-  function chat(uid, w, text) {
+  const seenMsg = new Map(); // uid -> Set(msgId) — одно сообщение читается один раз
+  function chat(uid, w, text, msgId) {
     const u = userById(uid); if (!u) return;
     const c = cfg(u), ch = c.chat; if (!ch.on || !c.tts.on || !canTts(u)) return;
+    if (msgId) { let st = seenMsg.get(uid); if (!st) seenMsg.set(uid, st = new Set()); if (st.has(msgId)) return; st.add(msgId); if (st.size > 500) st.delete(st.values().next().value); }
+    if (ch.who === 'followers' && !(w.follow >= 1)) return;
     let t = String(text || '').trim();
     if (ch.prefix) { if (!t.startsWith(ch.prefix)) return; t = t.slice(ch.prefix.length).trim(); }
     if (!ch.links) t = t.replace(/(https?:\/\/|www\.)\S+/gi, '').trim();
     t = censor(t, getSettings(u)).slice(0, ch.max || 150);
     if (!t || !/[\p{L}\p{N}]/u.test(t)) return;
-    emit(uid, 'tt_chat', { user: w.name, text: t, say: (ch.name ? w.name + ' пишет: ' : '') + t, voice: c.tts.voice, vol: c.tts.vol });
+    emit(uid, 'tt_chat', { id: msgId || (w.id + ':' + t), user: w.name, text: t, say: (ch.name ? w.name + ' пишет: ' : '') + t, voice: c.tts.voice, vol: c.tts.vol });
   }
-  const who = m => { const us = m.user || {}; return { id: us.uniqueId || us.userId || '', name: us.nickname || us.uniqueId || 'Зритель', avatar: (us.profilePicture && us.profilePicture.url && us.profilePicture.url[0]) || '' }; };
+  const who = m => { const us = m.user || {}, pp = us.profilePicture || {}; return { id: us.uniqueId || us.userId || '', name: us.nickname || us.uniqueId || 'Зритель', avatar: (pp.url && pp.url[0]) || (pp.urls && pp.urls[0]) || '', follow: (m.userIdentity && (m.userIdentity.isFollowerOfAnchor || m.userIdentity.isMutualFollowingWithAnchor || m.userIdentity.isModeratorOfAnchor || m.userIdentity.isAnchor)) ? 1 : 0 }; };
 
   async function start(uid, user) {
     stop(uid, true);
@@ -78,7 +81,7 @@ module.exports = function setupTikTok(app, d) {
         for (const it of (j.messages || [j])) {
           const t = it.type || '', m = it.data || {};
           if (t === 'roomInfo' || t === 'RoomInfoEvent') { const rid = m.roomInfo?.id || m.id || ''; if (rid && rid !== x.room) { likes.delete(uid); x.room = rid; emit(uid, 'tt_likes', []); } }
-          else if (t === 'WebcastChatMessage') chat(uid, who(m), m.comment);
+          else if (t === 'WebcastChatMessage') chat(uid, who(m), m.comment, m.common && String(m.common.msgId || ''));
           else if (t === 'WebcastLikeMessage') { const u = userById(uid); if (u && isLite(u)) addLike(uid, who(m), m.likeCount); }
           else if (t === 'WebcastGiftMessage') {
             const gt = m.giftType ?? m.giftDetails?.giftType;
@@ -114,7 +117,7 @@ module.exports = function setupTikTok(app, d) {
         c = new Lib.TikTokLiveConnection(user, { processInitialData: false, enableExtendedGiftInfo: false, fetchRoomInfoOnConnect: true });
         x.c = c;
         c.on(Lib.WebcastEvent.FOLLOW, m => fire(uid, 'follow', who(m)));
-        c.on(Lib.WebcastEvent.CHAT, m => chat(uid, who(m), m.comment));
+        c.on(Lib.WebcastEvent.CHAT, m => chat(uid, who(m), m.comment, m.common && m.common.msgId));
         c.on(Lib.WebcastEvent.LIKE, m => { const u = userById(uid); if (u && isLite(u)) addLike(uid, who(m), m.likeCount); });
         c.on(Lib.WebcastEvent.SHARE, m => fire(uid, 'share', who(m)));
         c.on(Lib.WebcastEvent.GIFT, m => {
@@ -164,7 +167,7 @@ module.exports = function setupTikTok(app, d) {
     if (b.user !== undefined) c.user = clean(b.user);
     if (b.popup !== undefined) c.popup = !!b.popup;
     if (b.tts) { const t = b.tts; if (t.on !== undefined) c.tts.on = !!t.on; if (typeof t.voice === 'string') c.tts.voice = t.voice.slice(0, 30); if (t.vol !== undefined) c.tts.vol = Math.max(0, Math.min(100, +t.vol || 0)); }
-    if (b.chat) { const t = b.chat; if (t.on !== undefined) c.chat.on = !!t.on; if (t.name !== undefined) c.chat.name = !!t.name; if (t.links !== undefined) c.chat.links = !!t.links; if (t.max !== undefined) c.chat.max = Math.max(20, Math.min(300, +t.max || 150)); if (typeof t.prefix === 'string') c.chat.prefix = t.prefix.trim().slice(0, 5); }
+    if (b.chat) { const t = b.chat; if (t.on !== undefined) c.chat.on = !!t.on; if (t.name !== undefined) c.chat.name = !!t.name; if (t.links !== undefined) c.chat.links = !!t.links; if (t.max !== undefined) c.chat.max = Math.max(20, Math.min(300, +t.max || 150)); if (typeof t.prefix === 'string') c.chat.prefix = t.prefix.trim().slice(0, 5); if (['all', 'followers'].includes(t.who)) c.chat.who = t.who; }
     if (b.likes) { c.likes.count = Math.max(1, Math.min(10, +b.likes.count || 5)); if (typeof b.likes.title === 'string') c.likes.title = b.likes.title.slice(0, 40); emit(u.id, 'tt_likes_cfg', c.likes); }
     for (const k of EV) if (b[k]) {
       const e = b[k], o = c[k];
@@ -193,7 +196,7 @@ module.exports = function setupTikTok(app, d) {
   app.post('/api/tiktok/chat/test', auth, (req, res) => {
     const u = req.user, c = cfg(u);
     if (!canTts(u)) return res.status(403).json({ error: 'Озвучка доступна на тарифах Lite и Pro' });
-    emit(u.id, 'tt_chat', { user: 'aruzhan_kz', text: 'Привет! Классный эфир', say: (c.chat.name ? 'aruzhan_kz пишет: ' : '') + 'Привет! Классный эфир', voice: c.tts.voice, vol: c.tts.vol });
+    emit(u.id, 'tt_chat', { id: 'test' + Date.now(), user: 'aruzhan_kz', text: 'Привет! Классный эфир', say: (c.chat.name ? 'aruzhan_kz пишет: ' : '') + 'Привет! Классный эфир', voice: c.tts.voice, vol: c.tts.vol });
     res.json({ ok: true });
   });
   app.post('/api/tiktok/likes/test', auth, (req, res) => {
