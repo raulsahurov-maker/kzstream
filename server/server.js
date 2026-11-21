@@ -173,7 +173,7 @@ function defaults(nick) {
     censor: { words: '', strip_links: true },
     nicks: {},
     goal: { title: 'Цель сбора', target: 100000, base: 0, start_at: Date.now(), theme: 'default', style: 'classic' },
-    top: { period: 'month', count: 5, theme: 'default', style: 'classic', font: 'manrope', title: '', size: 'md', radius: 16, opacity: 0.9 },
+    top: { period: 'month', count: 5, theme: 'default', style: 'classic', font: 'manrope', title: '', size: 'md', radius: 16, opacity: 0.9, bg: '', bgall: false, row: '', rowtx: '' },
     roulette: { enabled: true, min: 500, style: 'wheel',
       tasks: ['Спеть песню', 'Катка без прицела', '10 отжиманий', 'Говорить с акцентом', 'Ответить на 3 вопроса', 'Танец 15 сек'] },
     media: { enabled: true, min: 100, max_sec: 180, volume: 0.6 },
@@ -284,10 +284,17 @@ function publicPlan(u) {
   const p = effectivePlan(u);
   return { ...p, media: p.media === Infinity ? -1 : p.media };
 }
+// последний донат — для виджета «Последний донат» (с цензурой и временем)
+function lastDonation(u, s) {
+  const d = q(`SELECT id, name, amount, message, done_at FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 1`).get(u.id);
+  if (!d) return null;
+  s = s || getSettings(u);
+  return { id: d.id, name: (s.nicks && s.nicks[d.name]) || d.name, amount: d.amount, message: s.alerts.show_msg ? censor(d.message || '', s) : '', at: d.done_at };
+}
 function widgetState(u) {
   const s = getSettings(u);
   const p = effectivePlan(u);
-  const lastDon = q(`SELECT name, amount, message FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 1`).get(u.id);
+  const lastDon = lastDonation(u, s);
   return {
     nick: u.nick, plan: publicPlan(u), settings: { alerts: { ...s.alerts, layout: p.shop || ALERT_FREE.includes(s.alerts.layout || 'classic') ? (s.alerts.layout || 'classic') : 'classic' }, goal: { ...s.goal, style: p.shop || GOAL_FREE.includes(s.goal.style || 'classic') ? (s.goal.style || 'classic') : 'classic' }, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, faceit: s.faceit, cards: s.cards, hotkeys: p.hotkeys ? s.hotkeys : [] },
     top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title },
@@ -300,7 +307,7 @@ function mediaQueue(u) {
 }
 function pushStats(u) {
   const s = getSettings(u);
-  emit(u.id, 'stats', { top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title }, timer: timerState(s), media: mediaQueue(u) });
+  emit(u.id, 'stats', { top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title }, timer: timerState(s), media: mediaQueue(u), last: lastDonation(u, s) });
 }
 
 // ---------- завершение доната ----------
@@ -533,7 +540,7 @@ app.get('/api/me', auth, (req, res) => {
     stats: { ...stats, today, month, year, tests: tests.c, tests_sum: tests.s },
     urls: {
       page: `${b}/d/${u.nick}`, ingest: `${b}/api/ingest/${u.token}`,
-      widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit', 'card', 'promo', 'mprice', 'tiktok'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
+      widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit', 'card', 'promo', 'mprice', 'tiktok', 'lastdon'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
     },
     pay: { kaspi: PAY_KASPI, name: PAY_NAME, telegram: PAY_TELEGRAM },
     balance: u.balance || 0, promo: { mine: u.nick.toUpperCase(), used: u.promo_used || '', active: !!u.promo_used && !u.promo_spent, discount: PROMO_OFF,
@@ -611,6 +618,11 @@ app.put('/api/settings', auth, (req, res) => {
     if (['sm', 'md', 'lg'].includes(b.top.size)) s.top.size = b.top.size;
     if (b.top.radius !== undefined) s.top.radius = int(b.top.radius, 0, 32, s.top.radius);
     if (b.top.opacity !== undefined) s.top.opacity = Math.min(1, Math.max(0.3, +b.top.opacity || 0.9));
+    // свой фон (фото) и цвет строк
+    if (b.top.bg !== undefined) { const v = clampStr(b.top.bg, 500); s.top.bg = /^(https?:\/\/|\/u\/)/.test(v) ? v : ''; }
+    if (b.top.bgall !== undefined) s.top.bgall = !!b.top.bgall;
+    if (b.top.row !== undefined) s.top.row = /^#[0-9a-f]{6}$/i.test(b.top.row) ? b.top.row : '';
+    if (b.top.rowtx !== undefined) s.top.rowtx = /^#[0-9a-f]{6}$/i.test(b.top.rowtx) ? b.top.rowtx : '';
   }
   if (b.roulette) {
     if (!p.roulette && b.roulette.enabled) errors.push('Рулетка доступна с тарифа Lite');

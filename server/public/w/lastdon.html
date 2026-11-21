@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>KZStream — последний донат</title>
+<link rel="stylesheet" href="/w/w.css">
+<style>
+  body{justify-content:flex-start;padding-top:4px;box-sizing:border-box}
+  .ld{--a:#ffa01c;position:relative;width:420px;box-sizing:border-box;padding:14px 18px 12px 22px;border-radius:16px;background:linear-gradient(180deg,rgba(22,22,26,.94),rgba(12,12,15,.94));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 30px rgba(0,0,0,.45);color:#fff;font-family:Manrope,sans-serif;overflow:hidden}
+  .ld::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,var(--a),color-mix(in srgb,var(--a) 50%,#ff3b5c))}
+  .ld .r1{display:flex;align-items:baseline;gap:12px}
+  .ld .nm{flex:1;min-width:0;font:800 24px Unbounded,Manrope,sans-serif;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ld .am{font:800 24px Unbounded,Manrope,sans-serif;color:var(--a);white-space:nowrap;text-shadow:0 0 16px color-mix(in srgb,var(--a) 40%,transparent)}
+  .ld .ms{margin-top:6px;font-size:17px;font-weight:600;color:#e8e8ee;line-height:1.35;word-break:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .ld .ms:empty{display:none}
+  .ld .tm{margin-top:6px;text-align:right;font-size:14px;font-weight:600;color:#a4a7b5}
+  .ld.new{animation:pop .7s cubic-bezier(.2,1.4,.4,1)}
+  .ld.new::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.25) 45%,transparent 60%);animation:sh 1.2s ease-out}
+  @keyframes pop{0%{transform:scale(.92);opacity:.3}100%{transform:none;opacity:1}}
+  @keyframes sh{from{transform:translateX(-120%)}to{transform:translateX(120%)}}
+  .ld.empty .nm{font-size:18px;color:#c7c9d6}
+  /* светлая тема */
+  .ld.light{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(240,240,245,.96));color:#16161c;border-color:rgba(0,0,0,.08)}
+  .ld.light .ms{color:#2a2a33}.ld.light .tm{color:#6d7080}
+</style></head><body>
+<div class="ld empty" id="ld" data-fit><div class="r1"><span class="nm" id="nm">Пока донатов нет</span><span class="am" id="am"></span></div><div class="ms" id="ms"></div><div class="tm" id="tm"></div></div>
+<script src="/w/widget.js"></script>
+<script>
+(() => {
+  const { on, start, fmt } = KZ, Q = new URLSearchParams(location.search), el = document.getElementById('ld');
+  const c = (Q.get('c') || '').replace(/[^0-9a-f]/gi, ''); if (c.length === 6) el.style.setProperty('--a', '#' + c);
+  if (Q.get('th') === 'light') el.classList.add('light');
+  let last = null;
+  function ago(t) {
+    const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+    const pl = (n, a, b, c) => n % 10 === 1 && n % 100 !== 11 ? a : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? b : c;
+    if (s < 45) return 'только что';
+    const m = Math.round(s / 60); if (m < 60) return `${m} ${pl(m, 'минуту', 'минуты', 'минут')} назад`;
+    const h = Math.round(s / 3600); if (h < 24) return `${h} ${pl(h, 'час', 'часа', 'часов')} назад`;
+    const d = Math.round(s / 86400); return `${d} ${pl(d, 'день', 'дня', 'дней')} назад`;
+  }
+  function show(d, anim) {
+    if (!d) { last = null; el.className = 'ld empty' + (Q.get('th') === 'light' ? ' light' : ''); document.getElementById('nm').textContent = 'Пока донатов нет'; ['am', 'ms', 'tm'].forEach(i => document.getElementById(i).textContent = ''); return; }
+    if (last && last.id === d.id && !anim) { tick(); return; }
+    last = d;
+    document.getElementById('nm').textContent = d.name || 'Аноним';
+    document.getElementById('am').textContent = fmt(d.amount);
+    document.getElementById('ms').textContent = d.message || '';
+    el.classList.remove('empty'); tick();
+    if (anim) { el.classList.remove('new'); void el.offsetWidth; el.classList.add('new'); }
+  }
+  function tick() { if (last) document.getElementById('tm').textContent = ago(last.at || Date.now()); }
+  setInterval(tick, 30000);
+  if (Q.has('demo')) { show({ id: 1, name: 'Әділбек Ш.', amount: 630, message: 'Тапа тапа зёма', at: Date.now() - 15 * 3600e3 }); return; }
+  on('state', st => show(st.last));
+  on('stats', st => { if ('last' in st) show(st.last); });
+  on('donation', d => { if (d.test === undefined || true) show({ id: d.id, name: d.name, amount: d.amount, message: d.message, at: d.at || Date.now() }, true); });
+  start();
+})();
+</script></body></html>

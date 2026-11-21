@@ -201,7 +201,7 @@
     .g2,.g3,.g4,.plans,.row{grid-template-columns:1fr}
   }
 </style>
-<style>.as-flash{animation:asf 1.6s ease-out 2}@keyframes asf{0%{box-shadow:0 0 0 3px #fe2c55}100%{box-shadow:0 0 0 0 transparent}}.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}.ttlock{display:none;padding:10px 12px;border-radius:12px;background:rgba(255,197,49,.08);border:1px solid rgba(255,197,49,.25);color:#ffc531;font-weight:700;font-size:13px;margin-bottom:10px}.ttlock a{color:#fff}.ttev .copy-row{flex-wrap:wrap}.ttev .copy-row input{flex:1 1 100%}</style>
+<style>.sw{display:flex;flex-wrap:wrap;gap:8px}.sw button{width:34px;height:34px;border-radius:10px;border:2px solid rgba(255,255,255,.15);cursor:pointer}.sw button.on{border-color:#fff;box-shadow:0 0 0 2px #ff3b5c}.sw button.def{width:auto;padding:0 10px;color:#fff;font:700 12px Manrope;background:rgba(255,255,255,.06)}.as-flash{animation:asf 1.6s ease-out 2}@keyframes asf{0%{box-shadow:0 0 0 3px #fe2c55}100%{box-shadow:0 0 0 0 transparent}}.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}.ttlock{display:none;padding:10px 12px;border-radius:12px;background:rgba(255,197,49,.08);border:1px solid rgba(255,197,49,.25);color:#ffc531;font-weight:700;font-size:13px;margin-bottom:10px}.ttlock a{color:#fff}.ttev .copy-row{flex-wrap:wrap}.ttev .copy-row input{flex:1 1 100%}</style>
 </head>
 <body>
 <div class="mob-top"><a class="logo" href="/"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>KZStream</a><button class="btn btn-ghost btn-sm" onclick="document.querySelector('aside').classList.toggle('open')">Меню</button></div>
@@ -400,10 +400,21 @@
     <div class="card" style="margin-bottom:18px"><h3>Как добавить в TikTok Live Studio</h3><p class="hint" style="margin:0">Откройте TikTok Live Studio → «Добавить источник» → «Ссылка» (Link) → вставьте ссылку виджета → «Добавить». Растяните виджет на нужное место кадра. Алерты и рулетку лучше растянуть на весь экран, ТОП и цель сбора поставить сбоку. Перед эфиром отправьте тестовый донат на главной.</p></div>
     <div class="wtabs" id="wtabs">
       <button data-wt="links">🔗 Все ссылки</button><button data-wt="top">🏆 ТОП дня</button><button data-wt="goal">🎯 Цель сбора</button>
-      <button data-wt="cards">🏦 Карточки: банки и соцсети</button><button data-wt="info">📰 Info-виджет</button><button data-wt="timer">⏱ Таймер</button>
+      <button data-wt="cards">🏦 Карточки: банки и соцсети</button><button data-wt="info">📰 Info-виджет</button><button data-wt="timer">⏱ Таймер</button><button data-wt="lastdon">💬 Последний донат</button>
     </div>
     <div class="grid g2" id="wlinks" data-wsec="links"></div>
     <div class="grid g2" id="wsecs">
+      <div class="card" style="grid-column:1/-1" data-wsec="lastdon"><h3>💬 Последний донат</h3>
+        <p class="hint">Показывает последний донат: имя, сумму, сообщение и сколько времени прошло. Новый донат появляется сразу, с анимацией. Добавьте ссылку в TikTok Live Studio как «Ссылку».</p>
+        <div class="grid g2" style="gap:16px">
+          <iframe id="ldPrev" style="width:100%;height:160px;border:0;border-radius:12px;background:repeating-conic-gradient(#1a1c26 0 25%,#13151e 0 50%) 0 0/18px 18px"></iframe>
+          <div>
+            <div class="field"><label>Цвет суммы и полоски</label><div class="sw" id="ldCols"></div></div>
+            <div class="field"><label>Фон</label><div class="shape2" id="ldTh"><button type="button" data-th="" class="on">🌙 Тёмный</button><button type="button" data-th="light">☀️ Светлый</button></div></div>
+            <div class="field"><label>Ссылка для TikTok Live Studio</label><div class="copy-row"><input readonly id="ld_w"><button class="btn btn-ghost btn-sm" data-copy="ld_w">Копировать</button></div></div>
+          </div>
+        </div>
+      </div>
       <div class="card topcfg" style="grid-column:1/-1" data-wsec="top">
         <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: ТОП донатеров</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин</div></div></div><video controls preload="none" playsinline poster="/video/w_top.jpg" src="/video/w_top.mp4"></video></div>
         <h3>ТОП донатеров <span class="wb free">Бесплатно</span></h3><p class="hint">Конструктор виджета: выберите дизайн, шрифт и размеры — превью меняется сразу. На Free — дизайн «Классика» с небольшим логотипом KZStream.</p>
@@ -428,6 +439,15 @@
               <div class="field"><label>Скругление углов</label><select id="t_radius"><option value="8">Прямые (8px)</option><option value="16">Скруглённые (16px)</option><option value="24">Овальные (24px)</option></select></div>
               <div class="field"><label>Прозрачность фона</label><select id="t_opacity"><option value="0.75">75% — прозрачный</option><option value="0.9">90% — плотный</option><option value="1">100% — непрозрачный</option></select></div>
             </div>
+            <div class="field"><label>🖼 Своё фото фона</label>
+              <div class="up-banner" id="tbgPrev" style="height:90px"><span>Фото не выбрано — фон как в дизайне</span></div>
+              <div class="up-btns"><label class="btn btn-ghost btn-sm">📁 Загрузить фото<input type="file" accept="image/*" hidden data-up="t_bg" data-upsave="top"></label><button class="btn btn-ghost btn-sm" type="button" data-unset="t_bg" data-unsave="top">Убрать</button></div>
+              <select id="t_bg" data-files="image" hidden></select>
+              <label class="check" style="margin-top:8px"><input type="checkbox" id="t_bgall"> На весь виджет (иначе — только шапка с заголовком)</label></div>
+            <div class="field"><label>🎨 Цвет строк с донатерами</label>
+              <div class="sw" id="t_rows"></div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="color" id="t_row" style="width:56px;height:40px;padding:3px"><span class="muted" style="font-size:13px">свой цвет</span><button class="btn btn-ghost btn-sm" type="button" id="t_rowReset">Как в дизайне</button></div></div>
+            <div class="field"><label>Цвет текста в строках</label><div class="sw" id="t_txs"></div></div>
             <button class="btn btn-primary" data-save="top">Сохранить</button>
           </div>
         </div>

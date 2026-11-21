@@ -25,6 +25,7 @@ function topPickers() {
   $('#t_fonts').innerHTML = TOP_FONTS.map(([id, nm]) => `<button type="button" class="${TOPSEL.font === id ? 'on' : ''}" data-f="${id}" style="font-family:${FONT_CSS[id]},sans-serif">${nm}${locked && id !== 'manrope' ? ' 🔒' : ''}</button>`).join('');
   $('#t_theme_field').style.display = TOPSEL.style === 'classic' ? '' : 'none';
 }
+window.postTop = postTop;
 function postTop() { try { $('#topFrame').contentWindow.postMessage({ kzTop: collectors.top().top }, location.origin); } catch { } }
 
 // ---------- цель сбора: стили ----------
@@ -250,7 +251,7 @@ addEventListener('hashchange', route);
 
 // ---------- загрузка профиля ----------
 async function load() {
-  ME = await api('/api/me');
+  ME = await api('/api/me'); window.KZME = ME;
   FILES = await api('/api/files');
   render();
 }
@@ -282,13 +283,14 @@ function render() {
   listEdit('#nicksList', Object.entries(s.nicks || {}).map(([k, v]) => ({ k, v })), [['k', 'Имя в Kaspi'], ['v', 'Ник']]);
   listEdit('#varList', a.variations || [], [['amount', 'Сумма', 'number'], ['gif', 'Гифка (URL)', 'file:image,video'], ['sound', 'Звук (URL)', 'file:audio'], ['text', 'Подпись']]);
   // виджеты
-  const names = { alerts: '🔔 Алерты', top: '🏆 ТОП донатеров', goal: '🎯 Цель сбора', roulette: '🎰 Рулетка', media: '🎵 Музыка и видео', info: 'ℹ️ Info-виджет', timer: '⏱ Таймер', faceit: '🎮 FACEIT', card: '🏦 Виджет банка (Kaspi)' };
+  const names = { alerts: '🔔 Алерты', top: '🏆 ТОП донатеров', goal: '🎯 Цель сбора', roulette: '🎰 Рулетка', media: '🎵 Музыка и видео', info: 'ℹ️ Info-виджет', timer: '⏱ Таймер', faceit: '🎮 FACEIT', card: '🏦 Виджет банка (Kaspi)', lastdon: '💬 Последний донат' };
   const need = { alerts: null, top: null, goal: null, roulette: 'roulette', media: 'media', info: 'info', timer: 'timer' };
   const badge = k => !need[k] ? '<span class="wb free">Бесплатно</span>' : `<span class="wb lite">Lite</span>`;
   $('#wlinks').innerHTML = Object.entries(ME.urls.widgets).filter(([k]) => names[k]).map(([k, u]) => { if (k === 'card') u += '&k=kaspi'; const locked = need[k] && !p[need[k]];
     return `<div class="wlink ${locked ? 'locked' : ''}"><h4><span>${names[k]} ${badge(k)}</span>${locked ? '<a class="btn btn-ghost btn-sm" href="#billing">🔒 Подключить Lite</a>' : `<a class="btn btn-ghost btn-sm" href="${u}" target="_blank">Открыть ↗</a>`}</h4><div class="copy-row"><input readonly value="${u}" id="w_${k}"><button class="btn btn-ghost btn-sm" data-copy="w_${k}">Копировать</button></div></div>`; }).join('');
   val('t_period', s.top.period); val('t_count', s.top.count); val('t_theme', s.top.theme);
   val('t_title', s.top.title); val('t_size', s.top.size); val('t_radius', s.top.radius); val('t_opacity', s.top.opacity);
+  val('t_bg', s.top.bg || ''); val('t_bgall', !!s.top.bgall); TROW.row = s.top.row || ''; TROW.tx = s.top.rowtx || ''; topCustUi();
   TOPSEL = { style: s.top.style || 'classic', font: s.top.font || 'manrope' }; topPickers();
   if (!$('#topFrame').src) { $('#topFrame').onload = () => setTimeout(postTop, 400); $('#topFrame').src = ME.urls.widgets.top + '&demo'; } else postTop();
   val('g_title', s.goal.title); val('g_target', s.goal.target); val('g_base', s.goal.base); val('g_theme', s.goal.theme);
@@ -360,7 +362,7 @@ const collectors = {
     variations: readList('#varList') } }),
   censor: () => ({ censor: { words: val('c_words'), strip_links: val('c_strip_links') } }),
   nicks: () => ({ nicks: Object.fromEntries(readList('#nicksList').map(r => [r.k, r.v])) }),
-  top: () => ({ top: { period: val('t_period'), count: val('t_count'), theme: val('t_theme'), style: TOPSEL.style, font: TOPSEL.font, title: val('t_title'), size: val('t_size'), radius: +val('t_radius'), opacity: +val('t_opacity') } }),
+  top: () => ({ top: { period: val('t_period'), count: val('t_count'), theme: val('t_theme'), style: TOPSEL.style, font: TOPSEL.font, title: val('t_title'), size: val('t_size'), radius: +val('t_radius'), opacity: +val('t_opacity'), bg: val('t_bg'), bgall: val('t_bgall'), row: TROW.row, rowtx: TROW.tx } }),
   goal: () => {
     const t = +val('g_target');
     if (!t || t < 1 || t > 2000000) throw new Error('Цель сбора — от 1 до 2 000 000 ₸');
@@ -467,11 +469,12 @@ document.addEventListener('change', async e => {
     const r = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': f.type, 'X-Filename': encodeURIComponent(f.name) }, body: f }).then(r => r.json());
     if (r.error) throw new Error(r.error);
     FILES = await api('/api/files'); fillFileSelects();
+    if (inp.dataset.upsave) { val(inp.dataset.up, r.url); topCustUi(); postTop(); save(inp.dataset.upsave); return; }
     const keep = { pg_avatar: val('pg_avatar'), pg_banner: val('pg_banner') }; keep[inp.dataset.up] = r.url;
     Object.entries(keep).forEach(([k, v]) => val(k, v)); pagePreviews(); save('page');
   } catch (er) { toast(er.message, true); }
 });
-document.addEventListener('click', e => { const u = e.target.closest('[data-unset]'); if (!u) return; val(u.dataset.unset, ''); pagePreviews(); save('page'); });
+document.addEventListener('click', e => { const u = e.target.closest('[data-unset]'); if (!u) return; val(u.dataset.unset, ''); if (u.dataset.unsave) { topCustUi(); postTop(); save(u.dataset.unsave); return; } pagePreviews(); save('page'); });
 $('#goalReset').onclick = () => { if (!confirm('Сбросить прогресс цели? Собранная сумма начнётся с нуля (донаты не удаляются).')) return; save('goal', { reset: true }); postGoal({ kzGoalReset: 1 }); };
 $('#g_styles').onclick = e => { const d = e.target.closest('.gs'); if (!d) return; GOALSEL = d.dataset.g; goalPickers(); postGoal(); if (!ME.plan.shop && !goalFree(GOALSEL)) toast('Это предпросмотр. Стиль включится в эфире с тарифом Lite', true); };
 ['g_title', 'g_target', 'g_base', 'g_theme'].forEach(id => ['input', 'change'].forEach(ev => $('#' + id).addEventListener(ev, () => { postGoal(); goalDirty(); })));
@@ -701,3 +704,43 @@ function mLaySet(base) {
 document.addEventListener('click', e => { const b = e.target.closest('#mLay [data-ml]'); if (!b) return; mLay = b.dataset.ml; try { localStorage.setItem('kz_mlay', mLay); } catch { } mLaySet(); });
 // превью плашки «Музыка — цена» меняется сразу, пока вводят сумму
 document.addEventListener('input', e => { if (e.target.id !== 'm_min') return; const v = Math.max(1, Math.round(+e.target.value || 0)); const f = document.getElementById('mpPrev'); clearTimeout(f._t); f._t = setTimeout(() => { f.src = '/w/mprice.html?demo&min=' + v; }, 300); });
+
+// ---------- ТОП: своё фото фона и цвета строк ----------
+var TROW = { row: '', tx: '' };
+const ROW_COLORS = ['#c0142a', '#ff3b5c', '#ff7a1a', '#ffb800', '#2bd67b', '#00b3a4', '#2f8cff', '#7c5cff', '#c13cff', '#ff4fa3', '#1b1d26', '#ffffff'];
+const TX_COLORS = ['#ffffff', '#111111', '#ffd23f', '#25f4ee'];
+function topCustUi() {
+  const q = s => document.querySelector(s); if (!q('#t_rows')) return;
+  q('#t_rows').innerHTML = '<button type="button" class="def ' + (!TROW.row ? 'on' : '') + '" data-rc="">Как в дизайне</button>' + ROW_COLORS.map(c => `<button type="button" data-rc="${c}" class="${TROW.row === c ? 'on' : ''}" style="background:${c}"></button>`).join('');
+  q('#t_txs').innerHTML = '<button type="button" class="def ' + (!TROW.tx ? 'on' : '') + '" data-tc="">Авто</button>' + TX_COLORS.map(c => `<button type="button" data-tc="${c}" class="${TROW.tx === c ? 'on' : ''}" style="background:${c}"></button>`).join('');
+  if (TROW.row) q('#t_row').value = TROW.row;
+  const b = q('#t_bg').value, pv = q('#tbgPrev');
+  pv.style.background = b ? `center/cover no-repeat url("${b}")` : ''; pv.querySelector('span').style.display = b ? 'none' : '';
+}
+document.addEventListener('click', e => {
+  const r = e.target.closest('#t_rows [data-rc]'), t = e.target.closest('#t_txs [data-tc]');
+  if (r) { TROW.row = r.dataset.rc; topCustUi(); window.postTop && window.postTop(); }
+  if (t) { TROW.tx = t.dataset.tc; topCustUi(); window.postTop && window.postTop(); }
+  if (e.target.id === 't_rowReset') { TROW.row = ''; topCustUi(); window.postTop && window.postTop(); }
+});
+document.addEventListener('input', e => { if (e.target.id === 't_row') { TROW.row = e.target.value; topCustUi(); window.postTop && window.postTop(); } });
+document.addEventListener('change', e => { if (e.target.id === 't_bgall') window.postTop && window.postTop(); });
+
+// ---------- виджет «Последний донат» ----------
+const LD_COLORS = ['ffa01c', 'ff3b5c', '2bd67b', '2f8cff', '7c5cff', 'ff4fa3', 'ffd23f', '25f4ee'];
+let LD = { c: 'ffa01c', th: '' }; try { LD = { ...LD, ...JSON.parse(localStorage.kzLd || '{}') }; } catch { }
+function ldUi() {
+  const q = s => document.querySelector(s); const ME = window.KZME; if (!q('#ldCols') || !ME || !ME.urls || !ME.urls.widgets.lastdon) return;
+  q('#ldCols').innerHTML = LD_COLORS.map(c => `<button type="button" data-ldc="${c}" class="${LD.c === c ? 'on' : ''}" style="background:#${c}"></button>`).join('');
+  document.querySelectorAll('#ldTh [data-th]').forEach(b => b.classList.toggle('on', b.dataset.th === LD.th));
+  const extra = (LD.c !== 'ffa01c' ? '&c=' + LD.c : '') + (LD.th ? '&th=' + LD.th : '');
+  const inp = q('#ld_w'), sz = (inp.value.match(/&s=\d+/) || [''])[0];
+  inp.value = ME.urls.widgets.lastdon + extra + sz;
+  const pv = '/w/lastdon.html?demo&t=x' + extra; if (!q('#ldPrev').src.endsWith(pv)) q('#ldPrev').src = pv;
+  try { localStorage.kzLd = JSON.stringify(LD); } catch { }
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest('#ldCols [data-ldc]'), t = e.target.closest('#ldTh [data-th]');
+  if (c) { LD.c = c.dataset.ldc; ldUi(); } if (t) { LD.th = t.dataset.th; ldUi(); }
+});
+setInterval(() => { const i = document.querySelector('#ld_w'); if (i && !i.value) ldUi(); }, 1000);

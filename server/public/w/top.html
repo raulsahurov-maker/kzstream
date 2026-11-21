@@ -189,6 +189,14 @@
   .st-cs2 .row:nth-child(1) .sm{color:#ff5a3c}
   .st-cs2 .row.first{transform:none;margin:0}
   .st-cs2 .empty{color:#ffb100;font-family:Oswald,sans-serif;text-transform:uppercase}
+  /* ---- своё оформление ---- */
+  .cust-bg .hd{background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.5)),var(--hbg) center/cover no-repeat !important;min-height:70px;display:flex !important;align-items:center;justify-content:center;color:#fff !important;text-shadow:0 2px 8px rgba(0,0,0,.8) !important;-webkit-text-fill-color:#fff !important;clip-path:none !important;transform:none !important}
+  .cust-bg .hd::before,.cust-bg .hd::after{display:none !important}
+  .cust-bgall .box{background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.6)),var(--hbg) center/cover no-repeat !important}
+  .cust-bgall .scene,.cust-bgall .fire{display:none !important}
+  .cust-row .row{background:linear-gradient(90deg,var(--rc),color-mix(in srgb,var(--rc) 55%,#000)) !important;border-color:color-mix(in srgb,var(--rc) 70%,#fff) !important;box-shadow:0 4px 14px color-mix(in srgb,var(--rc) 35%,transparent) !important}
+  .cust-row .row::before,.cust-row .row::after{opacity:.25}
+  .cust-tx .row,.cust-tx .row .nm,.cust-tx .row .sm,.cust-tx .row .pos{color:var(--rt) !important;-webkit-text-fill-color:var(--rt) !important}
 </style></head><body>
 <div id="root" data-fit class="st-classic f-manrope sz-md"><div class="box"><div class="scene"><svg viewBox="0 0 420 520" preserveAspectRatio="xMidYMid slice"><defs>
 <linearGradient id="vs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b0638"/><stop offset=".38" stop-color="#5b1683"/><stop offset=".62" stop-color="#c2268f"/><stop offset=".8" stop-color="#ff6a6a"/><stop offset="1" stop-color="#ffb35c"/></linearGradient>
@@ -258,6 +266,12 @@
     root.style.setProperty('--o', o); root.style.setProperty('--r', r + 'px');
     const bg = getComputedStyle(document.documentElement).getPropertyValue('--w-bg').trim();
     root.style.setProperty('--bg', bg.replace(/,\s*[\d.]+\)$/, `,${o})`));
+    // своё фото в шапке (или на весь виджет) и свой цвет строк — поверх любого дизайна
+    const bgu = String(set.bg || '');
+    root.classList.toggle('cust-bg', !!bgu && !set.bgall); root.classList.toggle('cust-bgall', !!bgu && !!set.bgall);
+    root.style.setProperty('--hbg', bgu ? `url("${bgu.replace(/"/g, '')}")` : 'none');
+    root.classList.toggle('cust-row', !!set.row); if (set.row) root.style.setProperty('--rc', set.row);
+    root.classList.toggle('cust-tx', !!set.rowtx); if (set.rowtx) root.style.setProperty('--rt', set.rowtx);
     document.getElementById('h').textContent = String(set.title || '').trim() || per[set.period] || per.all;
     draw();
   }
