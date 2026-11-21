@@ -3,8 +3,8 @@
 <link rel="stylesheet" href="/w/w.css">
 <style>
   /* плашка всегда заполняет источник в Live Studio: рамку можно сделать маленькой */
-  html,body{height:100%;margin:0}body{display:grid;place-items:center}
-  #stack{position:relative;width:420px;height:84px;zoom:var(--z,1)}
+  html,body{height:100%;margin:0}body{justify-content:flex-start;align-items:center;padding-top:4px;box-sizing:border-box}
+  #stack{position:relative;width:420px;height:84px}
   #stack .tt{position:absolute;left:0;right:0;top:0;bottom:0}
   .tt{display:flex;align-items:center;gap:12px;padding:10px 20px 10px 12px;box-sizing:border-box;border-radius:999px;background:rgba(14,14,20,.88);border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 30px rgba(0,0,0,.45);color:#fff;font-family:Manrope,sans-serif;animation:tin .5s cubic-bezier(.2,1.4,.4,1) both}
   .tt.out{animation:tout .45s ease-in both}
@@ -21,13 +21,8 @@
   .tt.share{box-shadow:0 10px 30px rgba(37,244,238,.3)}
   #hint{display:none;position:fixed;inset:auto 0 10px;text-align:center;color:#fff;font:700 13px Manrope;opacity:.75}
 </style></head><body>
-<div id="stack"></div>
+<div id="stack" data-fit></div>
 <div id="hint">Нажмите один раз, чтобы включить звук</div>
-<script>
-  // масштаб под размер источника (с отступом 4%)
-  function fitZ() { const z = Math.min(innerWidth / 420, innerHeight / 84) * .96; document.getElementById('stack').style.setProperty('--z', Math.max(.2, z)); }
-  addEventListener('resize', fitZ); addEventListener('DOMContentLoaded', fitZ);
-</script>
 <script>window.KZ_STREAM_Q = '?role=tts&ev=' + encodeURIComponent(new URLSearchParams(location.search).get('ev') || '');</script>
 <script src="/w/widget.js"></script>
 <script src="/w/sfx.js"></script>
