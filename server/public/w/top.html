@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="UTF-8"><title>KZStream — ТОП</title>
 <link rel="stylesheet" href="/w/w.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&family=Montserrat:wght@700;900&family=Oswald:wght@600;700&family=Rubik:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@700;900&family=Montserrat:wght@700;900&family=Oswald:wght@600;700&family=Rubik:wght@700;900&display=swap" rel="stylesheet">
 <style>
   #root{--r:16px;--o:.9;--ri:max(4px,calc(var(--r) - 6px));--fs:17px;--glow:rgba(255,59,92,.5);width:420px;margin:10px}
   .f-manrope{font-family:Manrope,sans-serif}.f-montserrat{font-family:Montserrat,sans-serif}.f-unbounded{font-family:Unbounded,sans-serif}
@@ -189,6 +189,30 @@
   .st-cs2 .row:nth-child(1) .sm{color:#ff5a3c}
   .st-cs2 .row.first{transform:none;margin:0}
   .st-cs2 .empty{color:#ffb100;font-family:Oswald,sans-serif;text-transform:uppercase}
+  /* ===== НОВЫЙ ГОД ===== */
+  .snow{display:none}
+  .st-xmas{--glow:rgba(255,215,120,.55)}
+  .st-xmas .box{position:relative;overflow:hidden;border-radius:var(--r);padding:0 0 14px;border:3px solid #c9a24a;
+    background:linear-gradient(180deg,rgba(20,8,6,.25),rgba(20,8,6,.5) 45%,rgba(20,8,6,.7)),url(/img/top/xmas.jpg) center/cover no-repeat,#2a0f0a;
+    box-shadow:0 0 26px rgba(255,200,90,.35),0 16px 40px rgba(0,0,0,.6),inset 0 0 0 2px rgba(255,255,255,.08)}
+  .st-xmas .snow{display:block;position:absolute;inset:0;pointer-events:none;z-index:3}
+  .st-xmas .snow i{position:absolute;top:-10px;color:#fff;opacity:.85;text-shadow:0 0 6px rgba(255,255,255,.8);animation:snowf linear infinite}
+  @keyframes snowf{to{transform:translateY(560px) translateX(30px) rotate(360deg)}}
+  .st-xmas .hd{position:relative;z-index:2;margin:0 0 14px;padding:24px 16px 14px;text-align:center;color:#fff;font-family:Pacifico,Rubik,cursive;font-weight:400;font-size:calc(var(--fs)*1.9);letter-spacing:.01em;
+    background:linear-gradient(180deg,#b3121f,#7d0a14);border-bottom:3px solid #e8c56a;text-shadow:0 2px 0 #4a0309,0 0 14px rgba(255,220,140,.5);box-shadow:0 6px 18px rgba(0,0,0,.45)}
+  .st-xmas .hd::before{content:"";position:absolute;left:0;right:0;top:6px;height:14px;
+    background:radial-gradient(circle,#ffde59 0 3px,transparent 4px) 0 0/28px 14px,radial-gradient(circle,#ff4d4d 0 3px,transparent 4px) 14px 0/28px 14px;animation:lights 1.2s steps(2) infinite;filter:drop-shadow(0 0 4px #ffd84a)}
+  .st-xmas .hd::after{content:"🎄";position:absolute;left:12px;bottom:8px;font-size:calc(var(--fs)*1.6);font-family:sans-serif;text-shadow:none}
+  @keyframes lights{50%{filter:drop-shadow(0 0 7px #ff6a6a) hue-rotate(120deg)}}
+  .st-xmas .list{position:relative;z-index:2;padding:0 14px;gap:8px}
+  .st-xmas .row{border-radius:calc(var(--ri) * .8);color:#fff;border:2px solid #f3f3f3;
+    background:repeating-linear-gradient(135deg,rgba(190,20,32,.92) 0 14px,rgba(150,10,22,.92) 14px 28px);box-shadow:0 4px 12px rgba(0,0,0,.4)}
+  .st-xmas .row .pos{background:#fff;color:#b3121f;border-radius:50%}
+  .st-xmas .row .sm{color:#ffe08a;text-shadow:0 1px 0 #4a0309}
+  .st-xmas .row:nth-child(1){border-color:#ffd24a;background:repeating-linear-gradient(135deg,rgba(214,160,40,.95) 0 14px,rgba(178,120,20,.95) 14px 28px);box-shadow:0 0 18px rgba(255,210,80,.6)}
+  .st-xmas .row:nth-child(1) .nm::after{content:" 🎁"}
+  .st-xmas .row:nth-child(1) .sm{color:#fff}
+  .st-xmas .empty{color:#ffe08a;position:relative;z-index:2}
   /* ---- своё оформление ---- */
   .cust-bg .hd{background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.5)),var(--hbg) center/cover no-repeat !important;min-height:70px;display:flex !important;align-items:center;justify-content:center;color:#fff !important;text-shadow:0 2px 8px rgba(0,0,0,.8) !important;-webkit-text-fill-color:#fff !important;clip-path:none !important;transform:none !important}
   .cust-bg .hd::before,.cust-bg .hd::after{display:none !important}
@@ -208,7 +232,7 @@
 <g fill="#240a3d" opacity=".95"><path d="M0 520V392h22v-30h16v30h14v-64h26v64h12v-46h20v46h18v-90h10v-12h14v12h10v90h16v-58h24v58h12v-36h20v36h14v-74h8v-16h16v16h8v74h18v-50h22v50h14v-28h18v28h10V352h26v168z"/></g>
 <g stroke="#ff3ea5" stroke-width="1.2" opacity=".5"><path d="M0 470H420M0 492H420M0 512H420"/><path d="M210 455L40 520M210 455L130 520M210 455L290 520M210 455L380 520"/></g>
 <g><path d="M41 520 Q52.6 410.0 66 300 L71 300 Q58.6 410.0 51 520Z" fill="#12041f"/><path d="M68 300 Q37 282 7 316" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M68 300 Q39 264 11 302" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M68 300 Q56 256 43 291" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M68 300 Q80 256 93 291" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M68 300 Q97 264 125 302" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M68 300 Q99 282 129 316" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M68 300 Q68 264 68 292" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M375 520 Q374.0 419.0 358 318 L363 318 Q380.0 419.0 385 520Z" fill="#12041f"/><path d="M360 318 Q329 300 299 334" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M360 318 Q331 282 303 320" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M360 318 Q348 274 335 309" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M360 318 Q372 274 385 309" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M360 318 Q389 282 417 320" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M360 318 Q391 300 421 334" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M360 318 Q360 282 360 310" stroke="#12041f" stroke-width="9" fill="none" stroke-linecap="round"/></g>
-</svg></div><div class="hd" id="h">ТОП ДОНАТЕРОВ</div><div class="list" id="list"></div><div class="fire"><div class="logs"><i></i><i></i><i></i></div><div class="fl"></div><div class="fl"></div><div class="fl"></div><div class="fl"></div><div class="fl"></div><div class="fl"></div><div class="fl"></div><span class="sp"></span><span class="sp"></span><span class="sp"></span><span class="sp"></span><span class="sp"></span></div></div></div>
+</svg></div><div class="snow" id="snow"></div><div class="hd" id="h">ТОП ДОНАТЕРОВ</div><div class="list" id="list"></div><div class="fire"><div class="logs"><i></i><i></i><i></i></div><div class="fl"></div><div class="fl"></div><div class="fl"></div><div class="fl"></div><div class="fl"></div><div class="fl"></div><div class="fl"></div><span class="sp"></span><span class="sp"></span><span class="sp"></span><span class="sp"></span><span class="sp"></span></div></div></div>
 <div class="ad" id="ad" style="display:none">KZStream · донаты через Kaspi</div>
 <script src="/w/widget.js"></script>
 <script>
@@ -216,7 +240,7 @@
   const { on, start, theme, fmt, esc } = KZ;
   const demo = new URLSearchParams(location.search).has('demo'); // режим превью в кабинете
   const DEMO = [['ӘЛИХАН', 15000], ['DIAS_KZ', 8500], ['АЙГЕРІМ', 5000], ['НҰРСҰЛТАН', 2000], ['MIRA', 1000], ['ЕРЖАН', 900], ['АЙАРУ', 800], ['БАҚЫТ', 700], ['САБИНА', 600], ['НҰРБЕК', 500]].map(([name, total]) => ({ name, total }));
-  const STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud', 'vice', 'fire', 'cs2'], FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'], SIZES = ['sm', 'md', 'lg'];
+  const STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud', 'vice', 'fire', 'cs2', 'xmas'], FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'], SIZES = ['sm', 'md', 'lg'];
   const per = { day: 'ТОП ДНЯ', week: 'ТОП НЕДЕЛИ', month: 'ТОП МЕСЯЦА', all: 'ТОП ДОНАТЕРОВ' };
   const root = document.getElementById('root'), pick = (v, list) => list.includes(v) ? v : list[0];
   let set = {}, top = [];
@@ -259,6 +283,8 @@
   const PROMO = `<div class="promo"><div class="pl"><span class="pm"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span><span class="pt">KZStream</span></div><div class="ps">Лучший донат-сервис для TikTok Live</div></div>`;
   let promo = false;
   setInterval(() => { if (demo || top.length) return; promo = true; draw(); setTimeout(() => { promo = false; if (!top.length) draw(); }, 7000); }, 30000);
+  // снежинки для «Нового года»
+  document.getElementById('snow').innerHTML = Array.from({ length: 26 }, (_, i) => `<i style="left:${(i * 37) % 100}%;font-size:${8 + (i * 7) % 12}px;animation-duration:${6 + (i * 13) % 9}s;animation-delay:-${(i * 17) % 12}s">❄</i>`).join('');
   function apply() {
     theme(set.theme);
     root.className = `st-${pick(set.style, STYLES)} f-${pick(set.font, FONTS)} sz-${pick(set.size, ['md', ...SIZES])}`;

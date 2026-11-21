@@ -7,6 +7,7 @@ let ME = null, FILES = [];
 const THEME_COLORS = { default: ['rgba(14,15,26,.9)', '#fff', '#ff3b5c', '#ff7a45', 'Классика'], neon: ['rgba(8,4,24,.9)', '#e9e6ff', '#8b6cff', '#3ee6c4', 'Неон'], sunset: ['rgba(40,12,20,.9)', '#fff3ea', '#ff7a45', '#ffc84a', 'Закат'], mint: ['rgba(6,26,24,.9)', '#eafff9', '#3ee6c4', '#7dffb2', 'Мята'], royal: ['rgba(14,10,40,.9)', '#fff', '#5b7cff', '#c86bff', 'Роял'], mono: ['rgba(0,0,0,.9)', '#fff', '#ffffff', '#9a9a9a', 'Моно'], candy: ['rgba(40,10,36,.9)', '#fff', '#ff6bd6', '#ffb86b', 'Конфета'], steppe: ['rgba(6,24,40,.9)', '#fff', '#00b3e6', '#ffd23f', 'Степь'], ice: ['rgba(230,244,255,.95)', '#0b2a44', '#2f9bff', '#6ad7ff', 'Лёд'], gold: ['rgba(20,16,6,.92)', '#fff6dd', '#ffc84a', '#ff9d2e', 'Золото'] };
 // ---------- конструктор ТОПа ----------
 const TOP_DESIGNS = [
+  { id: 'xmas', name: '🎄 Новый год', desc: 'Камин и ёлка, гирлянда, снег', pv: `<div class="pv" style="background:linear-gradient(180deg,rgba(20,8,6,.3),rgba(20,8,6,.6)),url(/img/top/xmas.jpg) center/cover;border:1.5px solid #c9a24a;padding:0 6px 6px"><b style="display:block;margin:0 -6px 5px;padding:4px;background:#b3121f;color:#fff;font:400 10px Pacifico,cursive;text-align:center;border-bottom:2px solid #e8c56a">Топ донатеров</b><i style="display:block;height:9px;margin-bottom:3px;border-radius:4px;border:1px solid #fff;background:repeating-linear-gradient(135deg,#be1420 0 5px,#960a16 5px 10px)"></i><i style="display:block;height:9px;border-radius:4px;border:1px solid #fff;background:repeating-linear-gradient(135deg,#be1420 0 5px,#960a16 5px 10px)"></i></div>` },
   { id: 'cs2', name: 'CS2 · FACEIT', desc: 'Топ-1 = 10 лвл, топ-2 = 9…', pv: `<div class="pv" style="background:linear-gradient(115deg,#1b1d22 0 55%,#2a1c0c 55%);border:1.5px solid #ff8a00;padding:0 6px 6px"><b style="background:linear-gradient(115deg,transparent 0 70%,#fff 70% 72%,transparent 72%),linear-gradient(115deg,#d9d9db 0 40%,#ff8a00 55%);color:#14100a;font-style:italic;text-align:left;padding-left:8px;margin:0 -6px 4px;clip-path:polygon(0 0,100% 0,calc(100% - 8px) 100%,0 100%)">ТОП ДНЯ</b><i style="background:rgba(120,20,0,.85);border-left:3px solid #fe1f00;color:#fff;text-transform:uppercase"><svg viewBox="0 0 40 40" width="13" height="13" style="vertical-align:-2px;margin-right:3px"><circle cx="20" cy="20" r="19" fill="#1a1a1a"/><circle cx="20" cy="20" r="15" fill="none" stroke="#fe1f00" stroke-width="5" stroke-dasharray="70.7 999" transform="rotate(135 20 20)"/><text x="20" y="27" text-anchor="middle" font-weight="700" font-size="18" fill="#fe1f00">10</text></svg>Әлихан <span style="color:#ff5a3c">15 000 ₸</span></i><i style="background:rgba(40,42,48,.95);border-left:3px solid #ff8a00;color:#eee;text-transform:uppercase"><svg viewBox="0 0 40 40" width="13" height="13" style="vertical-align:-2px;margin-right:3px"><circle cx="20" cy="20" r="19" fill="#1a1a1a"/><circle cx="20" cy="20" r="15" fill="none" stroke="#ff6309" stroke-width="5" stroke-dasharray="63.6 999" transform="rotate(135 20 20)"/><text x="20" y="27" text-anchor="middle" font-weight="700" font-size="18" fill="#ff6309">9</text></svg>Dias <span style="color:#ffb100">8 500 ₸</span></i></div>` },
   { id: 'fire', name: 'Камин 🔥', desc: 'Живой огонь, искры', pv: `<div class="pv" style="background:linear-gradient(rgba(30,10,4,.9),rgba(30,10,4,.9)),repeating-linear-gradient(0deg,#5a2a18 0 8px,#2a120a 8px 9px);border:2px solid #6b3a22;position:relative;overflow:hidden"><b style="background:linear-gradient(#7a4524,#4a2512);color:#ffe2a8;border-radius:3px;font-size:10px;text-shadow:0 0 6px #ff9a2a;display:flex;align-items:center;justify-content:center;gap:4px"><img src="/img/top/flame.png" style="height:16px;margin:-4px 0">ТОП ДНЯ<img src="/img/top/flame.png" style="height:16px;margin:-4px 0"></b><i style="background:rgba(150,60,10,.9);border:1px solid #ffb547;box-shadow:0 0 6px #ff8a1f;color:#fff3c4;border-radius:4px"><img src="/img/top/crown.png" style="height:10px;vertical-align:-1px"> Әлихан <span style="color:#ffb547">15 000 ₸</span></i><i style="background:rgba(60,24,10,.85);border:1px solid rgba(255,140,50,.35);color:#ffe9c7;border-radius:4px">Dias <span style="color:#ffb547">8 500 ₸</span></i><u style="display:block;height:14px;margin:4px -8px -8px;background:radial-gradient(40% 100% at 50% 100%,#ffd23f,#ff6a1a 50%,transparent 75%),#1a0703;animation:pvf 1s ease-in-out infinite alternate"></u></div>` },
   { id: 'vice', name: 'Vice City (GTA 6)', desc: 'Неоновый закат, пальмы', pv: `<div class="pv" style="background:linear-gradient(#2a0a4a,#8b1d8f 55%,#ff6a6a 85%,#ffb35c);border:1.5px solid #ff7ac8"><b style="font-family:Oswald,sans-serif;font-style:italic;background:linear-gradient(#fff7a8,#ffc23a 50%,#ff3ea5);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:11px;filter:drop-shadow(0 1px 0 #ff3ea5)">ТОП ДНЯ</b><i style="background:rgba(60,14,60,.7);border:1px solid #ffd23f;box-shadow:0 0 5px #ffd23f;color:#ffd23f;border-radius:4px;font-style:italic">👑 ӘЛИХАН <span>15 000 ₸</span></i><i style="background:rgba(34,8,58,.7);border:1px solid #3ee8ff;box-shadow:0 0 5px #3ee8ff;color:#ff9be0;border-radius:4px;font-style:italic">DIAS_KZ <span style="color:#fff">8 500 ₸</span></i></div>` },
@@ -183,6 +184,7 @@ const CARD_DEF = [
   ['twitch', 'Twitch', '<span style="background:#9146ff;width:100%;height:100%;display:grid;place-items:center"><svg viewBox="0 0 24 24" fill="#fff"><path d="M4 2 2.5 6v14h5v3h3l3-3h4l5-5V2H4zm16 12-3 3h-5l-3 3v-3H5V4h15v10z"/></svg></span>', 'Ник на Twitch', 'Подпись, напр. «стримы каждый день»'],
   ['instagram', 'Instagram', '<span style="background:linear-gradient(45deg,#feda75,#fa7e1e,#d62976,#962fbf);width:100%;height:100%;display:grid;place-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></span>', '@ник в Instagram', 'Подпись'],
   ['youtube', 'YouTube', '<span style="background:#ff0000;width:100%;height:100%;display:grid;place-items:center"><svg viewBox="0 0 24 24"><path d="M9 7v10l8-5z" fill="#fff"/></svg></span>', 'Название канала', 'Подпись'],
+  ['telegram', 'Telegram', '<span style="background:#229ed9;width:100%;height:100%;display:grid;place-items:center"><svg viewBox="0 0 24 24" fill="#fff"><path d="M21.6 4.2 2.9 11.4c-1.3.5-1.3 1.2-.2 1.5l4.8 1.5 1.8 5.6c.2.6.1.9.8.9.5 0 .7-.2 1-.5l2.3-2.3 4.8 3.6c.9.5 1.5.2 1.7-.8l3.1-14.7c.3-1.3-.5-1.9-1.4-1.6z"/></svg></span>', '@канал или t.me/ссылка', 'Подпись, напр. «новости стрима»'],
   ['blackrussia', 'Black Russia', '<img src="/img/logo/blackrussia.png">', 'Ник_Нейм', 'Сервер, напр. RED'],
 ];
 function cardsInit() {
@@ -195,6 +197,29 @@ function cardsInit() {
   CARD_DEF.forEach(([k]) => { let l = 'wide'; try { l = localStorage['kzShape_' + k] || 'wide'; } catch { } cardShape(k, l, true); });
   $('#cardsGrid').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (!b) return; const k = b.parentNode.dataset.shape; cardShape(k, b.dataset.l); toast((b.dataset.l === 'tall' ? 'Форма «в толщину»' : 'Форма «в ширину»') + ' — скопируйте ссылку заново'); });
   document.querySelectorAll('#cardsGrid iframe').forEach(f => f.onload = () => setTimeout(() => cardPost(f.dataset.pv), 200));
+  rotInit();
+}
+// ---------- сменяющаяся карточка ----------
+let ROT = { ks: ['kaspi', 'halyk', 'freedom'], iv: 5, l: 'wide' }; try { ROT = { ...ROT, ...JSON.parse(localStorage.kzRot || '{}') }; } catch { }
+function rotInit() {
+  const pick = $('#rotPick'); if (!pick) return;
+  pick.innerHTML = CARD_DEF.map(([k, nm, ic]) => `<button type="button" data-rk="${k}"><i>${ic}</i>${nm}<b></b></button>`).join('');
+  $('#rotIv').value = String(ROT.iv);
+  pick.onclick = e => { const b = e.target.closest('[data-rk]'); if (!b) return; const k = b.dataset.rk; ROT.ks = ROT.ks.includes(k) ? ROT.ks.filter(x => x !== k) : [...ROT.ks, k]; rotUi(); };
+  $('#rotIv').onchange = () => { ROT.iv = +$('#rotIv').value; rotUi(); };
+  $('#rotShape').onclick = e => { const b = e.target.closest('[data-rl]'); if (!b) return; ROT.l = b.dataset.rl; rotUi(); };
+  $('#rotPrev').onload = () => setTimeout(rotPost, 250);
+  rotUi();
+}
+function rotPost() { try { const C = {}; CARD_DEF.forEach(([k, nm]) => { const v = cardVal(k); C[k] = v.value ? v : { value: k === 'kaspi' ? '7 775 000 00 00' : 'пример', name: '' }; }); $('#rotPrev').contentWindow.postMessage({ kzCards: C }, location.origin); } catch { } }
+function rotUi() {
+  try { localStorage.kzRot = JSON.stringify(ROT); } catch { }
+  document.querySelectorAll('#rotPick [data-rk]').forEach(b => { const i = ROT.ks.indexOf(b.dataset.rk); b.classList.toggle('on', i >= 0); b.querySelector('b').textContent = i >= 0 ? i + 1 : ''; });
+  document.querySelectorAll('#rotShape [data-rl]').forEach(b => b.classList.toggle('on', b.dataset.rl === ROT.l));
+  const q = '&k=' + (ROT.ks.join(',') || 'kaspi') + '&iv=' + ROT.iv + (ROT.l === 'tall' ? '&l=tall' : '');
+  const inp = $('#rot_w'), sz = (inp.value.match(/&s=\d+/) || [''])[0];
+  inp.value = ME.urls.widgets.card + q + sz;
+  const src = ME.urls.widgets.card + q + '&demo'; if ($('#rotPrev').getAttribute('src') !== src) $('#rotPrev').src = src;
 }
 function cardShape(k, l, init) {
   try { localStorage['kzShape_' + k] = l; } catch { }
@@ -728,12 +753,14 @@ document.addEventListener('change', e => { if (e.target.id === 't_bgall') window
 
 // ---------- виджет «Последний донат» ----------
 const LD_COLORS = ['ffa01c', 'ff3b5c', '2bd67b', '2f8cff', '7c5cff', 'ff4fa3', 'ffd23f', '25f4ee'];
-let LD = { c: 'ffa01c', th: '' }; try { LD = { ...LD, ...JSON.parse(localStorage.kzLd || '{}') }; } catch { }
+let LD = { c: 'ffa01c', th: '', f: '' }; try { LD = { ...LD, ...JSON.parse(localStorage.kzLd || '{}') }; } catch { }
 function ldUi() {
   const q = s => document.querySelector(s); const ME = window.KZME; if (!q('#ldCols') || !ME || !ME.urls || !ME.urls.widgets.lastdon) return;
   q('#ldCols').innerHTML = LD_COLORS.map(c => `<button type="button" data-ldc="${c}" class="${LD.c === c ? 'on' : ''}" style="background:#${c}"></button>`).join('');
   document.querySelectorAll('#ldTh [data-th]').forEach(b => b.classList.toggle('on', b.dataset.th === LD.th));
-  const extra = (LD.c !== 'ffa01c' ? '&c=' + LD.c : '') + (LD.th ? '&th=' + LD.th : '');
+  const LDF = [['', 'Unbounded', 'Unbounded'], ['montserrat', 'Montserrat', 'Montserrat'], ['oswald', 'Oswald', 'Oswald'], ['rubik', 'Rubik', 'Rubik'], ['inter', 'Inter', 'Inter'], ['russo', 'Russo One', '"Russo One"'], ['comfortaa', 'Comfortaa', 'Comfortaa'], ['pacifico', 'Pacifico', 'Pacifico'], ['pixel', 'Пиксель', '"Press Start 2P"'], ['manrope', 'Manrope', 'Manrope']];
+  q('#ldFonts').innerHTML = LDF.map(([k, n, ff]) => `<button type="button" data-ldf="${k}" class="${LD.f === k ? 'on' : ''}" style="font-family:${ff.replace(/"/g, "'")}">${n}</button>`).join('');
+  const extra = (LD.c !== 'ffa01c' ? '&c=' + LD.c : '') + (LD.th ? '&th=' + LD.th : '') + (LD.f ? '&f=' + LD.f : '');
   const inp = q('#ld_w'), sz = (inp.value.match(/&s=\d+/) || [''])[0];
   inp.value = ME.urls.widgets.lastdon + extra + sz;
   const pv = '/w/lastdon.html?demo&t=x' + extra; if (!q('#ldPrev').src.endsWith(pv)) q('#ldPrev').src = pv;
@@ -742,5 +769,17 @@ function ldUi() {
 document.addEventListener('click', e => {
   const c = e.target.closest('#ldCols [data-ldc]'), t = e.target.closest('#ldTh [data-th]');
   if (c) { LD.c = c.dataset.ldc; ldUi(); } if (t) { LD.th = t.dataset.th; ldUi(); }
+  const ff = e.target.closest('#ldFonts [data-ldf]'); if (ff) { LD.f = ff.dataset.ldf; ldUi(); }
 });
 setInterval(() => { const i = document.querySelector('#ld_w'); if (i && !i.value) ldUi(); }, 1000);
+
+// ---------- реферальная программа (вкладка «Аккаунт») ----------
+function refUi() {
+  const ME = window.KZME, q = s => document.querySelector(s); if (!ME || !ME.referral || !q('#refLink')) return;
+  const R = ME.referral, link = location.origin + '/?ref=' + encodeURIComponent(ME.nick);
+  if (q('#refLink').value !== link) q('#refLink').value = link;
+  q('#refHint').textContent = `Делитесь ссылкой со стримерами. Кто зарегистрируется по ней, получит скидку −${R.off}% на первую оплату тарифа, а вам на баланс придёт ${R.pct}% от каждой его оплаты тарифа. Баланс можно тратить на тарифы.`;
+  q('#refCount').textContent = R.count; q('#refPaid').textContent = R.paid; q('#refEarn').textContent = (R.earned || 0).toLocaleString('ru-RU') + ' ₸';
+  q('#refList').innerHTML = R.list.length ? R.list.map(x => `<span class="${x.paid ? 'p' : ''}">${x.paid ? '✅' : '👤'} ${String(x.nick).replace(/</g, '')}</span>`).join('') : '<span class="muted" style="background:none">Пока никого — отправьте ссылку друзьям-стримерам</span>';
+}
+setInterval(refUi, 1500);

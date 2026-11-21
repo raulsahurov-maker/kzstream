@@ -68,6 +68,8 @@ const MIGRATIONS = [
   ['ALTER TABLE payments ADD COLUMN kind TEXT DEFAULT \'plan\'', null],
   ['ALTER TABLE payments ADD COLUMN promo TEXT DEFAULT \'\'', null],
   ['ALTER TABLE users ADD COLUMN badges TEXT DEFAULT \'\'', null],
+  ['ALTER TABLE users ADD COLUMN ref_by INTEGER DEFAULT 0', null],
+  ['ALTER TABLE users ADD COLUMN ref_earned INTEGER DEFAULT 0', null],
 ];
 for (const [alter, after] of MIGRATIONS) { try { db.exec(alter); if (after) db.exec(after); } catch { /* поле уже есть */ } }
 // обёртка: убираем служебное поле _metadata, которое добавляет libsql
@@ -133,7 +135,7 @@ process.on('SIGTERM', flushAndExit); process.on('SIGINT', flushAndExit);
 
 // ---------- настройки по умолчанию ----------
 const INFO_STYLES = ['plate', 'plain', 'neon', 'gold', 'glass', 'outline', 'gradient', 'fire'];
-const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud', 'vice', 'fire', 'cs2'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
+const TOP_STYLES = ['classic', 'glassneon', 'esports', 'darkgold', 'hud', 'vice', 'fire', 'cs2', 'xmas'], TOP_FONTS = ['manrope', 'montserrat', 'unbounded', 'oswald', 'rubik', 'inter'];
 // стили цели сбора: первые три — бесплатно, остальные с тарифа Lite
 const GOAL_STYLES = ['classic', 'neon', 'battery', 'water', 'ring', 'thermo', 'gold', 'minimal'], GOAL_FREE = ['classic', 'neon', 'battery'];
 const GOAL_MAX = 2000000;
@@ -179,7 +181,7 @@ function defaults(nick) {
     media: { enabled: true, min: 100, max_sec: 180, volume: 0.6 },
     info: { lines: ['Донаты через Kaspi — ссылка в описании!'], interval: 8, theme: 'default', label: 'INFO', speed: 'normal', dir: 'right', show_last: true },
     timer: { end_at: 0, paused_left: 0, running: false, sec_per_100: 30, theme: 'default' },
-    cards: { kaspi: { value: '', name: '' }, halyk: { value: '', name: '' }, freedom: { value: '', name: '' }, twitch: { value: '', name: '' }, instagram: { value: '', name: '' }, youtube: { value: '', name: '' }, blackrussia: { value: '', name: '', promo: '' } },
+    cards: { kaspi: { value: '', name: '' }, halyk: { value: '', name: '' }, freedom: { value: '', name: '' }, twitch: { value: '', name: '' }, instagram: { value: '', name: '' }, youtube: { value: '', name: '' }, telegram: { value: '', name: '' }, blackrussia: { value: '', name: '', promo: '' } },
     faceit: { nick: '', show: { level: true, elo: true, today: true, kd: true, wr: true, hs: true, adr: false, matches: true, streak: false, last: true, flag: true } },
     hotkeys: [], webhooks: [],
   };
@@ -468,6 +470,9 @@ app.post('/api/register', async (req, res) => {
   const r = q(`INSERT INTO users(nick,email,pass,salt,created_at,is_admin,token,settings) VALUES(?,?,?,?,?,?,?,?)`)
     .run(nick, email, hashPass(password, salt), salt, now(), isAdmin, rnd(18), JSON.stringify({ page: settings.page, platform }));
   const uid = Number(r.lastInsertRowid);
+  // реферальная ссылка: запоминаем, кто пригласил, и сразу даём новичку скидку по его промокоду
+  const refOwner = userByNick(clampStr(req.body.ref, 24).replace(/^@/, ''));
+  if (refOwner && refOwner.id !== uid) q('UPDATE users SET ref_by=?, promo_used=?, promo_spent=0 WHERE id=?').run(refOwner.id, refOwner.nick.toUpperCase(), uid);
   startSession(res, uid);
   if (!VERIFY_ON) { q('UPDATE users SET email_verified=1 WHERE id=?').run(uid); return res.json({ ok: true }); }
   try { await sendVerifyCode(userById(uid)); res.json({ ok: true, verify: true, email }); }
@@ -543,6 +548,7 @@ app.get('/api/me', auth, (req, res) => {
       widgets: Object.fromEntries(['alerts', 'top', 'goal', 'roulette', 'media', 'info', 'timer', 'faceit', 'card', 'promo', 'mprice', 'tiktok', 'lastdon'].map(w => [w, `${b}/w/${w}.html?t=${u.token}`])),
     },
     pay: { kaspi: PAY_KASPI, name: PAY_NAME, telegram: PAY_TELEGRAM },
+    referral: (() => { const L = q('SELECT nick, created_at, paid_months FROM users WHERE ref_by=? ORDER BY id DESC LIMIT 50').all(u.id); return { pct: REF_PCT, off: PROMO_OFF, earned: u.ref_earned || 0, count: q('SELECT COUNT(*) c FROM users WHERE ref_by=?').get(u.id).c, paid: L.filter(x => x.paid_months > 0).length, list: L.map(x => ({ nick: x.nick, at: x.created_at, paid: x.paid_months > 0 })) }; })(),
     balance: u.balance || 0, promo: { mine: u.nick.toUpperCase(), used: u.promo_used || '', active: !!u.promo_used && !u.promo_spent, discount: PROMO_OFF,
       activations: q(`SELECT COUNT(*) c FROM users WHERE promo_used=? COLLATE NOCASE`).get(u.nick.toUpperCase()).c },
   });
@@ -652,7 +658,7 @@ app.put('/api/settings', auth, (req, res) => {
       if (['left', 'center', 'right'].includes(b.info.align)) s.info.align = b.info.align;
       if (TOP_FONTS.includes(b.info.font)) s.info.font = b.info.font; }
   }
-  if (b.cards) for (const k of ['kaspi', 'halyk', 'freedom', 'twitch', 'instagram', 'youtube', 'blackrussia']) if (b.cards[k]) {
+  if (b.cards) for (const k of ['kaspi', 'halyk', 'freedom', 'twitch', 'instagram', 'youtube', 'telegram', 'blackrussia']) if (b.cards[k]) {
     s.cards[k] = { value: clampStr(b.cards[k].value, 60), name: clampStr(b.cards[k].name, 40) };
     if (k === 'blackrussia') s.cards[k].promo = clampStr(b.cards[k].promo, 30);
   }
@@ -819,7 +825,7 @@ app.post('/api/pay/balance', auth, (req, res) => {
   if ((u.balance || 0) < pr.sum) return res.status(402).json({ error: `Не хватает ${pr.sum - (u.balance || 0)} ₸ на балансе` });
   q('UPDATE users SET balance=balance-? WHERE id=?').run(pr.sum, u.id);
   q(`INSERT INTO payments(user_id,plan,months,amount,created_at,comment,kind,promo,status) VALUES(?,?,?,?,?,?,?,?,?)`).run(u.id, plan.id, months, pr.sum, now(), 'с баланса', 'plan', pr.promo, 'approved');
-  applyPlanPayment(u.id, plan.id, months, pr.promo);
+  applyPlanPayment(u.id, plan.id, months, pr.promo); refBonus(u.id, pr.sum);
   res.json({ ok: true, balance: userById(u.id).balance });
 });
 // активация чужого промокода (ник другого стримера)
@@ -856,6 +862,13 @@ function grantPlan(uid, plan, days) {
   const from = (u.plan === plan && u.plan_until > now()) ? u.plan_until : now();
   q('UPDATE users SET plan=?, plan_until=? WHERE id=?').run(plan, from + days * 864e5, uid);
 }
+// реферальный бонус: пригласивший получает REF_PCT% от каждой оплаты тарифа приглашённым
+const REF_PCT = 10;
+function refBonus(uid, amount) {
+  const u = userById(uid); if (!u || !u.ref_by || !(amount > 0)) return;
+  const b = Math.floor(amount * REF_PCT / 100); if (!b) return;
+  q('UPDATE users SET balance=balance+?, ref_earned=ref_earned+? WHERE id=?').run(b, b, u.ref_by);
+}
 function applyPlanPayment(uid, plan, months, promo) {
   grantPlan(uid, plan, 30 * months);
   q('UPDATE users SET paid_months=paid_months+? WHERE id=?').run(months, uid);
@@ -868,7 +881,7 @@ app.post('/api/admin/payments/:id', admin, (req, res) => {
   if (!p) return res.status(404).json({ error: 'Заявка не найдена' });
   if (req.body.action === 'approve') {
     if (p.kind === 'balance') q('UPDATE users SET balance=balance+? WHERE id=?').run(p.amount, p.user_id);
-    else applyPlanPayment(p.user_id, p.plan, p.months, p.promo);
+    else { applyPlanPayment(p.user_id, p.plan, p.months, p.promo); refBonus(p.user_id, p.amount); }
     q(`UPDATE payments SET status='approved' WHERE id=?`).run(p.id);
   } else q(`UPDATE payments SET status='rejected' WHERE id=?`).run(p.id);
   res.json({ ok: true });

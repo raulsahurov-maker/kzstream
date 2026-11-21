@@ -757,10 +757,13 @@
   $('#modalX').onclick=()=>modal.classList.remove('open');
   modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open')};
   addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('open')});
+  // ?ref=ник — запоминаем, кто пригласил
+  try{const rf=new URLSearchParams(location.search).get('ref');if(rf&&/^[\w.-]{3,24}$/.test(rf)){localStorage.kzRef=rf;}}catch{}
   async function send(form,url,errEl){
     const btn=form.querySelector('button[type=submit]'); btn.disabled=true; errEl.style.display='none';
     try{
-      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(form)))});
+      const body=Object.fromEntries(new FormData(form)); if(url==='/api/register'){try{body.ref=localStorage.kzRef||''}catch{}}
+      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       const j=await r.json().catch(()=>({}));
       if(!r.ok) throw new Error(j.error||'Ошибка, попробуйте ещё раз');
       if(j.verify){ openVerify(j.email, j.mail_error); btn.disabled=false; return; }

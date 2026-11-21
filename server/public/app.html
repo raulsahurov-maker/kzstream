@@ -201,7 +201,8 @@
     .g2,.g3,.g4,.plans,.row{grid-template-columns:1fr}
   }
 </style>
-<style>.sw{display:flex;flex-wrap:wrap;gap:8px}.sw button{width:34px;height:34px;border-radius:10px;border:2px solid rgba(255,255,255,.15);cursor:pointer}.sw button.on{border-color:#fff;box-shadow:0 0 0 2px #ff3b5c}.sw button.def{width:auto;padding:0 10px;color:#fff;font:700 12px Manrope;background:rgba(255,255,255,.06)}.as-flash{animation:asf 1.6s ease-out 2}@keyframes asf{0%{box-shadow:0 0 0 3px #fe2c55}100%{box-shadow:0 0 0 0 transparent}}.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}.ttlock{display:none;padding:10px 12px;border-radius:12px;background:rgba(255,197,49,.08);border:1px solid rgba(255,197,49,.25);color:#ffc531;font-weight:700;font-size:13px;margin-bottom:10px}.ttlock a{color:#fff}.ttev .copy-row{flex-wrap:wrap}.ttev .copy-row input{flex:1 1 100%}</style>
+<style>.refst{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:6px 0 12px}.refst div{padding:12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);text-align:center}.refst b{display:block;font:800 22px Unbounded,Manrope;color:#fff}.refst span{font-size:12.5px;color:#9aa0b8;font-weight:700}.reflist{display:flex;flex-wrap:wrap;gap:6px}.reflist span{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.05);font-size:12.5px;font-weight:700}.reflist span.p{background:rgba(43,214,123,.15);color:#2bd67b}.rotpick{display:flex;flex-wrap:wrap;gap:8px}.rotpick button{display:flex;align-items:center;gap:7px;padding:7px 12px 7px 7px;border-radius:12px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#fff;font:700 13px Manrope;cursor:pointer}.rotpick button i{width:24px;height:24px;border-radius:7px;overflow:hidden;display:grid;place-items:center}.rotpick button i img,.rotpick button i span{width:100%;height:100%;object-fit:cover}.rotpick button.on{border-color:#ff3b5c;background:rgba(255,59,92,.12)}.rotpick button b{min-width:18px;height:18px;border-radius:6px;background:#ff3b5c;display:grid;place-items:center;font-size:11px}.rotpick button:not(.on) b{display:none}.sw{display:flex;flex-wrap:wrap;gap:8px}.sw button{width:34px;height:34px;border-radius:10px;border:2px solid rgba(255,255,255,.15);cursor:pointer}.sw button.on{border-color:#fff;box-shadow:0 0 0 2px #ff3b5c}.sw button.def{width:auto;padding:0 10px;color:#fff;font:700 12px Manrope;background:rgba(255,255,255,.06)}.as-flash{animation:asf 1.6s ease-out 2}@keyframes asf{0%{box-shadow:0 0 0 3px #fe2c55}100%{box-shadow:0 0 0 0 transparent}}.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}.ttlock{display:none;padding:10px 12px;border-radius:12px;background:rgba(255,197,49,.08);border:1px solid rgba(255,197,49,.25);color:#ffc531;font-weight:700;font-size:13px;margin-bottom:10px}.ttlock a{color:#fff}.ttev .copy-row{flex-wrap:wrap}.ttev .copy-row input{flex:1 1 100%}</style>
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Comfortaa:wght@700&family=Pacifico&family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="mob-top"><a class="logo" href="/"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>KZStream</a><button class="btn btn-ghost btn-sm" onclick="document.querySelector('aside').classList.toggle('open')">Меню</button></div>
@@ -410,6 +411,7 @@
           <iframe id="ldPrev" style="width:100%;height:160px;border:0;border-radius:12px;background:repeating-conic-gradient(#1a1c26 0 25%,#13151e 0 50%) 0 0/18px 18px"></iframe>
           <div>
             <div class="field"><label>Цвет суммы и полоски</label><div class="sw" id="ldCols"></div></div>
+            <div class="field"><label>Шрифт</label><div class="fonts" id="ldFonts"></div></div>
             <div class="field"><label>Фон</label><div class="shape2" id="ldTh"><button type="button" data-th="" class="on">🌙 Тёмный</button><button type="button" data-th="light">☀️ Светлый</button></div></div>
             <div class="field"><label>Ссылка для TikTok Live Studio</label><div class="copy-row"><input readonly id="ld_w"><button class="btn btn-ghost btn-sm" data-copy="ld_w">Копировать</button></div></div>
           </div>
@@ -483,6 +485,20 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>Карточки: банки и соцсети</h3><button class="btn btn-primary btn-sm" id="cardsSave">Сохранить</button></div>
         <p class="hint">Каждая карточка — отдельный виджет: логотип слева, ваш номер или ник. Добавьте нужные в TikTok Live Studio по своей ссылке. Пустая карточка в эфире не показывается.</p>
         <div class="cards-grid" id="cardsGrid"></div>
+      </div>
+      <div class="card" style="grid-column:1/-1" data-wsec="cards"><h3>🔄 Сменяющаяся карточка</h3>
+        <p class="hint">Одна карточка, которая по очереди переворачивается: например Kaspi → Halyk → Telegram. Выберите карточки в нужном порядке (нажимайте по очереди) и сколько секунд показывать каждую. В виджет попадают только заполненные выше карточки.</p>
+        <div class="grid g2" style="gap:16px">
+          <div>
+            <div class="field"><label>Какие карточки и в каком порядке</label><div class="rotpick" id="rotPick"></div></div>
+            <div class="field"><label>Сколько секунд показывать каждую</label><select id="rotIv"><option value="3">3 сек</option><option value="5" selected>5 сек</option><option value="8">8 сек</option><option value="10">10 сек</option><option value="15">15 сек</option></select></div>
+            <div class="shape2" id="rotShape"><button type="button" data-rl="wide" class="on">▬ В ширину</button><button type="button" data-rl="tall">▮ В толщину</button></div>
+          </div>
+          <div>
+            <iframe id="rotPrev" style="width:100%;height:120px;border:0;border-radius:12px;background:repeating-conic-gradient(#1a1c26 0 25%,#13151e 0 50%) 0 0/18px 18px;margin-bottom:10px"></iframe>
+            <div class="copy-row"><input readonly id="rot_w"><button class="btn btn-ghost btn-sm" data-copy="rot_w">Копировать</button></div>
+          </div>
+        </div>
       </div>
       <div class="card infocfg" style="grid-column:1/-1" data-wsec="info">
         <div class="vtut"><div class="vtut-h"><span class="vtut-ic">▶</span><div><b>Видеоинструкция: Info-виджет</b><div class="muted" style="font-size:13px">Как настроить и поставить в TikTok LIVE Studio · 1 мин</div></div></div><video controls preload="none" playsinline poster="/video/w_info.jpg" src="/video/w_info.mp4"></video></div>
@@ -782,6 +798,12 @@
     <div class="top"><h1>Аккаунт</h1><button class="btn btn-danger" id="logout">Выйти</button></div>
     <div class="grid g2">
       <div class="card"><h3>Данные</h3><p class="hint" id="accInfo"></p></div>
+      <div class="card" style="grid-column:1/-1"><h3>🤝 Реферальная программа</h3>
+        <p class="hint" id="refHint"></p>
+        <div class="field"><label>Ваша реферальная ссылка</label><div class="copy-row"><input readonly id="refLink"><button class="btn btn-ghost btn-sm" data-copy="refLink">Копировать</button></div></div>
+        <div class="refst"><div><b id="refCount">0</b><span>приглашено</span></div><div><b id="refPaid">0</b><span>оплатили тариф</span></div><div><b id="refEarn">0 ₸</b><span>заработано на баланс</span></div></div>
+        <div id="refList" class="reflist"></div>
+      </div>
       <div class="card"><h3>Сменить пароль</h3>
         <div class="field"><input type="password" id="pwOld" placeholder="Текущий пароль"></div>
         <div class="field"><input type="password" id="pwNew" placeholder="Новый пароль (мин. 6)"></div>
