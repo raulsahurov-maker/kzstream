@@ -53,7 +53,7 @@ window.KZ = (() => {
       const st = await fetch('/api/w/' + token + '/state').then(r => { if (!r.ok) throw 0; return r.json(); });
       fire('state', st);
     } catch { document.body.innerHTML = '<p style="color:#fff;font:16px sans-serif;padding:20px">Неверная ссылка виджета. Скопируйте новую из кабинета KZStream.</p>'; return; }
-    const es = new EventSource('/api/w/' + token + '/stream');
+    const es = new EventSource('/api/w/' + token + '/stream' + (window.KZ_STREAM_Q || ''));
     ['donation', 'roulette', 'stats', 'settings', 'skip', 'media_skip', 'faceit', 'tt', 'tt_likes', 'tt_likes_cfg', 'tt_chat'].forEach(ev => es.addEventListener(ev, e => fire(ev, JSON.parse(e.data))));
     es.onerror = () => {}; // EventSource переподключается сам
     // раз в 5 минут — полная синхронизация

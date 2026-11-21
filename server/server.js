@@ -152,6 +152,18 @@ const VOICES = {
   remy: ['fr-FR-RemyMultilingualNeural', 'Реми', '', '', 'ru'],
   giuseppe: ['it-IT-GiuseppeMultilingualNeural', 'Джузеппе', '', '', 'ru'],
   ava: ['en-US-AvaMultilingualNeural', 'Ава', '', '', 'ru'],
+  brian: ['en-US-BrianMultilingualNeural', 'Брайан', '', '', 'ru'],
+  vivienne: ['fr-FR-VivienneMultilingualNeural', 'Вивьен', '', '', 'ru'],
+  seraphina: ['de-DE-SeraphinaMultilingualNeural', 'Серафина', '', '', 'ru'],
+  florian: ['de-DE-FlorianMultilingualNeural', 'Флориан', '', '', 'ru'],
+  ostap: ['uk-UA-OstapNeural', 'Остап', '', '', 'ru'],
+  polina: ['uk-UA-PolinaNeural', 'Полина', '', '', 'ru'],
+  villain: ['ru-RU-DmitryNeural', 'Злодей', '-35%', '-14%', 'ru'],
+  oldman: ['ru-RU-DmitryNeural', 'Дед', '-12%', '-28%', 'ru'],
+  cartoon: ['ru-RU-SvetlanaNeural', 'Мультик', '+60%', '+8%', 'ru'],
+  fast: ['ru-RU-DmitryNeural', 'Скороговорка', '', '+55%', 'ru'],
+  giant: ['ru-RU-SvetlanaNeural', 'Великанша', '-30%', '-10%', 'ru'],
+  baby: ['kk-KZ-AigulNeural', 'Балақай', '+45%', '+5%', 'kk'],
 };
 const THEMES = ['default', 'neon', 'sunset', 'mint', 'royal', 'mono', 'candy', 'steppe', 'ice', 'gold'];
 function defaults(nick) {
@@ -234,6 +246,14 @@ function emit(uid, event, data) {
   const set = channels.get(uid); if (!set) return;
   const msg = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const r of set) r.write(msg);
+}
+// озвучка чата — ровно одному виджету TikTok (если в Live Studio их несколько, голос не двоится)
+function emitSpeaker(uid, event, data) {
+  const set = channels.get(uid); if (!set) return;
+  const L = [...set].filter(r => r.kzRole === 'tts');
+  const pick = L.filter(r => r.kzEv.split(',').includes('chat')).sort((a, b) => a.kzAt - b.kzAt)[0]
+    || L.filter(r => !r.kzEv).sort((a, b) => a.kzAt - b.kzAt)[0];
+  if (pick) pick.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 setInterval(() => { for (const set of channels.values()) for (const r of set) r.write(': ping\n\n'); }, 20000).unref();
 function sse(res) {
@@ -1005,6 +1025,7 @@ app.get('/api/w/:token/state', (req, res) => {
 });
 app.get('/api/w/:token/stream', (req, res) => {
   const u = userByToken(req.params.token); if (!u) return res.status(404).end();
+  res.kzRole = String(req.query.role || ''); res.kzEv = String(req.query.ev || ''); res.kzAt = Date.now();
   sse(res); subscribe(u.id, res);
 });
 app.get('/api/events', auth, (req, res) => { sse(res); subscribe(req.user.id, res); });
@@ -1143,7 +1164,7 @@ for (const prefix of ['/update', '/downloads']) {
 }
 app.use(express.static(PUB, { extensions: ['html'] }));
 // TikTok LIVE: подписки, подарки, репосты → звуки (вкладка «TikTok» в кабинете)
-require('./tiktok')(app, { auth, q, getSettings, saveSettings, userById, userByToken, emit, baseUrl, censor, canTts: u => !!effectivePlan(u).tts, isLite: u => !!effectivePlan(u).shop });
+require('./tiktok')(app, { auth, q, getSettings, saveSettings, userById, userByToken, emit, emitSpeaker, baseUrl, censor, canTts: u => !!effectivePlan(u).tts, isLite: u => !!effectivePlan(u).shop });
 app.use((req, res) => res.status(404).sendFile(path.join(PUB, '404.html')));
 
 const listen = () => app.listen(PORT, () => console.log(`KZStream запущен: http://localhost:${PORT}`));
