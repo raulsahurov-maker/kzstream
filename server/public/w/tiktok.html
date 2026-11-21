@@ -2,13 +2,17 @@
 <html lang="ru"><head><meta charset="UTF-8"><title>KZStream — события TikTok</title>
 <link rel="stylesheet" href="/w/w.css">
 <style>
-  #stack{position:fixed;left:50%;top:14px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;width:max-content}
-  .tt{display:flex;align-items:center;gap:12px;padding:10px 20px 10px 10px;border-radius:999px;background:rgba(14,14,20,.88);border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 30px rgba(0,0,0,.45);color:#fff;font-family:Manrope,sans-serif;animation:tin .5s cubic-bezier(.2,1.4,.4,1) both}
+  /* плашка всегда заполняет источник в Live Studio: рамку можно сделать маленькой */
+  html,body{height:100%;margin:0}body{display:grid;place-items:center}
+  #stack{position:relative;width:420px;height:84px;zoom:var(--z,1)}
+  #stack .tt{position:absolute;left:0;right:0;top:0;bottom:0}
+  .tt{display:flex;align-items:center;gap:12px;padding:10px 20px 10px 12px;box-sizing:border-box;border-radius:999px;background:rgba(14,14,20,.88);border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 30px rgba(0,0,0,.45);color:#fff;font-family:Manrope,sans-serif;animation:tin .5s cubic-bezier(.2,1.4,.4,1) both}
   .tt.out{animation:tout .45s ease-in both}
   @keyframes tin{from{opacity:0;transform:translateY(-20px) scale(.85)}}
   @keyframes tout{to{opacity:0;transform:translateY(-14px) scale(.9)}}
-  .tt .av{width:46px;height:46px;border-radius:50%;background:#25f4ee center/cover;display:grid;place-items:center;font-size:22px;flex:none;box-shadow:0 0 0 3px #fe2c55}
-  .tt b{font-size:18px;font-weight:800;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+  .tt .av{width:58px;height:58px;border-radius:50%;background:#25f4ee center/cover;display:grid;place-items:center;font-size:22px;flex:none;box-shadow:0 0 0 3px #fe2c55}
+  .tt>div:nth-child(2){flex:1;min-width:0}
+  .tt b{font-size:19px;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
   .tt span{font-size:14px;color:#bfc3d6;font-weight:700}
   .tt i{font-style:normal;font-size:24px;margin-left:4px;animation:pop 1s ease-in-out infinite alternate}
   @keyframes pop{to{transform:scale(1.25) rotate(8deg)}}
@@ -19,6 +23,11 @@
 </style></head><body>
 <div id="stack"></div>
 <div id="hint">Нажмите один раз, чтобы включить звук</div>
+<script>
+  // масштаб под размер источника (с отступом 4%)
+  function fitZ() { const z = Math.min(innerWidth / 420, innerHeight / 84) * .96; document.getElementById('stack').style.setProperty('--z', Math.max(.2, z)); }
+  addEventListener('resize', fitZ); addEventListener('DOMContentLoaded', fitZ);
+</script>
 <script src="/w/widget.js"></script>
 <script src="/w/sfx.js"></script>
 <script>
