@@ -154,8 +154,6 @@ const VOICES = {
   ava: ['en-US-AvaMultilingualNeural', 'Ава', '', '', 'ru'],
   brian: ['en-US-BrianMultilingualNeural', 'Брайан', '', '', 'ru'],
   vivienne: ['fr-FR-VivienneMultilingualNeural', 'Вивьен', '', '', 'ru'],
-  seraphina: ['de-DE-SeraphinaMultilingualNeural', 'Серафина', '', '', 'ru'],
-  florian: ['de-DE-FlorianMultilingualNeural', 'Флориан', '', '', 'ru'],
   ostap: ['uk-UA-OstapNeural', 'Остап', '', '', 'ru'],
   polina: ['uk-UA-PolinaNeural', 'Полина', '', '', 'ru'],
   villain: ['ru-RU-DmitryNeural', 'Злодей', '-35%', '-14%', 'ru'],
