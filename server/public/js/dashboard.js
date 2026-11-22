@@ -310,7 +310,7 @@ function render() {
   listEdit('#varList', a.variations || [], [['amount', 'Сумма', 'number'], ['gif', 'Гифка (URL)', 'file:image,video'], ['sound', 'Звук (URL)', 'file:audio'], ['text', 'Подпись']]);
   // виджеты
   const names = { alerts: '🔔 Алерты', top: '🏆 ТОП донатеров', goal: '🎯 Цель сбора', roulette: '🎰 Рулетка', media: '🎵 Музыка и видео', info: 'ℹ️ Info-виджет', timer: '⏱ Таймер', faceit: '🎮 FACEIT', card: '🏦 Виджет банка (Kaspi)', lastdon: '💬 Последний донат' };
-  const need = { alerts: null, top: null, goal: null, roulette: 'roulette', media: 'media', info: 'info', timer: 'timer' };
+  const need = { alerts: null, top: null, goal: null, roulette: 'roulette', media: 'media', info: 'info', timer: 'timer', lastdon: 'shop' };
   const badge = k => !need[k] ? '<span class="wb free">Бесплатно</span>' : `<span class="wb lite">Lite</span>`;
   $('#wlinks').innerHTML = Object.entries(ME.urls.widgets).filter(([k]) => names[k]).map(([k, u]) => { if (k === 'card') u += '&k=kaspi'; const locked = need[k] && !p[need[k]];
     return `<div class="wlink ${locked ? 'locked' : ''}"><h4><span>${names[k]} ${badge(k)}</span>${locked ? '<a class="btn btn-ghost btn-sm" href="#billing">🔒 Подключить Lite</a>' : `<a class="btn btn-ghost btn-sm" href="${u}" target="_blank">Открыть ↗</a>`}</h4><div class="copy-row"><input readonly value="${u}" id="w_${k}"><button class="btn btn-ghost btn-sm" data-copy="w_${k}">Копировать</button></div></div>`; }).join('');
