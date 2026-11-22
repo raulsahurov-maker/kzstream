@@ -1,5 +1,5 @@
 ; Установщик KZStream для Windows (Inno Setup)
-#define AppVer "2.3.0"
+#define AppVer "2.3.1"
 [Setup]
 AppId={{6F2B7C1E-4D2A-4E8B-9C55-0A1B2C3D4E5F}
 AppName=KZStream

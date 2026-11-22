@@ -47,7 +47,10 @@ def _bytes(buf):
 
 def _buffer(data):
     w = DataWriter()
-    w.write_bytes(list(data))
+    try:
+        w.write_bytes(bytes(data))
+    except TypeError:
+        w.write_bytes(list(data))
     return w.detach_buffer()
 
 
@@ -135,7 +138,8 @@ class IphoneBT:
         for sel_src, kind in ((BluetoothLEDevice, 'le'), (BluetoothDevice, 'classic')):
             try:
                 sel = sel_src.get_device_selector_from_pairing_state(True)
-                items = await DeviceInformation.find_all_async(sel)
+                # в winsdk нет варианта с одним параметром: нужен (селектор, доп. свойства)
+                items = await DeviceInformation.find_all_async(sel, [])
             except Exception as e:
                 self.log(f'Bluetooth: не удалось получить список ({e})')
                 continue

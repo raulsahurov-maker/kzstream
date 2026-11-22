@@ -32,7 +32,7 @@ import webbrowser
 import requests
 
 APP_NAME = 'KZStream'
-VERSION = '2.3.0'
+VERSION = '2.3.1'
 DEFAULT_SERVER = 'https://kzstream.onrender.com'
 APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
@@ -700,6 +700,19 @@ def selftest():
                     for nm in names:
                         if not hasattr(cls, nm):
                             problems.append(f'bt:{cls.__name__}.{nm}')
+                # настоящий вызов: поиск сопряжённых устройств и запись буфера должны работать без ошибок
+                import asyncio as _a
+                async def _probe():
+                    for src in (ib.BluetoothLEDevice, ib.BluetoothDevice):
+                        await ib.DeviceInformation.find_all_async(src.get_device_selector_from_pairing_state(True), [])
+                try:
+                    _a.run(_probe())
+                except Exception as e:
+                    problems.append(f'bt:find_all_async: {e}')
+                try:
+                    ib._buffer(b'\x00\x01\x02')
+                except Exception as e:
+                    problems.append(f'bt:buffer: {e}')
         except Exception as e:
             problems.append(f'bluetooth: {e}')
     if keyboard is None:
