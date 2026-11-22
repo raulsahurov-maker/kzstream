@@ -589,11 +589,18 @@ async function loadState() { try { const st = await api('/api/w/' + ME.token + '
 // ---------- донаты ----------
 async function loadDonations() {
   const list = await api('/api/donations?limit=200');
-  $('#donTable').innerHTML = list.map(d => `<tr><td class="muted">${time(d.done_at || d.created_at)}</td><td>${esc(d.name || d.sender || '—')}${d.sender && d.sender !== d.name ? `<div class="muted" style="font-size:12px">Kaspi: ${esc(d.sender)}</div>` : ''}</td><td><b>${fmt(d.amount)}</b></td><td style="max-width:320px">${esc(d.message)}${d.media_url ? ' 🎵' : ''}</td>
+  $('#donTable').innerHTML = list.map(d => `<tr><td class="muted">${time(d.done_at || d.created_at)}</td><td><span class="dn-name">${esc(d.name || d.sender || '—')}</span> <button class="btn-ed" data-ren="${d.id}" data-nm="${esc(d.name || '')}" title="Изменить имя">✏️</button>${d.orig_name ? `<div class="muted" style="font-size:12px">было: ${esc(d.orig_name)}</div>` : ''}${d.sender && d.sender !== d.name && d.sender !== d.orig_name ? `<div class="muted" style="font-size:12px">Kaspi: ${esc(d.sender)}</div>` : ''}</td><td><b>${fmt(d.amount)}</b></td><td style="max-width:320px">${esc(d.message)}${d.media_url ? ' 🎵' : ''}</td>
     <td>${d.status === 'done' ? `<span class="tag ok">${d.source === 'test' ? 'тест' : 'получен'}</span>` : '<span class="tag">тест</span>'}</td>
     <td style="white-space:nowrap">${d.status === 'done' ? `<button class="btn btn-ghost btn-sm" data-replay="${d.id}">Повторить</button>` : ''} <button class="btn btn-ghost btn-sm" data-del="${d.id}">✕</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted">Донатов пока нет</td></tr>';
 }
 $('#donTable').onclick = async e => {
+  const rn = e.target.closest('[data-ren]');
+  if (rn) {
+    const v = prompt('Новое имя донатера (поменяется во всех его донатах и в ТОПе).\nОставьте пустым, чтобы вернуть исходное имя:', rn.dataset.nm);
+    if (v === null) return;
+    try { const r = await api('/api/donations/rename', { method: 'POST', body: { id: +rn.dataset.ren, name: v } }); toast(`Имя изменено на «${r.name}» — донатов: ${r.updated}`); loadDonations(); } catch (er) { toast(er.message, true); }
+    return;
+  }
   const b = e.target.closest('button'); if (!b) return;
   try {
     if (b.dataset.replay) { await api(`/api/donations/${b.dataset.replay}/replay`, { method: 'POST' }); toast('Алерт показан повторно'); }

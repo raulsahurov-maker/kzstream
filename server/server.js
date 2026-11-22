@@ -69,6 +69,7 @@ const MIGRATIONS = [
   ['ALTER TABLE payments ADD COLUMN promo TEXT DEFAULT \'\'', null],
   ['ALTER TABLE users ADD COLUMN badges TEXT DEFAULT \'\'', null],
   ['ALTER TABLE users ADD COLUMN ref_by INTEGER DEFAULT 0', null],
+  ['ALTER TABLE donations ADD COLUMN orig_name TEXT DEFAULT \'\'', null],
   ['ALTER TABLE users ADD COLUMN ref_earned INTEGER DEFAULT 0', null],
 ];
 for (const [alter, after] of MIGRATIONS) { try { db.exec(alter); if (after) db.exec(after); } catch { /* поле уже есть */ } }
@@ -725,9 +726,24 @@ app.get('/u/:uid/:file', async (req, res) => {
 });
 
 // --- донаты в кабинете ---
+// переименовать донатера: меняется имя во всех его донатах (ТОП объединяется под новым именем)
+app.post('/api/donations/rename', auth, (req, res) => {
+  const u = req.user, d = q('SELECT * FROM donations WHERE id=? AND user_id=?').get(+req.body.id, u.id);
+  if (!d) return res.status(404).json({ error: 'Донат не найден' });
+  const old = d.name || '', nn = clampStr(String(req.body.name || '').replace(/\s+/g, ' ').trim(), 32);
+  const rows = q('SELECT id, name, orig_name FROM donations WHERE user_id=? AND lower(name)=lower(?)').all(u.id, old);
+  let n = 0;
+  for (const r of rows) {
+    const orig = r.orig_name || r.name;
+    const target = nn || orig; // пустое имя — вернуть исходное
+    q('UPDATE donations SET name=?, orig_name=? WHERE id=?').run(target, target === orig ? '' : orig, r.id); n++;
+  }
+  pushStats(u);
+  res.json({ ok: true, updated: n, name: nn || (d.orig_name || d.name) });
+});
 app.get('/api/donations', auth, (req, res) => {
   const lim = int(req.query.limit, 1, 500, 100);
-  res.json(q(`SELECT id,name,sender,amount,message,media_url,voice_url,source,status,created_at,done_at FROM donations WHERE user_id=? AND hidden=0 ORDER BY COALESCE(done_at,created_at) DESC LIMIT ?`).all(req.user.id, lim));
+  res.json(q(`SELECT id,name,orig_name,sender,amount,message,media_url,voice_url,source,status,created_at,done_at FROM donations WHERE user_id=? AND hidden=0 ORDER BY COALESCE(done_at,created_at) DESC LIMIT ?`).all(req.user.id, lim));
 });
 app.post('/api/donations/test', auth, (req, res) => {
   const u = req.user;
