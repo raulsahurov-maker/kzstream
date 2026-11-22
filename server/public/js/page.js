@@ -30,8 +30,7 @@
   ];
   const FX = [['none', '🚫', 'Нет'], ['rain', '🌧', 'Дождь'], ['snow', '❄️', 'Снег'], ['leaves', '🍂', 'Листопад'], ['confetti', '🎉', 'Конфетти'], ['fireflies', '✨', 'Светлячки'], ['stars', '⭐', 'Звёзды']];
   const COLORS = ['#ff3b5c', '#ff7a45', '#ffc531', '#2bd67b', '#3ee6c4', '#2f9bff', '#8b6cff', '#ff6bd6', '#ffffff'];
-  const SOC = [['youtube', 'YouTube', '#ff0000', 'youtube.com/@канал'], ['twitch', 'Twitch', '#9146ff', 'twitch.tv/ник'], ['telegram', 'Telegram', '#229ed9', 't.me/канал'], ['instagram', 'Instagram', 'linear-gradient(45deg,#f9a825,#e91e63,#7b1fa2)', 'instagram.com/ник'], ['tiktok', 'TikTok', '#000', 'tiktok.com/@ник'], ['discord', 'Discord', '#5865f2', 'discord.gg/приглашение'], ['donationalerts', 'DonationAlerts', '#f57c00', 'donationalerts.com/r/ник']];
-  const SOCRX = { youtube: /(youtube\.com|youtu\.be)$/, twitch: /twitch\.tv$/, telegram: /(t\.me|telegram\.me)$/, instagram: /instagram\.com$/, tiktok: /tiktok\.com$/, discord: /(discord\.gg|discord\.com)$/, donationalerts: /(donationalerts\.com|donationalerts\.ru|dalink\.to)$/ };
+  const KS = window.KZSOC, SOC = KS.list;
 
   const S = { design: 'classic', effect: 'none', layer: 'over', devType: 'pc', days: [], avatar: '', banner: '', bg: '' };
   let loaded = false, dirty = false;
@@ -109,18 +108,19 @@
   const colors = () => $$('#lpColors button').forEach(b => b.classList.toggle('on', b.dataset.c.toLowerCase() === $('#pg_color').value.toLowerCase()));
   $('#pg_color').oninput = () => { colors(); mark(); };
 
-  $('#lpSoc').innerHTML = SOC.map(([k, n, c, ph]) => `<div class="lp-soc"><i style="background:${c}">${n.slice(0, 2)}</i><input data-soc="${k}" maxlength="200" placeholder="${n}: ${ph}"><span class="ok" data-ok="${k}"></span></div>`).join('');
+  $('#lpSoc').innerHTML = SOC.map(([k, n, c, ph]) => `<div class="lp-soc"><i style="background:${c}" title="${n}">${KS.icon(k, 22)}</i><input data-soc="${k}" maxlength="200" placeholder="${n}: ${ph}"><span class="ok" data-ok="${k}"></span></div>`).join('');
   const socCheck = () => $$('[data-soc]').forEach(i => {
     const v = i.value.trim(), o = $(`[data-ok="${i.dataset.soc}"]`); if (!v) { o.textContent = ''; return; }
-    let h = ''; try { h = new URL(/^https?:\/\//i.test(v) ? v : 'https://' + v).hostname.replace(/^www\./, ''); } catch { }
-    const ok = SOCRX[i.dataset.soc].test(h); o.textContent = ok ? '✓' : '✕'; o.style.color = ok ? '#2bd67b' : '#ff6b81';
+    const ok = KS.ok(i.dataset.soc, v); o.textContent = ok ? '✓' : '✕'; o.style.color = ok ? '#2bd67b' : '#ff6b81'; o.title = ok ? KS.norm(i.dataset.soc, v) : 'Ссылка с другого сайта';
   });
-
+  // ник без ссылки превращаем в ссылку при выходе из поля
+  $('#lpSoc').addEventListener('focusout', e => { const i = e.target.closest('[data-soc]'); if (i && i.value.trim() && KS.ok(i.dataset.soc, i.value)) { i.value = KS.norm(i.dataset.soc, i.value); socCheck(); } });
   function counters() { $$('.lp-cnt').forEach(c => { const t = $('#' + c.dataset.for); c.textContent = (t.value || '').length + ' / ' + t.maxLength; }); }
   function pv() {
     for (const k of ['avatar', 'banner', 'bg']) { const el = $(`[data-pv="${k}"]`); el.style.backgroundImage = S[k] ? `url("${S[k]}")` : ''; el.classList.toggle('has', !!S[k]); }
   }
   function mark() { dirty = true; $('#lpSave').textContent = 'Сохранить •'; }
+  $('#pg_tiktok').addEventListener('change', () => { const t = $('[data-soc=tiktok]'), v = $('#pg_tiktok').value.trim().replace(/^https?:\/\/(www\.)?tiktok\.com\/@?/i, '').replace(/^@/, '').split(/[/?#\s]/)[0]; $('#pg_tiktok').value = v; if (v && !t.value.trim()) { t.value = KS.norm('tiktok', v); socCheck(); } });
   $('#p-page').addEventListener('input', e => { if (e.target.closest('.lp-ed')) { mark(); if (e.target.dataset.soc) socCheck(); if (e.target.tagName === 'TEXTAREA') counters(); } });
 
   // ---------- загрузка в форму ----------
@@ -159,13 +159,13 @@
       texts: $$('#lpTexts > .lp-blk').map(d => ({ title: d.querySelector('[data-k=title]').value.trim(), text: d.querySelector('[data-k=text]').value.trim() })).filter(t => t.title || t.text),
       links: $$('#lpLinks > .lp-blk').map(d => ({ title: d.querySelector('[data-k=title]').value.trim(), items: [...d.querySelectorAll('.li .lp-row')].map(r => ({ label: r.querySelector('[data-k=label]').value.trim(), url: r.querySelector('[data-k=url]').value.trim() })).filter(i => i.label || i.url) })).filter(l => l.items.length),
     },
-    socials: Object.fromEntries($$('[data-soc]').map(i => [i.dataset.soc, i.value.trim()])),
+    socials: Object.fromEntries($$('[data-soc]').map(i => [i.dataset.soc, KS.norm(i.dataset.soc, i.value)])),
   } });
 
   async function save(quiet) {
     const body = window.pageCollect();
     for (const l of body.page.blocks.links) for (const i of l.items) if (!/^https?:\/\/\S+$/i.test(i.url) || !i.label) { toast(`Кнопка «${i.label || i.url}»: нужен текст и ссылка, начинающаяся с https://`, true); return false; }
-    const bad = $$('[data-ok]').find(o => o.textContent === '✕'); if (bad) { toast('Проверьте ссылку ' + SOC.find(s => s[0] === bad.dataset.ok)[1] + ' — она с другого сайта', true); return false; }
+    const bad = $$('[data-ok]').find(o => o.textContent === '✕'); if (bad) { $('#lpTabs [data-t=soc]').click(); const n = SOC.find(s => s[0] === bad.dataset.ok)[1]; $(`[data-soc="${bad.dataset.ok}"]`).focus(); toast(`Вкладка «Соцсети», поле ${n}: ссылка с другого сайта. Вставьте ссылку ${n} или просто ник`, true); return false; }
     try {
       const r = await api('/api/settings', { method: 'PUT', body });
       window.KZME.settings = r.settings; dirty = false; $('#lpSave').textContent = 'Сохранить';

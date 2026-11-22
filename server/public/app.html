@@ -222,7 +222,7 @@
 .lp-designs em,.lp-fx em{position:absolute;top:6px;right:6px;font:800 10px Manrope;font-style:normal;padding:2px 6px;border-radius:6px;background:#ffc531;color:#111}
 .lp-fx{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:8px}.lp-fx button{padding:12px 6px}.lp-fx button b{display:block;font-size:22px;margin-bottom:3px}
 .lp-blk{padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:10px}.lp-blk .lp-row:last-child{margin-bottom:0}
-.lp-soc{display:flex;align-items:center;gap:10px;margin-bottom:10px}.lp-soc i{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-weight:800;color:#fff;font-size:13px}.lp-soc input{flex:1}.lp-soc .ok{flex:none;width:22px;text-align:center;font-weight:800}
+.lp-soc{display:flex;align-items:center;gap:10px;margin-bottom:10px}.lp-soc i{flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}.lp-soc input{flex:1}.lp-soc .ok{flex:none;width:22px;text-align:center;font-weight:800}
 @media(max-width:1100px){.lp{grid-template-columns:1fr}.lp-pv{position:static;order:-1}.lp-phone{width:280px;height:520px}}
 @media(max-width:600px){.lp-devs,.lp-ups{grid-template-columns:1fr}.lp-tabs button{flex:1 1 30%}}
 .ov-head{display:flex;align-items:center;gap:16px;padding:18px;margin-bottom:16px;border-radius:20px;background:linear-gradient(120deg,rgba(255,59,92,.16),rgba(255,122,69,.06) 60%,transparent);border:1px solid rgba(255,59,92,.25)}
@@ -248,7 +248,7 @@ aside{display:flex;flex-direction:column}
 .sb-items{display:flex;flex-direction:column;padding:4px 0 2px;overflow:hidden}.menu .sb-items a{padding:8px 12px;font-size:14px;white-space:nowrap}.sb-grp.shut .sb-items{display:none}
 .sb-app{display:flex;align-items:center;gap:9px;margin-top:auto;padding:11px 13px;border-radius:14px;border:1px solid rgba(255,59,92,.3);background:rgba(255,59,92,.08);color:#ff6b81;font-weight:800;font-size:13px;text-decoration:none}
 .sb-app i{width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;flex:none}.sb-app.on{color:#2bd67b;border-color:rgba(43,214,123,.35);background:rgba(43,214,123,.08)}.sb-app.on i{animation:ttb 1.2s infinite alternate}
-.sb-app span{flex:1}.menu{flex:1}
+.sb-app span{flex:1}.menu .sb-items a.sb-two b{display:flex;flex-direction:column;font-weight:inherit;line-height:1.15}.sb-two small{font-size:11px;color:#6b6f85;font-weight:700}.menu{flex:1}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Comfortaa:wght@700&family=Pacifico&family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
@@ -275,7 +275,7 @@ aside{display:flex;flex-direction:column}
       <a href="#media"><span>🎵</span>Музыка и видео<i class="mb">Lite</i></a>
     </div></div>
     <div class="sb-grp" data-g="int"><button class="sb-h" type="button"><span>🔌</span>Подключения<i>▾</i></button><div class="sb-items">
-      <a href="#devices"><span>📲</span>Приложение и Kaspi</a>
+      <a href="#devices" class="sb-two"><span>📲</span><b>Установка<small>Android · iOS · Windows</small></b></a>
       <a href="#tiktok"><span>📱</span>TikTok<i class="mb" data-new-until="2026-11-27" style="background:#ff5500;color:#fff">NEW</i></a>
       <a href="#faceit"><span>🎮</span>FACEIT<i class="mb" style="background:#ff5500;color:#fff">NEW</i></a>
       <a href="#pro"><span>⌨️</span>Хоткеи и вебхуки<i class="mb pro">Pro</i></a>
@@ -347,7 +347,7 @@ aside{display:flex;flex-direction:column}
 
   <!-- ПОДКЛЮЧЕНИЕ -->
   <section class="page" id="p-devices">
-    <div class="top"><h1>Подключение телефона или ПК</h1></div>
+    <div class="top"><h1>Установка: Android · iOS · Windows</h1></div>
     <div class="card" style="margin-bottom:18px">
       <h3>Ваша ссылка подключения</h3>
       <p class="hint">В приложения Android и Windows просто войдите своим email и паролем. Ссылка нужна для iPhone («Команды»). Никому её не показывайте.</p>
@@ -782,7 +782,7 @@ aside{display:flex;flex-direction:column}
 
         <div class="lp-pane" data-p="soc">
           <div class="card">
-            <h3>Соцсети</h3><p class="hint">Вставьте ссылку на профиль. Принимаются только ссылки с правильного сайта: YouTube — youtube.com, Telegram — t.me и т.д.</p>
+            <h3>Соцсети</h3><p class="hint">Вставьте ссылку на профиль <b>или просто ник</b> — ссылку соберём сами. Ссылки с чужого сайта не принимаются.</p>
             <div id="lpSoc"></div>
           </div>
         </div>
@@ -951,6 +951,7 @@ aside{display:flex;flex-direction:column}
 <script src="/js/dashboard.js"></script>
 <script src="/w/sfx.js"></script>
 <script src="/js/tiktok.js"></script>
+<script src="/js/socicons.js"></script>
 <script src="/js/page.js"></script>
 <script>document.querySelectorAll("[data-new-until]").forEach(b => { if (Date.now() > new Date(b.dataset.newUntil + "T23:59:59+05:00").getTime()) b.remove(); });</script>
 </body>

@@ -607,8 +607,10 @@ app.put('/api/settings', auth, (req, res) => {
       for (const k of Object.keys(DOM)) if (pg.socials[k] !== undefined) {
         const v = clampStr(pg.socials[k], 200).trim();
         if (!v) { s.page.socials[k] = ''; continue; }
-        let host = ''; try { host = new URL(/^https?:\/\//i.test(v) ? v : 'https://' + v).hostname.replace(/^www\./, ''); } catch { }
-        if (DOM[k].test(host)) s.page.socials[k] = /^https?:\/\//i.test(v) ? v : 'https://' + v; else errors.push(`Ссылка ${k}: нужен адрес ${String(DOM[k]).replace(/[\/\\$()]/g, '').replace(/\|/g, ' или ')}`);
+        const TPL = { youtube: 'https://www.youtube.com/@', twitch: 'https://www.twitch.tv/', telegram: 'https://t.me/', instagram: 'https://www.instagram.com/', tiktok: 'https://www.tiktok.com/@', discord: 'https://discord.gg/', donationalerts: 'https://www.donationalerts.com/r/' };
+        const bare = v.replace(/^@/, ''), url = /^[\w.\-]{1,60}$/.test(bare) && !/\.(com|tv|me|gg|ru|be|to)$/i.test(bare) ? TPL[k] + bare : /^https?:\/\//i.test(v) ? v : 'https://' + v;
+        let host = ''; try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { }
+        if (DOM[k].test(host)) s.page.socials[k] = url; else errors.push(`Ссылка ${k}: нужен адрес ${String(DOM[k]).replace(/[\/\\$()]/g, '').replace(/\|/g, ' или ')}`);
       }
     }
   }

@@ -42,7 +42,7 @@
   @media(max-width:420px){.kaspi{flex-wrap:wrap}.kaspi button{margin-left:0;width:100%}.perks{grid-template-columns:1fr}}
 .bdg{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:6px 0 4px}.bd{display:inline-flex;align-items:center;gap:6px;padding:5px 11px 5px 6px;border-radius:999px;font:800 12.5px Manrope,sans-serif;color:#fff;background:color-mix(in srgb,var(--b) 18%,transparent);border:1px solid color-mix(in srgb,var(--b) 55%,transparent)}.bd i{font-style:normal;width:20px;height:20px;border-radius:50%;background:var(--b);display:grid;place-items:center;font-size:11px;color:#fff}
 .ttbtn{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:9px 16px;border-radius:12px;background:#000;border:1px solid rgba(255,255,255,.15);color:#fff;font-weight:800;font-size:14px;text-decoration:none}.ttbtn svg{width:18px;height:18px}
-.soc a{display:inline-flex;align-items:center;gap:6px}.soc a i{width:9px;height:9px;border-radius:50%;background:var(--sc);font-style:normal}
+.soc a.si{width:44px;height:44px;padding:0;border-radius:14px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.14);box-shadow:0 6px 18px rgba(0,0,0,.3);transition:transform .15s}.soc a.si:hover{transform:translateY(-2px) scale(1.05)}
 .extra{white-space:pre-line;color:#cfd3e3;font-size:14.5px;line-height:1.55}
 .cardx{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);margin-top:10px}.cardx .bk{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none;font-size:13px}.cardx .cn{flex:1;min-width:0}.cardx .cn b{display:block;font-size:13px;color:var(--muted)}.cardx .cn span{font-weight:800;font-size:15.5px;word-break:break-all}.cardx button{background:rgba(255,255,255,.08);color:#fff;font-weight:800;padding:8px 12px;border-radius:10px;font-size:13px}
 .devs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.dv{padding:10px 12px;border-radius:12px;background:var(--bg2);border:1px solid var(--line)}.dv b{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}.dv span{font-weight:700;font-size:14px}
@@ -87,6 +87,7 @@ body.d-amethyst{--c:#b47cff;background:radial-gradient(ellipse at 50% 0,rgba(180
   <div class="card" id="devCard" style="display:none"><h3 style="margin-bottom:12px" id="devT">🖥 Мой ПК</h3><div class="devs" id="devs"></div></div>
   <div class="foot">Работает на <a href="/" style="color:var(--c)">KZStream</a> · деньги приходят напрямую стримеру, без комиссии<br>Сервис не является продуктом или партнёром АО «Kaspi Bank»</div>
 </div>
+<script src="/js/socicons.js"></script>
 <script>
 (() => {
   const $ = s => document.querySelector(s);
@@ -121,8 +122,8 @@ body.d-amethyst{--c:#b47cff;background:radial-gradient(ellipse at 50% 0,rgba(180
     if (p.badges && p.badges.length) $('#title').insertAdjacentHTML('afterend', '<div class="bdg">' + p.badges.map(b => `<span class="bd" style="--b:${esc(b.color)}" title="${esc(b.name)}"><i>${esc(b.icon)}</i>${esc(b.name)}</span>`).join('') + '</div>');
     if (pg.avatar) { $('#ava').style.backgroundImage = `url("${pg.avatar}")`; $('#ava').textContent = ''; } else $('#ava').textContent = name[0].toUpperCase();
     if (pg.banner) $('#banner').style.backgroundImage = `url("${pg.banner}")`;
-    const SOC = { youtube: ['YouTube', '#ff0000'], twitch: ['Twitch', '#9146ff'], telegram: ['Telegram', '#229ed9'], instagram: ['Instagram', '#e1306c'], tiktok: ['TikTok', '#fe2c55'], discord: ['Discord', '#5865f2'], donationalerts: ['DonationAlerts', '#f57c00'] };
-    $('#soc').innerHTML = Object.entries(pg.socials || {}).filter(([k, v]) => SOC[k] && /^https?:\/\//.test(v)).map(([k, v]) => `<a href="${esc(v)}" target="_blank" rel="noopener" style="--sc:${SOC[k][1]}"><i></i>${SOC[k][0]}</a>`).join('');
+    const KS = window.KZSOC;
+    $('#soc').innerHTML = KS.list.filter(([k]) => /^https?:\/\//.test((pg.socials || {})[k] || '')).map(([k, n, c]) => `<a href="${esc(pg.socials[k])}" target="_blank" rel="noopener" title="${n}" class="si" style="background:${c}">${KS.icon(k, 22)}</a>`).join('');
     if (pg.tiktok) $('#tt').innerHTML = `<a class="ttbtn" href="https://www.tiktok.com/@${encodeURIComponent(pg.tiktok)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="#fff"><path d="M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-2.6-2.6c.3 0 .5 0 .8.1V9.7a5.8 5.8 0 1 0 5 5.7V9a7.4 7.4 0 0 0 4.3 1.4V7.3a4.3 4.3 0 0 1-3.3-1.5z"/></svg>@${esc(pg.tiktok)} в TikTok</a>`;
     if (pg.extra) { $('#extraCard').style.display = ''; $('#extra').textContent = pg.extra; }
     if (pg.bg) { document.body.classList.add('hasbg'); document.body.style.setProperty('--bgimg', `url("${pg.bg}")`); }
