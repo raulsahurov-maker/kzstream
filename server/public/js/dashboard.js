@@ -115,11 +115,6 @@ async function saveAlerts(part, msg) {
 }
 
 // ---------- страница доната: картинки и «Поделиться» ----------
-function pagePreviews() {
-  const a = val('pg_avatar'), b = val('pg_banner');
-  $('#avPrev').style.backgroundImage = a ? `url("${a}")` : ''; $('#avPrev').classList.toggle('has', !!a);
-  $('#bnPrev').style.backgroundImage = b ? `url("${b}")` : ''; $('#bnPrev').classList.toggle('has', !!b);
-}
 function shareBlock() {
   const url = ME.urls.page, text = `Поддержать меня донатом через Kaspi: ${url}`;
   val('shareUrl', url); $('#shareOpen').href = url;
@@ -260,6 +255,7 @@ async function api(url, opts = {}) {
   if (!r.ok) throw new Error(j.error || 'Ошибка сервера');
   return j;
 }
+window.kzToast = (m, e) => toast(m, e); window.kzApi = (u, o) => api(u, o);
 const val = (id, v) => { const el = $('#' + id); if (!el) return; if (v === undefined) return el.type === 'checkbox' ? el.checked : el.type === 'number' ? +el.value : el.value; if (el.type === 'checkbox') el.checked = !!v; else el.value = v ?? ''; };
 
 // ---------- навигация ----------
@@ -337,9 +333,7 @@ function render() {
   val('m_enabled', s.media.enabled); val('m_min', s.media.min); val('m_max', s.media.max_sec); val('m_volume', s.media.volume);
   // страница
   const pg = s.page;
-  val('pg_title', pg.title); val('pg_description', pg.description); val('pg_kaspi', pg.kaspi); val('pg_receiver', pg.receiver); val('pg_min', pg.min_amount); val('pg_cards', pg.cards); val('pg_avatar', pg.avatar); val('pg_banner', pg.banner); val('pg_color', pg.color || '#ff3b5c');
-  pagePreviews(); shareBlock();
-  Object.keys(pg.socials).forEach(k => val('s_' + k, pg.socials[k]));
+  shareBlock(); window.dispatchEvent(new Event('kz:me'));
   // pro
   listEdit('#hkList', s.hotkeys, [['min', 'От, ₸', 'number'], ['max', 'До, ₸ (0 = ∞)', 'number'], ['keys', 'Клавиши, напр. ctrl+shift+1']]);
   listEdit('#whList', s.webhooks.map(v => ({ v })), [['v', 'https://...']]);
@@ -353,7 +347,7 @@ function render() {
   // тариф
   renderBilling();
   $('#accInfo').innerHTML = `Ник: <b>${esc(ME.nick)}</b><br>Email: ${esc(ME.email)}<br>Баланс: <b>${fmt(ME.balance)}</b> · <a href="#billing" style="color:var(--accent)">пополнить</a><br>Ваш промокод: <b>${esc(ME.promo.mine)}</b> (−20% другу)<br>Оплачено месяцев: ${ME.paid_months}${ME.vip ? ' · VIP' : ' (VIP с 10 месяцев)'}`;
-  if (!pg.kaspi && !sessionStorage.kaspiHint) { sessionStorage.kaspiHint = 1; toast('Укажите номер Kaspi в разделе «Страница доната»'); }
+  if (!pg.kaspi && !sessionStorage.kaspiHint) { sessionStorage.kaspiHint = 1; toast('Укажите номер Kaspi: «Личная страница» → «Карты»'); }
 }
 
 function fillFileSelects() {
@@ -403,8 +397,7 @@ const collectors = {
   timer: () => ({ timer: { sec_per_100: val('tm_sec'), theme: val('tm_theme') } }),
   roulette: () => ({ roulette: { enabled: val('r_enabled'), sound: val('r_sound'), min: val('r_min'), style: val('r_style'), tasks: readList('#taskList').map(r => r.v) } }),
   media: () => ({ media: { enabled: val('m_enabled'), min: val('m_min'), max_sec: val('m_max'), volume: +val('m_volume') } }),
-  page: () => ({ page: { title: val('pg_title'), description: val('pg_description'), kaspi: val('pg_kaspi'), receiver: val('pg_receiver'), min_amount: val('pg_min'), cards: val('pg_cards'), avatar: val('pg_avatar'), banner: val('pg_banner'), color: val('pg_color'),
-    socials: Object.fromEntries(['tiktok', 'instagram', 'telegram'].map(k => [k, val('s_' + k)])) } }),
+  page: () => window.pageCollect(),
   hotkeys: () => ({ hotkeys: readList('#hkList') }),
   webhooks: () => ({ webhooks: readList('#whList').map(r => r.v) }),
 };
@@ -500,11 +493,10 @@ document.addEventListener('change', async e => {
     if (r.error) throw new Error(r.error);
     FILES = await api('/api/files'); fillFileSelects();
     if (inp.dataset.upsave) { val(inp.dataset.up, r.url); topCustUi(); postTop(); save(inp.dataset.upsave); return; }
-    const keep = { pg_avatar: val('pg_avatar'), pg_banner: val('pg_banner') }; keep[inp.dataset.up] = r.url;
-    Object.entries(keep).forEach(([k, v]) => val(k, v)); pagePreviews(); save('page');
+
   } catch (er) { toast(er.message, true); }
 });
-document.addEventListener('click', e => { const u = e.target.closest('[data-unset]'); if (!u) return; val(u.dataset.unset, ''); if (u.dataset.unsave) { topCustUi(); postTop(); save(u.dataset.unsave); return; } pagePreviews(); save('page'); });
+document.addEventListener('click', e => { const u = e.target.closest('[data-unset]'); if (!u) return; val(u.dataset.unset, ''); if (u.dataset.unsave) { topCustUi(); postTop(); save(u.dataset.unsave); return; } });
 $('#goalReset').onclick = () => { if (!confirm('Сбросить прогресс цели? Собранная сумма начнётся с нуля (донаты не удаляются).')) return; save('goal', { reset: true }); postGoal({ kzGoalReset: 1 }); };
 $('#g_dreams').onclick = e => { const b = e.target.closest('[data-dr]'); if (!b) return; GDREAM = b.dataset.dr; goalPickers(); postGoal(); $('#goalSaved').textContent = '● Не сохранено'; $('#goalSaved').style.color = '#ffc84a'; };
 $('#g_styles').onclick = e => { const d = e.target.closest('.gs'); if (!d) return; GOALSEL = d.dataset.g; goalPickers(); postGoal(); if (!ME.plan.shop && !goalFree(GOALSEL)) toast('Это предпросмотр. Стиль включится в эфире с тарифом Lite', true); };
@@ -552,7 +544,7 @@ $('#mTest').onclick = async () => { try { await api('/api/test/media', { method:
 // ---------- статистика и сброс тестовых донатов ----------
 function renderStatsTiles() {
   const st = ME.stats;
-  $('#stToday').textContent = fmt(st.today); $('#stMonth').textContent = fmt(st.month); $('#stYear').textContent = fmt(st.year); $('#stCnt').textContent = st.cnt;
+  $('#stToday').textContent = fmt(st.today); $('#stMonth').textContent = fmt(st.month); $('#stYear').textContent = fmt(st.year); $('#stCnt').textContent = st.cnt + ' донатов'; window.dispatchEvent(new Event('kz:stats'));
   $('#testInfo').innerHTML = st.tests ? `В статистике <b style="color:var(--text)">${st.tests}</b> тестовых донатов на <b style="color:var(--text)">${fmt(st.tests_sum)}</b>. Настоящие донаты из Kaspi сброс не затронет.` : 'Тестовых донатов нет — в статистике только настоящие донаты.';
   $('#resetTests').disabled = !st.tests;
 }

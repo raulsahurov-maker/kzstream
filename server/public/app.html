@@ -202,6 +202,54 @@
   }
 </style>
 <style>.btn-ed{background:none;border:0;cursor:pointer;font-size:13px;opacity:.55;padding:2px 4px}.btn-ed:hover{opacity:1}.dreams{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.dreams button{padding:10px 4px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#fff;font:700 12px Manrope;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}.dreams button i{font-style:normal;font-size:26px}.dreams button.on{border-color:#ffd23f;background:rgba(255,210,63,.12)}@media(max-width:700px){.dreams{grid-template-columns:repeat(3,1fr)}}.refst{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:6px 0 12px}.refst div{padding:12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);text-align:center}.refst b{display:block;font:800 22px Unbounded,Manrope;color:#fff}.refst span{font-size:12.5px;color:#9aa0b8;font-weight:700}.reflist{display:flex;flex-wrap:wrap;gap:6px}.reflist span{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.05);font-size:12.5px;font-weight:700}.reflist span.p{background:rgba(43,214,123,.15);color:#2bd67b}.rotpick{display:flex;flex-wrap:wrap;gap:8px}.rotpick button{display:flex;align-items:center;gap:7px;padding:7px 12px 7px 7px;border-radius:12px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#fff;font:700 13px Manrope;cursor:pointer}.rotpick button i{width:24px;height:24px;border-radius:7px;overflow:hidden;display:grid;place-items:center}.rotpick button i img,.rotpick button i span{width:100%;height:100%;object-fit:cover}.rotpick button.on{border-color:#ff3b5c;background:rgba(255,59,92,.12)}.rotpick button b{min-width:18px;height:18px;border-radius:6px;background:#ff3b5c;display:grid;place-items:center;font-size:11px}.rotpick button:not(.on) b{display:none}.sw{display:flex;flex-wrap:wrap;gap:8px}.sw button{width:34px;height:34px;border-radius:10px;border:2px solid rgba(255,255,255,.15);cursor:pointer}.sw button.on{border-color:#fff;box-shadow:0 0 0 2px #ff3b5c}.sw button.def{width:auto;padding:0 10px;color:#fff;font:700 12px Manrope;background:rgba(255,255,255,.06)}.as-flash{animation:asf 1.6s ease-out 2}@keyframes asf{0%{box-shadow:0 0 0 3px #fe2c55}100%{box-shadow:0 0 0 0 transparent}}.ttst{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:4px 0 14px;font-weight:700;font-size:14px}.ttst .dot{width:10px;height:10px;border-radius:50%;background:#6b6f85;flex:none}.ttst .dot.live{background:#2bd67b;box-shadow:0 0 10px #2bd67b}.ttst .dot.wait{background:#ffc531;animation:ttb 1s infinite alternate}.ttst .dot.err{background:#ff3b5c}@keyframes ttb{to{opacity:.3}}.ttev h3{display:flex;align-items:center;gap:8px}.ttev .row2{display:flex;gap:8px}.ttev select{flex:1}.ttlock{display:none;padding:10px 12px;border-radius:12px;background:rgba(255,197,49,.08);border:1px solid rgba(255,197,49,.25);color:#ffc531;font-weight:700;font-size:13px;margin-bottom:10px}.ttlock a{color:#fff}.ttev .copy-row{flex-wrap:wrap}.ttev .copy-row input{flex:1 1 100%}</style>
+<style>
+.lp{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}.lp-ed .card{margin-bottom:14px}
+.lp-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:5px;border-radius:16px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}
+.lp-tabs button{flex:1 1 auto;padding:10px 12px;border-radius:12px;border:0;background:none;color:#9aa0b8;font:800 13.5px Manrope;cursor:pointer;white-space:nowrap}.lp-tabs button.on{background:linear-gradient(120deg,#ff3b5c,#ff7a45);color:#fff;box-shadow:0 6px 20px rgba(255,59,92,.3)}
+.lp-pane{display:none}.lp-pane.on{display:block;animation:lpIn .25s ease}@keyframes lpIn{from{opacity:0;transform:translateY(6px)}}
+.lp-pv{position:sticky;top:18px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.lp-phone{width:320px;height:640px;border-radius:44px;padding:12px;background:#07080d;border:2px solid rgba(255,255,255,.12);box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 0 0 6px #14151d}.lp-phone iframe{width:100%;height:100%;border:0;border-radius:32px;background:#0b0c12}
+.lp-at{display:flex;align-items:center;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03)}.lp-at span{padding:0 4px 0 14px;color:#fe2c55;font-weight:800}.lp-at input{border:0!important;background:none!important}
+.lp-cnt{float:right;font-weight:600;color:#6b6f85;font-size:12px}
+.lp-seg{display:inline-flex;gap:4px;padding:4px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.lp-seg button{padding:8px 14px;border-radius:9px;border:0;background:none;color:#9aa0b8;font:800 13px Manrope;cursor:pointer}.lp-seg button.on{background:#ff3b5c;color:#fff}
+.lp-devs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.lp-devs label{display:block;font-size:12.5px;font-weight:700;color:#9aa0b8;margin-bottom:5px}
+.lp-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}.lp-row input{flex:1;min-width:0}.lp-row .x{flex:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:#ff6b81;cursor:pointer;font-weight:800}
+.lp-days{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.lp-days button{width:48px;height:44px;border-radius:12px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:#cfd3e3;font:800 13.5px Manrope;cursor:pointer}.lp-days button.on{border-color:#ff3b5c;background:rgba(255,59,92,.15);color:#fff}
+.lp-ups{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.lp-up{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:12px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)}.lp-up span{font-size:12px;color:#6b6f85}
+.lp-upv{width:100%;height:76px;border-radius:12px;background:rgba(255,255,255,.05) center/cover;display:grid;place-items:center;color:#6b6f85;font-weight:700;font-size:13px;margin-bottom:6px;border:1px dashed rgba(255,255,255,.15)}.lp-upv.ava{width:76px;border-radius:50%;font-size:28px}.lp-upv.has{border-style:solid;color:transparent}
+.lp-designs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}.lp-designs button,.lp-fx button{position:relative;padding:8px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#fff;font:800 13px Manrope;cursor:pointer;text-align:center}.lp-designs button.on,.lp-fx button.on{border-color:#ff3b5c;box-shadow:0 0 0 3px rgba(255,59,92,.2)}
+.lp-designs i{display:block;height:74px;border-radius:10px;margin-bottom:7px;overflow:hidden;position:relative}.lp-designs i::before,.lp-designs i::after{content:"";position:absolute;left:12%;right:12%;height:14px;border-radius:5px}.lp-designs i::before{top:16px}.lp-designs i::after{top:38px;right:30%}
+.lp-designs em,.lp-fx em{position:absolute;top:6px;right:6px;font:800 10px Manrope;font-style:normal;padding:2px 6px;border-radius:6px;background:#ffc531;color:#111}
+.lp-fx{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:8px}.lp-fx button{padding:12px 6px}.lp-fx button b{display:block;font-size:22px;margin-bottom:3px}
+.lp-blk{padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:10px}.lp-blk .lp-row:last-child{margin-bottom:0}
+.lp-soc{display:flex;align-items:center;gap:10px;margin-bottom:10px}.lp-soc i{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-weight:800;color:#fff;font-size:13px}.lp-soc input{flex:1}.lp-soc .ok{flex:none;width:22px;text-align:center;font-weight:800}
+@media(max-width:1100px){.lp{grid-template-columns:1fr}.lp-pv{position:static;order:-1}.lp-phone{width:280px;height:520px}}
+@media(max-width:600px){.lp-devs,.lp-ups{grid-template-columns:1fr}.lp-tabs button{flex:1 1 30%}}
+.ov-head{display:flex;align-items:center;gap:16px;padding:18px;margin-bottom:16px;border-radius:20px;background:linear-gradient(120deg,rgba(255,59,92,.16),rgba(255,122,69,.06) 60%,transparent);border:1px solid rgba(255,59,92,.25)}
+.ov-ava{width:64px;height:64px;border-radius:50%;flex:none;background:linear-gradient(120deg,#ff3b5c,#ff7a45) center/cover;display:grid;place-items:center;font:800 26px Unbounded;color:#fff;border:3px solid rgba(255,255,255,.12)}
+.ov-head h2{font:800 20px Unbounded,Manrope;margin:0 0 6px}.ov-tags{display:flex;gap:6px;flex-wrap:wrap}.ov-tags span{padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.06);font-size:12.5px;font-weight:800;color:#cfd3e3}.ov-tags span.pl{background:#ff3b5c;color:#fff}
+.ov-bal{margin-left:auto;text-align:right}.ov-bal b{display:block;font:800 22px Unbounded,Manrope}.ov-bal span{font-size:12.5px;color:#9aa0b8;font-weight:700}
+.ov-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.ov-c{padding:16px;border-radius:18px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}.ov-c span{font-size:12.5px;font-weight:800;color:#9aa0b8;text-transform:uppercase;letter-spacing:.04em}.ov-c b{display:block;font:800 22px Unbounded,Manrope;margin:6px 0 4px;white-space:nowrap}.ov-c small{font-size:12.5px;color:#6b6f85;font-weight:700}.ov-c small.up{color:#2bd67b}.ov-c small.dn{color:#ff6b81}
+.ov-g{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-bottom:18px}.ov-chart{height:190px;display:flex;align-items:flex-end;gap:3px;padding-top:10px}.ov-chart div{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}.ov-chart i{display:block;width:100%;max-width:26px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#ff7a45,#ff3b5c);min-height:3px;transition:height .5s}.ov-chart i.z{background:rgba(255,255,255,.07)}.ov-chart u{text-decoration:none;font-size:10px;color:#6b6f85;font-weight:700;white-space:nowrap}
+.ov-rng{display:inline-flex;gap:3px;padding:3px;border-radius:10px;background:rgba(255,255,255,.04)}.ov-rng button{padding:6px 10px;border-radius:8px;border:0;background:none;color:#9aa0b8;font:800 12px Manrope;cursor:pointer}.ov-rng button.on{background:#ff3b5c;color:#fff}
+.ov-l{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-weight:700;font-size:14px}.ov-l:last-child{border:0}.ov-l .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ov-l .n small{display:block;color:#6b6f85;font-weight:600;font-size:12px;overflow:hidden;text-overflow:ellipsis}.ov-l .s{color:#ff7a45;white-space:nowrap}.ov-l .p{width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.06);display:grid;place-items:center;font-size:12px;flex:none}.ov-l:first-child .p.t{background:linear-gradient(120deg,#ffd23f,#ff9d2e);color:#111}
+@media(max-width:900px){.ov-cards{grid-template-columns:1fr 1fr}.ov-g{grid-template-columns:1fr}.ov-head{flex-wrap:wrap}.ov-bal{margin-left:0;text-align:left}}
+</style>
+<style>
+aside{display:flex;flex-direction:column}
+.sb-prof{display:flex;align-items:center;gap:11px;padding:12px;margin:4px 0 14px;border-radius:18px;background:linear-gradient(135deg,rgba(255,59,92,.2),rgba(255,122,69,.08));border:1px solid rgba(255,59,92,.35);color:#fff;text-decoration:none;position:relative}
+.sb-ava{width:46px;height:46px;border-radius:14px;flex:none;background:linear-gradient(120deg,#ff3b5c,#ff7a45) center/cover;display:grid;place-items:center;font:800 19px Unbounded,Manrope;color:#fff}
+.sb-who{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}.sb-who b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:40px}.sb-who small{font-size:12px;color:#9aa0b8;font-weight:700}.sb-who em{font-style:normal;font:800 14px Unbounded,Manrope;color:#ffc531}
+.sb-plan{position:absolute;top:10px;right:10px;font:800 10.5px Manrope;font-style:normal;padding:3px 7px;border-radius:7px;background:rgba(255,255,255,.1);color:#cfd3e3;letter-spacing:.04em}.sb-plan.lite{background:#ff3b5c;color:#fff}.sb-plan.pro{background:linear-gradient(120deg,#ffd23f,#ff9d2e);color:#111}
+.menu .sb-grp{margin-bottom:6px}
+.sb-h{display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border:0;border-radius:12px;background:rgba(255,255,255,.04);color:#ff7a45;font:800 12.5px Manrope;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;text-align:left}
+.sb-grp[data-g=widgets] .sb-h{color:#a98bff}.sb-grp[data-g=int] .sb-h{color:#3ee6c4}.sb-grp[data-g=more] .sb-h{color:#9aa0b8}
+.sb-h i{margin-left:auto;font-style:normal;transition:transform .2s;opacity:.7}.sb-grp.shut .sb-h i{transform:rotate(-90deg)}
+.sb-items{display:flex;flex-direction:column;padding:4px 0 2px;overflow:hidden}.menu .sb-items a{padding:8px 12px;font-size:14px;white-space:nowrap}.sb-grp.shut .sb-items{display:none}
+.sb-app{display:flex;align-items:center;gap:9px;margin-top:auto;padding:11px 13px;border-radius:14px;border:1px solid rgba(255,59,92,.3);background:rgba(255,59,92,.08);color:#ff6b81;font-weight:800;font-size:13px;text-decoration:none}
+.sb-app i{width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;flex:none}.sb-app.on{color:#2bd67b;border-color:rgba(43,214,123,.35);background:rgba(43,214,123,.08)}.sb-app.on i{animation:ttb 1.2s infinite alternate}
+.sb-app span{flex:1}.menu{flex:1}
+</style>
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Comfortaa:wght@700&family=Pacifico&family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -209,43 +257,60 @@
 <div class="layout">
 <aside>
   <a class="logo" href="/"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>KZStream</a>
+  <a href="#account" class="sb-prof" id="sbProf"><span class="sb-ava" id="sbAva">K</span><span class="sb-who"><b id="sbNick">…</b><small id="sbUntil">бесплатно</small><em id="sbBal">0 ₸</em></span><i class="sb-plan" id="sbPlan">FREE</i></a>
   <nav class="menu">
-    <a href="#home"><span>🏠</span>Главная</a>
-    <a href="#devices"><span>📲</span>Подключение</a>
-    <a href="#alerts"><span>🔔</span>Алерты и озвучка</a>
-    <a href="#widgets"><span>📊</span>Виджеты</a>
-    <a href="#roulette"><span>🎰</span>Рулетка<i class="mb">Lite</i></a>
-    <a href="#media"><span>🎵</span>Музыка и видео<i class="mb">Lite</i></a>
-    <a href="#tiktok"><span>📱</span>TikTok<i class="mb" data-new-until="2026-11-27" style="background:#ff5500;color:#fff">NEW</i></a>
-    <a href="#faceit"><span>🎮</span>FACEIT<i class="mb" style="background:#ff5500;color:#fff">NEW</i></a>
-    <a href="#page"><span>🌐</span>Страница доната</a>
-    <a href="#donations"><span>💸</span>Донаты</a>
-    <a href="#files"><span>📁</span>Хранилище</a>
-    <a href="#pro"><span>⌨️</span>Хоткеи и вебхуки<i class="mb pro">Pro</i></a>
-    <a href="#billing"><span>💳</span>Тариф</a>
-    <a href="#account"><span>👤</span>Аккаунт</a>
-    <a href="#partner"><span>🤝</span>Сотрудничество</a>
-    <a href="https://t.me/KZstream1" target="_blank" rel="noopener"><span>📢</span>Новости и видеоинструкции<i class="mb" style="background:#229ed9;color:#fff">TG</i></a>
-    <a href="/admin" id="adminLink" style="display:none"><span>🛡️</span>Админка</a>
+    <div class="sb-grp" data-g="main"><button class="sb-h" type="button"><span>🏠</span>Главная<i>▾</i></button><div class="sb-items">
+      <a href="#home"><span>📊</span>Обзор</a>
+      <a href="https://t.me/KZstream1" target="_blank" rel="noopener"><span>📢</span>Новости<i class="mb" style="background:#229ed9;color:#fff">TG</i></a>
+      <a href="#billing"><span>💳</span>Купить тариф<i class="mb" id="sbTariff" style="background:rgba(255,255,255,.08);color:#9aa0b8">free</i></a>
+      <a href="#donations"><span>💸</span>Мои донаты</a>
+      <a href="#page"><span>🌐</span>Личная страница<i class="mb" data-new-until="2026-11-29" style="background:#2bd67b;color:#06140c">NEW</i></a>
+      <a href="#files"><span>📁</span>Хранилище</a>
+      <a href="#account"><span>👤</span>Аккаунт</a>
+    </div></div>
+    <div class="sb-grp" data-g="widgets"><button class="sb-h" type="button"><span>🎨</span>Виджеты<i>▾</i></button><div class="sb-items">
+      <a href="#alerts"><span>🔔</span>Алерты и озвучка</a>
+      <a href="#widgets"><span>🧩</span>Все виджеты</a>
+      <a href="#roulette"><span>🎰</span>Рулетка<i class="mb">Lite</i></a>
+      <a href="#media"><span>🎵</span>Музыка и видео<i class="mb">Lite</i></a>
+    </div></div>
+    <div class="sb-grp" data-g="int"><button class="sb-h" type="button"><span>🔌</span>Подключения<i>▾</i></button><div class="sb-items">
+      <a href="#devices"><span>📲</span>Приложение и Kaspi</a>
+      <a href="#tiktok"><span>📱</span>TikTok<i class="mb" data-new-until="2026-11-27" style="background:#ff5500;color:#fff">NEW</i></a>
+      <a href="#faceit"><span>🎮</span>FACEIT<i class="mb" style="background:#ff5500;color:#fff">NEW</i></a>
+      <a href="#pro"><span>⌨️</span>Хоткеи и вебхуки<i class="mb pro">Pro</i></a>
+    </div></div>
+    <div class="sb-grp" data-g="more"><button class="sb-h" type="button"><span>✨</span>Ещё<i>▾</i></button><div class="sb-items">
+      <a href="#partner"><span>🤝</span>Сотрудничество</a>
+      <a href="/admin" id="adminLink" style="display:none"><span>🛡️</span>Админка</a>
+    </div></div>
   </nav>
-  <div class="side-plan" id="sidePlan"></div>
+  <a href="#devices" class="sb-app" id="sbApp"><i></i><span>Проверяем приложение…</span></a>
+  <div class="side-plan" id="sidePlan" hidden></div>
 </aside>
 
 <main>
   <!-- ГЛАВНАЯ -->
   <section class="page" id="p-home">
-    <div class="top"><h1>Привет, <span id="nickH"></span> 👋</h1><a class="btn btn-ghost btn-sm" id="pageLinkBtn" target="_blank">Моя страница доната ↗</a></div>
+    <div class="top"><h1>Привет, <span id="nickH"></span> 👋</h1><a class="btn btn-ghost btn-sm" id="pageLinkBtn" target="_blank">Моя личная страница ↗</a></div>
+    <div class="ov-head" id="ovHead"><div class="ov-ava" id="ovAva">K</div><div><h2 id="ovNick">…</h2><div class="ov-tags" id="ovTags"></div></div><div class="ov-bal"><b id="ovBal">0 ₸</b><span>баланс · <a href="#billing" style="color:#ff7a45">пополнить</a></span></div></div>
+    <div class="ov-cards">
+      <div class="ov-c"><span>Сегодня</span><b id="stToday">0 ₸</b><small id="ovTodayC">0 донатов</small></div>
+      <div class="ov-c"><span>Неделя</span><b id="ovWeek">0 ₸</b><small id="ovWeekC">0 донатов</small></div>
+      <div class="ov-c"><span>Месяц</span><b id="stMonth">0 ₸</b><small id="ovMonthD">—</small></div>
+      <div class="ov-c"><span>Всего</span><b id="ovAll">0 ₸</b><small id="stCnt">0 донатов</small></div>
+    </div>
+    <span id="stYear" hidden></span>
+    <div class="ov-g">
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Доход</h3><div class="ov-rng" id="ovRng"><button data-r="today" class="on">Сегодня</button><button data-r="7d">7 дней</button><button data-r="30d">30 дней</button><button data-r="year">Год</button></div></div><div class="ov-chart" id="ovChart"></div><div class="muted" style="font-size:12.5px;margin-top:6px" id="ovSum"></div></div>
+      <div class="card"><h3>🏆 Топ донатеры (месяц)</h3><div id="ovTop"><div class="muted">Пока нет донатов в этом месяце</div></div></div>
+      <div class="card" style="grid-column:1/-1"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0 0 6px">Последние донаты</h3><a href="#donations" style="color:#ff7a45;font-weight:800;font-size:13px">Все →</a></div><div id="ovRecent"><div class="muted">Пока нет донатов</div></div></div>
+    </div>
     <a href="https://t.me/KZstream1" target="_blank" rel="noopener" class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:18px;text-decoration:none;color:inherit;border-color:rgba(34,158,217,.5);background:linear-gradient(90deg,rgba(34,158,217,.16),transparent)">
       <span style="width:46px;height:46px;border-radius:50%;background:#229ed9;display:grid;place-items:center;flex:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="#fff"><path d="M21.4 4.3 2.9 11.4c-1.3.5-1.2 1.2-.2 1.5l4.7 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.4l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.3-.5-1.9-1.4-1.5zM8.8 14.1l9.7-6.1c.5-.3.9-.1.5.2l-8.1 7.4-.3 3.4-1.8-4.9z"/></svg></span>
       <span style="flex:1"><b style="font-size:16px">Новости и видеоинструкции KZStream</b><br><span class="muted" style="font-size:13.5px">Обновления, новые функции и видео «как настроить» — в нашем Telegram-канале</span></span>
       <span class="btn btn-primary btn-sm" style="background:#229ed9">Подписаться</span>
     </a>
-    <div class="grid g4 stats-g" style="margin-bottom:18px">
-      <div class="card stat"><b id="stToday">0 ₸</b><span>Сегодня</span></div>
-      <div class="card stat"><b id="stMonth">0 ₸</b><span>За месяц</span></div>
-      <div class="card stat"><b id="stYear">0 ₸</b><span>За год</span></div>
-      <div class="card stat"><b id="stCnt">0</b><span>Донатов</span></div>
-    </div>
     <div class="test-bar" id="testBar"><span id="testInfo">Тестовых донатов нет</span><button class="btn btn-danger btn-sm" id="resetTests">🧹 Сбросить тестовые донаты</button></div>
     <div class="grid g2">
       <div class="card">
@@ -613,9 +678,9 @@
     </div>
   </section>
 
-  <!-- СТРАНИЦА -->
+  <!-- ЛИЧНАЯ СТРАНИЦА -->
   <section class="page" id="p-page">
-    <div class="top"><h1>Страница доната</h1><button class="btn btn-primary" data-save="page">Сохранить</button></div>
+    <div class="top"><h1>Личная страница</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-ghost" id="lpOpen" target="_blank">Открыть ↗</a><button class="btn btn-primary" id="lpSave">Сохранить</button></div></div>
     <div class="card share-card" style="margin-bottom:18px">
       <div class="share-l">
         <h3>Поделитесь своей страницей доната</h3>
@@ -632,32 +697,99 @@
       </div>
       <div class="qr-box"><canvas id="shareQr" width="180" height="180"></canvas><span>Наведите камеру</span></div>
     </div>
-    <div class="grid g2">
-      <div class="card">
-        <div class="field"><label>Заголовок</label><input id="pg_title"></div>
-        <div class="field"><label>Описание</label><textarea id="pg_description"></textarea></div>
-        <div class="field"><label>Номер Kaspi для переводов</label><input id="pg_kaspi" placeholder="+7 777 123 45 67"><small>Зрители будут переводить на этот номер.</small></div>
-        <div class="field"><label>Имя получателя (как в Kaspi)</label><input id="pg_receiver" placeholder="Аружан А."></div>
-        <div class="field"><label>Минимальная сумма доната, ₸</label><input type="number" id="pg_min"></div>
-        <div class="field"><label>Карты других банков (необязательно)</label><input id="pg_cards" placeholder="Halyk 4400 **** **** 1234"></div>
+    <div class="lp">
+      <div class="lp-ed">
+        <div class="lp-tabs" id="lpTabs">
+          <button data-t="main" class="on">👤 Основное</button><button data-t="cards">💳 Карты</button><button data-t="dev">🖥 Девайсы</button><button data-t="look">🎨 Оформление</button><button data-t="blocks">🧩 Свои блоки</button><button data-t="soc">🔗 Соцсети</button>
+        </div>
+
+        <div class="lp-pane on" data-p="main">
+          <div class="card">
+            <h3>Профиль</h3>
+            <div class="field"><label>Ссылка на страницу</label><div class="copy-row"><input readonly id="lpLink"><button class="btn btn-ghost" data-copy="lpLink">Копировать</button></div><small>Ссылка совпадает с вашим ником.</small></div>
+            <div class="field"><label>Отображаемое имя</label><input id="pg_title" maxlength="60" placeholder="Как вас называть на странице"></div>
+            <div class="field"><label>TikTok-аккаунт стримера</label><div class="lp-at"><span>@</span><input id="pg_tiktok" maxlength="60" placeholder="username или ссылка tiktok.com/@…"></div><small>Под именем появится кнопка «Смотреть в TikTok».</small></div>
+            <div class="field"><label>О себе <span class="lp-cnt" data-for="pg_description"></span></label><textarea id="pg_description" maxlength="500" rows="4" placeholder="Пару слов о себе и стримах"></textarea></div>
+            <div class="field"><label>Дополнительная информация <span class="lp-cnt" data-for="pg_extra"></span></label><textarea id="pg_extra" maxlength="500" rows="3" placeholder="Правила донатов, цели, промокоды…"></textarea></div>
+            <div class="field"><label>Минимальная сумма доната, ₸</label><input type="number" id="pg_min" min="1"></div>
+          </div>
+        </div>
+
+        <div class="lp-pane" data-p="cards">
+          <div class="card">
+            <h3>Kaspi</h3><p class="hint">Главный способ доната: на этот номер приходят переводы, и донаты сразу появляются в эфире.</p>
+            <div class="row"><div class="field"><label>Номер Kaspi</label><input id="pg_kaspi" placeholder="+7 777 123 45 67"></div><div class="field"><label>Имя получателя (как в Kaspi)</label><input id="pg_receiver" placeholder="Аружан А."></div></div>
+          </div>
+          <div class="card">
+            <h3>Другие карты и реквизиты</h3><p class="hint">Halyk, Freedom, Jusan, IBAN и любые другие, до 5. Зрители смогут скопировать номер в один клик.</p>
+            <div id="lpCards"></div>
+            <button class="btn btn-ghost btn-sm" id="lpCardAdd" type="button">+ Добавить карту</button>
+          </div>
+        </div>
+
+        <div class="lp-pane" data-p="dev">
+          <div class="card">
+            <h3>Мои девайсы</h3><p class="hint">Зрители часто спрашивают «на чём играешь?». Заполните только то, что хотите показать.</p>
+            <div class="lp-seg" id="lpDevType"><button data-v="pc" class="on">🖥 ПК</button><button data-v="laptop">💻 Ноутбук</button></div>
+            <div class="lp-devs" id="lpDevs"></div>
+            <div class="as-sec" style="margin-top:14px">Своё <span class="muted" style="font-weight:600">— до 6 строк, например «Руль» · «Logitech G29»</span></div>
+            <div id="lpCustom"></div>
+            <button class="btn btn-ghost btn-sm" id="lpCustomAdd" type="button">+ Добавить строку</button>
+          </div>
+          <div class="card">
+            <h3>Расписание стримов</h3><p class="hint">Отметьте дни и время — на странице появится «Когда я в эфире».</p>
+            <div class="lp-days" id="lpDays"></div>
+            <div class="row"><div class="field"><label>Начало</label><input type="time" id="lpStart"></div><div class="field"><label>Конец</label><input type="time" id="lpEnd"></div></div>
+          </div>
+        </div>
+
+        <div class="lp-pane" data-p="look">
+          <div class="card">
+            <h3>Аватар, баннер и фон</h3>
+            <p class="hint">JPG, PNG, GIF или WEBP до 8 МБ. Эти картинки хранятся отдельно и <b>не занимают место в «Хранилище»</b>.</p>
+            <div class="lp-ups">
+              <div class="lp-up"><div class="lp-upv ava" data-pv="avatar">👤</div><b>Аватар</b><span>квадрат 400×400</span><div class="up-btns"><label class="btn btn-ghost btn-sm">📁 Загрузить<input type="file" accept="image/*" hidden data-pf="avatar"></label><button class="btn btn-ghost btn-sm" type="button" data-pfunset="avatar">✕</button></div></div>
+              <div class="lp-up"><div class="lp-upv" data-pv="banner">Баннер</div><b>Баннер</b><span>1500×500</span><div class="up-btns"><label class="btn btn-ghost btn-sm">📁 Загрузить<input type="file" accept="image/*" hidden data-pf="banner"></label><button class="btn btn-ghost btn-sm" type="button" data-pfunset="banner">✕</button></div></div>
+              <div class="lp-up"><div class="lp-upv" data-pv="bg">Фон</div><b>Фон страницы</b><span>1920×1080</span><div class="up-btns"><label class="btn btn-ghost btn-sm">📁 Загрузить<input type="file" accept="image/*" hidden data-pf="bg"></label><button class="btn btn-ghost btn-sm" type="button" data-pfunset="bg">✕</button></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Дизайн страницы</h3><p class="hint">«Классика» бесплатно, остальные — с тарифа Lite.</p>
+            <div class="lp-designs" id="lpDesigns"></div>
+          </div>
+          <div class="card">
+            <h3>Эффекты <i class="mb" style="font-style:normal">Lite</i></h3><p class="hint">Анимация поверх или под блоками страницы.</p>
+            <div class="lp-fx" id="lpFx"></div>
+            <div class="lp-seg" id="lpLayer" style="margin-top:12px"><button data-v="over" class="on">Поверх блоков</button><button data-v="under">Под блоками</button></div>
+          </div>
+          <div class="card">
+            <h3>Цвет темы</h3>
+            <div class="sw" id="lpColors"></div>
+            <div class="field" style="margin-top:10px;max-width:160px"><input type="color" id="pg_color" style="height:42px;padding:4px"></div>
+          </div>
+        </div>
+
+        <div class="lp-pane" data-p="blocks">
+          <div class="card">
+            <h3>Текстовые блоки</h3><p class="hint">Заголовок и текст, до 5 блоков: правила, о стримах, достижения.</p>
+            <div id="lpTexts"></div><button class="btn btn-ghost btn-sm" id="lpTextAdd" type="button">+ Текстовый блок</button>
+          </div>
+          <div class="card">
+            <h3>Блоки с кнопками-ссылками</h3><p class="hint">Заголовок и до 6 кнопок: магазин, мерч, сборка, плейлист…</p>
+            <div id="lpLinks"></div><button class="btn btn-ghost btn-sm" id="lpLinkAdd" type="button">+ Блок ссылок</button>
+          </div>
+        </div>
+
+        <div class="lp-pane" data-p="soc">
+          <div class="card">
+            <h3>Соцсети</h3><p class="hint">Вставьте ссылку на профиль. Принимаются только ссылки с правильного сайта: YouTube — youtube.com, Telegram — t.me и т.д.</p>
+            <div id="lpSoc"></div>
+          </div>
+        </div>
       </div>
-      <div class="card">
-        <h3>Оформление</h3><p class="hint">Загрузите аватарку и баннер прямо с телефона или компьютера (JPG, PNG, GIF, WEBP до 8 МБ).</p>
-        <div class="field"><label>Баннер (шапка страницы)</label>
-          <div class="up-banner" id="bnPrev"><span>Баннер не загружен · лучше 1500×500</span></div>
-          <div class="up-btns"><label class="btn btn-ghost btn-sm">📁 Загрузить баннер<input type="file" accept="image/*" hidden data-up="pg_banner"></label><button class="btn btn-ghost btn-sm" type="button" data-unset="pg_banner">Убрать</button></div>
-          <select id="pg_banner" data-files="image" hidden></select></div>
-        <div class="field"><label>Аватарка</label>
-          <div style="display:flex;align-items:center;gap:14px"><div class="up-ava" id="avPrev">👤</div>
-          <div class="up-btns" style="margin:0"><label class="btn btn-ghost btn-sm">📁 Загрузить аватарку<input type="file" accept="image/*" hidden data-up="pg_avatar"></label><button class="btn btn-ghost btn-sm" type="button" data-unset="pg_avatar">Убрать</button></div></div>
-          <select id="pg_avatar" data-files="image" hidden></select></div>
-        <div class="field"><label>Цвет страницы</label><input type="color" id="pg_color" style="height:46px;padding:4px"></div>
-      </div>
-      <div class="card">
-        <h3>Соцсети</h3><p class="hint">Ссылки появятся на странице.</p>
-                        <div class="field"><label>TikTok</label><input id="s_tiktok"></div>
-        <div class="field"><label>Instagram</label><input id="s_instagram"></div>
-        <div class="field"><label>Telegram</label><input id="s_telegram"></div>
+      <div class="lp-pv">
+        <div class="lp-phone"><iframe id="lpFrame" title="Превью страницы"></iframe></div>
+        <span class="muted" style="font-size:12.5px">Так страницу увидят зрители · обновляется после сохранения</span>
       </div>
     </div>
   </section>
@@ -819,6 +951,7 @@
 <script src="/js/dashboard.js"></script>
 <script src="/w/sfx.js"></script>
 <script src="/js/tiktok.js"></script>
+<script src="/js/page.js"></script>
 <script>document.querySelectorAll("[data-new-until]").forEach(b => { if (Date.now() > new Date(b.dataset.newUntil + "T23:59:59+05:00").getTime()) b.remove(); });</script>
 </body>
 </html>

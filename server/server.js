@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS payments(id INTEGER PRIMARY KEY, user_id INTEGER, pla
   status TEXT DEFAULT 'pending', created_at INTEGER, comment TEXT DEFAULT '');
 CREATE TABLE IF NOT EXISTS files(id INTEGER PRIMARY KEY, user_id INTEGER, name TEXT, mime TEXT, size INTEGER, file TEXT, created_at INTEGER);
 CREATE TABLE IF NOT EXISTS file_data(file TEXT PRIMARY KEY, data BLOB);
+CREATE TABLE IF NOT EXISTS page_files(file TEXT PRIMARY KEY, user_id INTEGER, kind TEXT, mime TEXT, created_at INTEGER);
 CREATE TABLE IF NOT EXISTS ingest_log(id INTEGER PRIMARY KEY, user_id INTEGER, hash TEXT, text TEXT, result TEXT, created_at INTEGER);
 CREATE INDEX IF NOT EXISTS il_user ON ingest_log(user_id, hash);
 `;
@@ -91,7 +92,7 @@ async function pushLoop() {
 const q = (sql) => { const st = db.prepare(sql); return {
   get: (...a) => clean(st.get(...a)), all: (...a) => st.all(...a).map(clean),
   run: (...a) => { const r = st.run(...a); if (remote) { outbox.push({ sql, args: a }); pushLoop(); } return r; } }; };
-const TABLES = ['users', 'sessions', 'donations', 'payments', 'files', 'file_data', 'ingest_log', 'faceit_track'];
+const TABLES = ['users', 'sessions', 'donations', 'payments', 'files', 'file_data', 'ingest_log', 'faceit_track', 'page_files'];
 async function initStorage() {
   if (!USE_TURSO) { console.log('Локальная база: ' + LOCAL_DB); return; }
   const { createClient } = require('@libsql/client');
@@ -171,7 +172,9 @@ const THEMES = ['default', 'neon', 'sunset', 'mint', 'royal', 'mono', 'candy', '
 function defaults(nick) {
   return {
     page: { title: nick, description: 'Спасибо за поддержку стрима!', kaspi: '', receiver: '', min_amount: 100, cards: '', avatar: '', banner: '', color: '#ff3b5c',
-      socials: { twitch: '', youtube: '', tiktok: '', instagram: '', telegram: '' } },
+      socials: { twitch: '', youtube: '', tiktok: '', instagram: '', telegram: '', discord: '', donationalerts: '' },
+      tiktok: '', extra: '', bg: '', design: 'classic', effect: 'none', effect_layer: 'over',
+      devices: { type: 'pc', items: {}, custom: [] }, schedule: { days: [], start: '', end: '' }, cards2: [], blocks: { texts: [], links: [] } },
     alerts: { duration: 6, gif: '', sound: '', volume: 0.8, min_alert: 0, show_msg: true, theme: 'default',
       tts: true, min_tts: 0, tts_lang: 'ru', tts_voice: 'dmitry', tts_rate: 1, tts_read_name: false, variations: [], layout: 'classic', pool: [], pool_min: 0 },
     censor: { words: '', strip_links: true },
@@ -569,9 +572,45 @@ app.put('/api/settings', auth, (req, res) => {
     s.page.receiver = clampStr(pg.receiver ?? s.page.receiver, 60);
     s.page.min_amount = int(pg.min_amount, 1, 1e6, s.page.min_amount);
     s.page.cards = clampStr(pg.cards ?? s.page.cards, 300);
-    for (const k of ['avatar', 'banner']) if (pg[k] !== undefined) s.page[k] = /^(\/u\/\d+\/[\w.-]+|)$/.test(pg[k]) ? pg[k] : s.page[k];
+    for (const k of ['avatar', 'banner', 'bg']) if (pg[k] !== undefined) s.page[k] = /^(\/u\/\d+\/[\w.-]+|\/pf\/\d+\/[\w.-]+|)$/.test(pg[k]) ? pg[k] : (s.page[k] || '');
+    // личная страница: TikTok, доп. инфо, девайсы, расписание, карты, свои блоки, оформление
+    if (pg.tiktok !== undefined) s.page.tiktok = clampStr(String(pg.tiktok).replace(/^https?:\/\/(www\.)?tiktok\.com\/@?/i, '').replace(/^@/, '').split(/[/?#\s]/)[0], 40);
+    if (pg.extra !== undefined) s.page.extra = clampStr(pg.extra, 500);
+    const DEV = ['cpu', 'gpu', 'ram', 'mb', 'storage', 'monitor', 'mouse', 'keyboard', 'headphones', 'mic', 'camera', 'pad'];
+    if (pg.devices) {
+      const dv = pg.devices, items = {};
+      for (const k of DEV) if (dv.items && dv.items[k]) items[k] = clampStr(dv.items[k], 60);
+      const custom = (Array.isArray(dv.custom) ? dv.custom : []).slice(0, 6).map(r => ({ k: clampStr(r && r.k, 30), v: clampStr(r && r.v, 60) })).filter(r => r.k && r.v);
+      s.page.devices = { type: dv.type === 'laptop' ? 'laptop' : 'pc', items, custom };
+    }
+    if (pg.schedule) {
+      const sc = pg.schedule, tm = x => /^\d{2}:\d{2}$/.test(x || '') ? x : '';
+      s.page.schedule = { days: (Array.isArray(sc.days) ? sc.days : []).map(Number).filter(d => d >= 0 && d <= 6).filter((d, i, a) => a.indexOf(d) === i).sort(), start: tm(sc.start), end: tm(sc.end) };
+    }
+    if (Array.isArray(pg.cards2)) s.page.cards2 = pg.cards2.slice(0, 5).map(c => ({ bank: clampStr(c && c.bank, 30), number: clampStr(c && c.number, 40) })).filter(c => c.bank && c.number);
+    if (pg.blocks) {
+      const okUrl = u => /^https?:\/\/[^\s]+$/i.test(u || '');
+      s.page.blocks = {
+        texts: (pg.blocks.texts || []).slice(0, 5).map(t => ({ title: clampStr(t && t.title, 60), text: clampStr(t && t.text, 1000) })).filter(t => t.title || t.text),
+        links: (pg.blocks.links || []).slice(0, 5).map(l => ({ title: clampStr(l && l.title, 60), items: ((l && l.items) || []).slice(0, 6).map(i => ({ label: clampStr(i && i.label, 40), url: clampStr(i && i.url, 300) })).filter(i => i.label && okUrl(i.url)) })).filter(l => l.items.length),
+      };
+    }
+    const PAGE_DESIGNS = ['classic', 'hud', 'minimal', 'pastel', 'amethyst'], PAGE_FX = ['none', 'rain', 'snow', 'leaves', 'confetti', 'fireflies', 'stars'];
+    if (pg.design !== undefined) { if (!PAGE_DESIGNS.includes(pg.design)) errors.push('Неизвестный дизайн'); else if (pg.design !== 'classic' && !p.shop) errors.push('Этот дизайн страницы — с тарифа Lite'); else s.page.design = pg.design; }
+    if (pg.effect !== undefined) { if (!PAGE_FX.includes(pg.effect)) errors.push('Неизвестный эффект'); else if (pg.effect !== 'none' && !p.shop) errors.push('Эффекты на странице — с тарифа Lite'); else s.page.effect = pg.effect; }
+    if (pg.effect_layer !== undefined) s.page.effect_layer = pg.effect_layer === 'under' ? 'under' : 'over';
     if (/^#[0-9a-f]{6}$/i.test(pg.color || '')) s.page.color = pg.color;
-    if (pg.socials) for (const k of Object.keys(s.page.socials)) s.page.socials[k] = clampStr(pg.socials[k] ?? s.page.socials[k], 200);
+    if (pg.socials) {
+      // ссылка принимается только с правильного домена — иначе иконка не появится
+      const DOM = { youtube: /(youtube\.com|youtu\.be)$/, twitch: /twitch\.tv$/, telegram: /(t\.me|telegram\.me)$/, instagram: /instagram\.com$/, tiktok: /tiktok\.com$/, discord: /(discord\.gg|discord\.com)$/, donationalerts: /(donationalerts\.com|donationalerts\.ru|dalink\.to)$/ };
+      s.page.socials = { ...{ twitch: '', youtube: '', tiktok: '', instagram: '', telegram: '', discord: '', donationalerts: '' }, ...(s.page.socials || {}) };
+      for (const k of Object.keys(DOM)) if (pg.socials[k] !== undefined) {
+        const v = clampStr(pg.socials[k], 200).trim();
+        if (!v) { s.page.socials[k] = ''; continue; }
+        let host = ''; try { host = new URL(/^https?:\/\//i.test(v) ? v : 'https://' + v).hostname.replace(/^www\./, ''); } catch { }
+        if (DOM[k].test(host)) s.page.socials[k] = /^https?:\/\//i.test(v) ? v : 'https://' + v; else errors.push(`Ссылка ${k}: нужен адрес ${String(DOM[k]).replace(/[\/\\$()]/g, '').replace(/\|/g, ' или ')}`);
+      }
+    }
   }
   if (b.alerts) {
     const a = b.alerts, A = s.alerts;
@@ -703,6 +742,47 @@ app.post('/api/upload', auth, express.raw({ type: '*/*', limit: '20mb' }), (req,
   const name = clampStr(decodeURIComponent(req.headers['x-filename'] || file), 100);
   const r = q('INSERT INTO files(user_id,name,mime,size,file,created_at) VALUES(?,?,?,?,?,?)').run(u.id, name, mime, size, `${u.id}/${file}`, now());
   res.json({ ok: true, id: Number(r.lastInsertRowid), url: `/u/${u.id}/${file}` });
+});
+// файлы личной страницы (аватарка, баннер, фон) — отдельно от «Хранилища» и не занимают место
+app.post('/api/page/upload', auth, express.raw({ type: '*/*', limit: '10mb' }), (req, res) => {
+  const u = req.user, mime = String(req.headers['content-type'] || '').split(';')[0], kind = String(req.query.kind || '');
+  if (!['avatar', 'banner', 'bg'].includes(kind)) return res.status(400).json({ error: 'Неизвестный тип' });
+  if (!/^image\/(gif|png|jpeg|webp)$/.test(mime)) return res.status(400).json({ error: 'Только картинки: JPG, PNG, GIF, WEBP' });
+  const size = req.body?.length || 0;
+  if (!size) return res.status(400).json({ error: 'Пустой файл' });
+  if (size > 8 * 1048576) return res.status(413).json({ error: 'Картинка больше 8 МБ — сожмите её' });
+  for (const old of q('SELECT file FROM page_files WHERE user_id=? AND kind=?').all(u.id, kind)) { q('DELETE FROM file_data WHERE file=?').run('pf:' + old.file); q('DELETE FROM page_files WHERE file=?').run(old.file); }
+  const file = `${u.id}/${kind}-${rnd(8)}.${mime.split('/')[1].replace('jpeg', 'jpg')}`;
+  q('INSERT INTO file_data(file,data) VALUES(?,?)').run('pf:' + file, req.body);
+  q('INSERT INTO page_files(file,user_id,kind,mime,created_at) VALUES(?,?,?,?,?)').run(file, u.id, kind, mime, now());
+  res.json({ ok: true, url: '/pf/' + file });
+});
+app.get('/pf/:uid/:file', async (req, res) => {
+  const key = `${req.params.uid}/${req.params.file}`;
+  const f = q('SELECT mime FROM page_files WHERE file=?').get(key);
+  let d = f && q('SELECT data FROM file_data WHERE file=?').get('pf:' + key);
+  if (f && !d && remote) { try { const r = await remote.execute({ sql: 'SELECT data FROM file_data WHERE file=?', args: ['pf:' + key] }); const v = r.rows[0]?.data; if (v) d = { data: Buffer.from(v) }; } catch { } }
+  if (!d) return res.status(404).end();
+  res.set({ 'Content-Type': f.mime, 'Cache-Control': 'public, max-age=604800' }).send(Buffer.from(d.data));
+});
+// обзор на главной кабинета: суммы за периоды, график дохода, последние донаты, топ месяца
+app.get('/api/overview', auth, (req, res) => {
+  const u = req.user, s = getSettings(u), T = Date.now(), tz = 5 * 3600e3; // время Казахстана
+  const dayStart = Math.floor((T + tz) / 864e5) * 864e5 - tz;
+  const d0 = new Date(T + tz), monthStart = Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth(), 1) - tz, prevMonthStart = Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() - 1, 1) - tz;
+  const sum = (from, to = T + 1) => q(`SELECT COALESCE(SUM(amount),0) s, COUNT(*) c FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=? AND done_at<?`).get(u.id, from, to);
+  const cards = { today: sum(dayStart), week: sum(dayStart - 6 * 864e5), month: sum(monthStart), prev: sum(prevMonthStart, monthStart), all: sum(0) };
+  const range = ['today', '7d', '30d', 'year'].includes(req.query.range) ? req.query.range : 'today';
+  const rows = q(`SELECT amount, done_at FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=?`).all(u.id, range === 'today' ? dayStart : range === '7d' ? dayStart - 6 * 864e5 : range === '30d' ? dayStart - 29 * 864e5 : Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() - 11, 1) - tz);
+  let series = [];
+  if (range === 'today') { series = Array.from({ length: 24 }, (_, h) => ({ label: String(h).padStart(2, '0') + ':00', sum: 0, cnt: 0 })); for (const r of rows) { const b = series[Math.floor((r.done_at - dayStart) / 3600e3)]; if (b) { b.sum += r.amount; b.cnt++; } } }
+  else if (range === 'year') { series = Array.from({ length: 12 }, (_, i) => { const d = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() - 11 + i, 1)); return { label: ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][d.getUTCMonth()], y: d.getUTCFullYear(), m: d.getUTCMonth(), sum: 0, cnt: 0 }; }); for (const r of rows) { const d = new Date(r.done_at + tz), b = series.find(x => x.y === d.getUTCFullYear() && x.m === d.getUTCMonth()); if (b) { b.sum += r.amount; b.cnt++; } } }
+  else { const n = range === '7d' ? 7 : 30; series = Array.from({ length: n }, (_, i) => { const d = new Date(dayStart + tz - (n - 1 - i) * 864e5); return { label: String(d.getUTCDate()).padStart(2, '0') + '.' + String(d.getUTCMonth() + 1).padStart(2, '0'), sum: 0, cnt: 0 }; }); for (const r of rows) { const b = series[n - 1 - Math.floor((dayStart + 864e5 - 1 - r.done_at) / 864e5)]; if (b) { b.sum += r.amount; b.cnt++; } } }
+  const recent = q(`SELECT name, amount, message, done_at FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 6`).all(u.id);
+  const top = q(`SELECT name, SUM(amount) total FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=? GROUP BY lower(name) ORDER BY total DESC LIMIT 5`).all(u.id, monthStart);
+  const appOn = [...(channels.get(u.id) || [])].some(r => r.kzApp);
+  const lastIn = q('SELECT MAX(created_at) t FROM ingest_log WHERE user_id=?').get(u.id).t || 0;
+  res.json({ app: { windows: appOn, last_ingest: lastIn }, cards, range, series: series.map(({ label, sum, cnt }) => ({ label, sum, cnt })), recent, top, since: u.created_at, avatar: s.page.avatar || '', title: s.page.title || u.nick });
 });
 app.get('/api/files', auth, (req, res) => res.json(q('SELECT id,name,mime,size,file,created_at FROM files WHERE user_id=? ORDER BY id DESC').all(req.user.id).map(f => ({ ...f, url: '/u/' + f.file }))));
 app.delete('/api/files/:id', auth, (req, res) => {
@@ -1066,7 +1146,7 @@ app.get('/api/w/:token/state', (req, res) => {
 });
 app.get('/api/w/:token/stream', (req, res) => {
   const u = userByToken(req.params.token); if (!u) return res.status(404).end();
-  res.kzRole = String(req.query.role || ''); res.kzEv = String(req.query.ev || ''); res.kzAt = Date.now();
+  res.kzApp = /python-requests|KZStream/i.test(req.get('user-agent') || ''); res.kzRole = String(req.query.role || ''); res.kzEv = String(req.query.ev || ''); res.kzAt = Date.now();
   sse(res); subscribe(u.id, res);
 });
 app.get('/api/events', auth, (req, res) => { sse(res); subscribe(req.user.id, res); });
