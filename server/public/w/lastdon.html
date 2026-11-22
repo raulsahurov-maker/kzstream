@@ -35,7 +35,7 @@
   if (Q.get('th') === 'light') el.classList.add('light');
   const FF = { montserrat: 'Montserrat', oswald: 'Oswald', rubik: 'Rubik', inter: 'Inter', russo: '"Russo One"', comfortaa: 'Comfortaa', pacifico: 'Pacifico', pixel: '"Press Start 2P"', manrope: 'Manrope' };
   const f = Q.get('f'); if (FF[f]) { el.dataset.f = f; el.style.setProperty('--ff', FF[f] + ',sans-serif'); }
-  let last = null;
+  let last = null, locked = false;
   function ago(t) {
     const s = Math.max(0, Math.round((Date.now() - t) / 1000));
     const pl = (n, a, b, c) => n % 10 === 1 && n % 100 !== 11 ? a : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? b : c;
@@ -45,6 +45,8 @@
     const d = Math.round(s / 86400); return `${d} ${pl(d, 'день', 'дня', 'дней')} назад`;
   }
   function show(d, anim) {
+    if (d && d.locked) { locked = true; last = null; el.className = 'ld empty' + (Q.get('th') === 'light' ? ' light' : ''); document.getElementById('nm').textContent = '🔒 Последний донат — с тарифа Lite'; ['am', 'ms', 'tm'].forEach(i => document.getElementById(i).textContent = ''); return; }
+    if (locked && anim) return; if (d) locked = false;
     if (!d) { last = null; el.className = 'ld empty' + (Q.get('th') === 'light' ? ' light' : ''); document.getElementById('nm').textContent = 'Пока донатов нет'; ['am', 'ms', 'tm'].forEach(i => document.getElementById(i).textContent = ''); return; }
     if (last && last.id === d.id && !anim) { tick(); return; }
     last = d;
@@ -57,8 +59,8 @@
   function tick() { if (last) document.getElementById('tm').textContent = ago(last.at || Date.now()); }
   setInterval(tick, 30000);
   if (Q.has('demo')) { show({ id: 1, name: 'Әділбек Ш.', amount: 630, message: 'Тапа тапа зёма', at: Date.now() - 15 * 3600e3 }); return; }
-  on('state', st => show(st.last));
-  on('stats', st => { if ('last' in st) show(st.last); });
+  on('state', st => show(st.last_locked ? { locked: true } : st.last));
+  on('stats', st => { if ('last' in st) show(st.last_locked ? { locked: true } : st.last); });
   on('donation', d => { if (d.test === undefined || true) show({ id: d.id, name: d.name, amount: d.amount, message: d.message, at: d.at || Date.now() }, true); });
   start();
 })();

@@ -305,7 +305,7 @@ function widgetState(u) {
   return {
     nick: u.nick, plan: publicPlan(u), settings: { alerts: { ...s.alerts, layout: p.shop || ALERT_FREE.includes(s.alerts.layout || 'classic') ? (s.alerts.layout || 'classic') : 'classic' }, goal: { ...s.goal, style: p.shop || GOAL_FREE.includes(s.goal.style || 'classic') ? (s.goal.style || 'classic') : 'classic' }, top: p.shop ? s.top : { ...s.top, style: 'classic', font: 'manrope', theme: 'default' }, roulette: s.roulette, media: s.media, info: s.info, timer: s.timer, faceit: s.faceit, cards: s.cards, hotkeys: p.hotkeys ? s.hotkeys : [] },
     top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title },
-    timer: timerState(s), last: lastDon || null, media: mediaQueue(u),
+    timer: timerState(s), last: lastDon || null, last_locked: !p.shop, media: mediaQueue(u),
   };
 }
 const mediaTitles = new Map(); // id доната -> название видео (сообщает плеер)
@@ -314,7 +314,7 @@ function mediaQueue(u) {
 }
 function pushStats(u) {
   const s = getSettings(u);
-  emit(u.id, 'stats', { top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title }, timer: timerState(s), media: mediaQueue(u), last: lastDonation(u, s) });
+  emit(u.id, 'stats', { top: topList(u, s), goal: { sum: goalSum(u, s), target: s.goal.target, title: s.goal.title }, timer: timerState(s), media: mediaQueue(u), last: lastDonation(u, s), last_locked: !effectivePlan(u).shop });
 }
 
 // ---------- завершение доната ----------
