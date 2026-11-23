@@ -2,7 +2,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const EV = [['follow', '❤️ Подписка', 'Звук, когда зритель подписался'], ['gift', '🎁 Подарок', 'Звук на каждый подарок (серия роз — один раз)'], ['share', '🔁 Репост эфира', 'Звук, когда зритель поделился эфиром']];
-  const ST = { off: ['Не запущено', ''], connecting: ['Подключаюсь к эфиру…', 'wait'], waiting: ['Жду эфир', 'wait'], live: ['🔴 Подключено к LIVE — ловлю подписки', 'live'], error: ['Ошибка', 'err'] };
+  const ST = { off: ['Не запущено', ''], connecting: ['Подключаюсь к эфиру…', 'wait'], waiting: ['Жду эфир', 'wait'], live: ['🔴 Подключено к LIVE — ловлю подписки', 'live'], error: ['Ошибка', 'err'], limit: ['Лимит на сегодня исчерпан', 'err'] };
   let D = null, files = [], tmr;
   const req = (url, method = 'GET', body) => fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Ошибка'); return j; });
   const toast = (m, bad) => { try { window.toast ? window.toast(m, bad) : alert(m); } catch { } };
@@ -14,6 +14,7 @@
   function status(s) {
     s = s || { state: 'off' }; const [t, c] = ST[s.state] || ST.off;
     $('#ttDot').className = 'dot ' + c; $('#ttTxt').textContent = s.state === 'live' ? `${t} (@${s.user})` : (s.err || t);
+    const lm = s.limit || {}; $('#ttLim').textContent = lm.hours === -1 || lm.hours == null ? 'TikTok без лимита времени (Pro)' : `Лимит тарифа: ${lm.hours} ч в сутки · осталось сегодня ${Math.floor(lm.left_min / 60) ? Math.floor(lm.left_min / 60) + ' ч ' : ''}${lm.left_min % 60} мин`;
     const on = s.state !== 'off'; $('#ttGo').style.display = on ? 'none' : ''; $('#ttStop').style.display = on ? '' : 'none';
   }
   function render() {

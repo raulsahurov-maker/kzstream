@@ -20,6 +20,14 @@ const clean = u => String(u || '').trim().replace(/^@/, '').replace(/^https?:\/\
 module.exports = function setupTikTok(app, d) {
   const { auth, q, getSettings, saveSettings, userById, userByToken, emit, emitSpeaker, baseUrl, censor, canTts, isLite } = d;
   const watched = d.watched || (() => true);
+  // лимит TikTok по тарифу: Free — 1 час в сутки, Lite — 7 часов, Pro — без лимита (сутки по Алматы)
+  const ttHours = d.ttHours || (() => Infinity);
+  const almDay = () => new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10);
+  const msToMidnight = () => { const t = Date.now() + 5 * 3600e3; return 864e5 - (t % 864e5); };
+  function usage(u) { const s = getSettings(u); const x = s.tiktok_usage || {}; return x.day === almDay() ? x.sec || 0 : 0; }
+  function addUsage(u, sec) { const s = getSettings(u); const x = s.tiktok_usage && s.tiktok_usage.day === almDay() ? s.tiktok_usage : { day: almDay(), sec: 0 }; x.sec += sec; s.tiktok_usage = x; saveSettings(u, s); return x.sec; }
+  const leftSec = u => { const h = ttHours(u); return h === Infinity ? Infinity : Math.max(0, h * 3600 - usage(u)); };
+  const fmtLeft = sec => sec === Infinity ? 'без лимита' : `${Math.floor(sec / 3600) ? Math.floor(sec / 3600) + ' ч ' : ''}${Math.floor(sec % 3600 / 60)} мин`;
   // Квота Euler Stream общая на всех стримеров (бесплатно ~1000 подключений в сутки).
   // Поэтому: 1) не стучимся, пока у стримера не открыт ни виджет, ни кабинет, ни программа;
   // 2) сначала бесплатно спрашиваем у TikTok, идёт ли эфир; 3) после «лимита» все ждут вместе.
@@ -40,7 +48,7 @@ module.exports = function setupTikTok(app, d) {
   const conns = new Map(); // user_id -> { c, state, retry, since, user, err }
 
   const cfg = u => { const s = getSettings(u); const t = s.tiktok || {}; const o = { ...DEF, ...t }; for (const k of EV) o[k] = { ...DEF[k], ...(t[k] || {}) }; o.likes = { ...DEF.likes, ...(t.likes || {}) }; o.tts = { ...DEF.tts, ...(t.tts || {}) }; o.chat = { ...DEF.chat, ...(t.chat || {}) }; return o; };
-  const status = uid => { const x = conns.get(uid); return x ? { state: x.state, user: x.user, err: x.err || '', since: x.since || 0 } : { state: 'off' }; };
+  const status = uid => { const x = conns.get(uid), u = userById(uid), h = u ? ttHours(u) : Infinity, l = u ? leftSec(u) : Infinity; const lim = { hours: h === Infinity ? -1 : h, left_min: l === Infinity ? -1 : Math.floor(l / 60) }; return x ? { state: x.state, user: x.user, err: x.err || '', since: x.since || 0, limit: lim } : { state: 'off', limit: lim }; };
   const setState = (uid, state, err) => { const x = conns.get(uid); if (!x) return; x.state = state; x.err = err || ''; if (state === 'live') x.since = Date.now(); emit(uid, 'tt_status', status(uid)); };
 
   // анти-спам: одна подписка от человека — один звук за эфир
@@ -91,6 +99,7 @@ module.exports = function setupTikTok(app, d) {
     // облачное подключение Euler Stream: эфир находит и держит их сервер (TikTok не пускает дата-центры напрямую)
     const cloud = async () => {
       if (conns.get(uid) !== x) return;
+      { const u0 = userById(uid); if (u0 && leftSec(u0) <= 0) { setState(uid, 'limit', `Лимит TikTok на сегодня исчерпан (${ttHours(u0)} ч в сутки на вашем тарифе). Подключусь снова после полуночи — или перейдите на Lite (7 ч) / Pro (без лимита)`); return later(msToMidnight() / 1000 + 30); } }
       if (!watched(uid)) { setState(uid, 'waiting', 'Жду, когда откроете виджет в TikTok Live Studio, кабинет или программу KZStream'); return later(30); }
       if (Date.now() < eulerPauseUntil) { setState(uid, 'waiting', 'Сервис TikTok перегружен — подключусь через минуту сам'); return later(Math.ceil((eulerPauseUntil - Date.now()) / 1000) + 5 + Math.random() * 20); }
       const pr = await probeLive(user);
@@ -126,6 +135,7 @@ module.exports = function setupTikTok(app, d) {
       });
       ws.on('close', (code, reason) => {
         if (conns.get(uid) !== x) return;
+        if (x.state === 'limit') return;
         const r = String(reason || '');
         console.error(`TikTok(cloud) @${user}: закрыто ${code} ${r.slice(0, 200)}`);
         if (code === 4404) { x.off = (x.off || 0) + 1; setState(uid, 'waiting', 'TikTok не видит эфир @' + user + ' — запустите LIVE с этого аккаунта, подключусь сам'); return later(probeWorks ? 30 : Math.min(600, 60 * x.off)); }
@@ -185,6 +195,19 @@ module.exports = function setupTikTok(app, d) {
     goers.set(uid, go);
     go();
   }
+  // каждую минуту считаем время в эфире и отключаем, когда лимит тарифа исчерпан
+  setInterval(() => {
+    for (const [uid, x] of conns) {
+      if (x.state !== 'live') continue;
+      const u = userById(uid); if (!u || ttHours(u) === Infinity) continue;
+      const used = addUsage(u, 60), lim = ttHours(u) * 3600;
+      if (used >= lim) {
+        try { x.c && x.c.disconnect(); } catch { }
+        setState(uid, 'limit', `Лимит TikTok на сегодня исчерпан (${ttHours(u)} ч в сутки на вашем тарифе). Подключусь снова после полуночи — или перейдите на Lite (7 ч) / Pro (без лимита)`);
+        clearTimeout(x.retry); const go = goers.get(uid); if (go) x.retry = setTimeout(go, msToMidnight() + 30e3);
+      } else if (lim - used <= 600 && lim - used > 540) emit(uid, 'tt_status', { ...status(uid), err: `Осталось ${fmtLeft(lim - used)} TikTok на сегодня` });
+    }
+  }, 60e3).unref();
   // открыли виджет/кабинет/программу — если ждём эфир, проверяем сразу
   d.onWatch && d.onWatch(uid => { const x = conns.get(uid); if (x && x.state === 'waiting' && x.retry && !(Date.now() < eulerPauseUntil)) { clearTimeout(x.retry); x.retry = setTimeout(() => go2(uid), 1500); } });
   const goers = new Map();

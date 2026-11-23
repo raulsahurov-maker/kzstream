@@ -562,7 +562,7 @@ app.get('/api/me', auth, (req, res) => {
     plan: publicPlan(u), plan_raw: u.plan, plan_until: u.plan_until, vip: u.paid_months >= 10, paid_months: u.paid_months,
     freeze_available: effectivePlan(u).freezeDays > 0 && now() - u.freeze_used_at > 30 * 864e5,
     storage: { used: storageUsed(u.id), limit: effectivePlan(u).storageMB * 1048576 },
-    settings: s, themes: THEMES, goal_styles: GOAL_STYLES, goal_free: GOAL_FREE, goal_max: GOAL_MAX, voices: Object.keys(VOICES), plans: Object.values(PLANS).map(p => ({ ...p, media: p.media === Infinity ? -1 : p.media })),
+    settings: s, themes: THEMES, goal_styles: GOAL_STYLES, goal_free: GOAL_FREE, goal_max: GOAL_MAX, voices: Object.keys(VOICES), plans: Object.values(PLANS).map(p => ({ ...p, media: p.media === Infinity ? -1 : p.media, ttHours: p.ttHours === Infinity ? -1 : p.ttHours })),
     stats: { ...stats, today, month, year, tests: tests.c, tests_sum: tests.s },
     urls: {
       page: `${b}/d/${u.nick}`, ingest: `${b}/api/ingest/${u.token}`,
@@ -1345,7 +1345,7 @@ for (const prefix of ['/update', '/downloads']) {
 }
 app.use(express.static(PUB, { extensions: ['html'] }));
 // TikTok LIVE: подписки, подарки, репосты → звуки (вкладка «TikTok» в кабинете)
-require('./tiktok')(app, { auth, q, getSettings, saveSettings, userById, userByToken, emit, emitSpeaker, baseUrl, censor, canTts: u => !!effectivePlan(u).tts, isLite: u => !!effectivePlan(u).shop , watched: uid => [...(channels.get(uid) || [])].length > 0, onWatch: f => { watchHooks.push(f); }, admin});
+require('./tiktok')(app, { auth, q, getSettings, saveSettings, userById, userByToken, emit, emitSpeaker, baseUrl, censor, canTts: u => !!effectivePlan(u).tts, isLite: u => !!effectivePlan(u).shop, ttHours: u => effectivePlan(u).ttHours ?? 1, watched: uid => [...(channels.get(uid) || [])].length > 0, onWatch: f => { watchHooks.push(f); }, admin});
 app.use((req, res) => res.status(404).sendFile(path.join(PUB, '404.html')));
 
 const listen = () => app.listen(PORT, () => console.log(`KZStream запущен: http://localhost:${PORT}`));
