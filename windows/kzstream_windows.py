@@ -32,7 +32,7 @@ import webbrowser
 import requests
 
 APP_NAME = 'KZStream'
-VERSION = '2.3.1'
+VERSION = '2.3.2'
 DEFAULT_SERVER = 'https://kzstream.onrender.com'
 APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
@@ -696,6 +696,23 @@ def selftest():
                         (ib.BluetoothDevice, ('from_id_async', 'get_device_selector_from_pairing_state')),
                         (ib.DeviceInformation, ('find_all_async',)), (ib.BluetoothAdapter, ('get_default_async',)),
                         (ib.DataWriter, ('write_bytes', 'detach_buffer'))]
+                if ib.GattSession is None:
+                    problems.append('bt:GattSession')
+                else:
+                    need.append((ib.GattSession, ('from_device_id_async',)))
+                if ib.BluetoothLEAdvertisementWatcher is None:
+                    problems.append('bt:AdvertisementWatcher')
+                for nm in ('CONFIRM_ONLY', 'CONFIRM_PIN_MATCH', 'DISPLAY_PIN'):
+                    if not hasattr(ib.DevicePairingKinds, nm):
+                        problems.append(f'bt:DevicePairingKinds.{nm}')
+                for nm in ('ENCRYPTION', 'ENCRYPTION_AND_AUTHENTICATION'):
+                    if not hasattr(ib.DevicePairingProtectionLevel, nm):
+                        problems.append(f'bt:ProtectionLevel.{nm}')
+                try:  # наблюдатель рекламы должен создаваться и подписываться
+                    _w = ib.BluetoothLEAdvertisementWatcher(); _t = _w.add_received(lambda s, a: None); _w.remove_received(_t)
+                    _w.scanning_mode = ib.BluetoothLEScanningMode.ACTIVE
+                except Exception as e:
+                    problems.append(f'bt:watcher: {e}')
                 for cls, names in need:
                     for nm in names:
                         if not hasattr(cls, nm):

@@ -3,8 +3,10 @@
 
 iPhone отдаёт уведомления сопряжённым устройствам по стандартному протоколу Apple ANCS
 (Apple Notification Center Service, BLE). Программа подключается к iPhone как часы/браслет:
-  1) iPhone сопрягается с компьютером в параметрах Bluetooth Windows (один раз);
-  2) программа подключается к нему, iPhone спрашивает «Разрешить уведомления?» — «Разрешить»;
+  1) программа находит iPhone (сопряжённый в Windows или просто лежащий рядом) и сама
+     делает защищённое сопряжение по Bluetooth LE — на iPhone «Создать пару»;
+  2) держит соединение открытым, пока на iPhone не нажмут «Разрешить» уведомления
+     (раньше соединение рвалось сразу, и запрос на iPhone не успевал появиться);
   3) каждое новое уведомление (Kaspi и т. п.) приходит сюда целиком: приложение, заголовок, текст.
 Заодно читается заряд батареи iPhone (стандартная служба Battery 0x180F).
 """
@@ -20,10 +22,19 @@ try:
     from winsdk.windows.devices.bluetooth.genericattributeprofile import (
         GattClientCharacteristicConfigurationDescriptorValue as CCCD, GattCommunicationStatus, GattWriteOption)
     from winsdk.windows.devices.enumeration import DeviceInformation
+    from winsdk.windows.devices.enumeration import DevicePairingKinds, DevicePairingProtectionLevel, DevicePairingResultStatus
     from winsdk.windows.storage.streams import DataReader, DataWriter
     HAS_BT = True
 except Exception:  # pragma: no cover
     HAS_BT = False
+try:
+    from winsdk.windows.devices.bluetooth.genericattributeprofile import GattSession
+except Exception:  # pragma: no cover
+    GattSession = None
+try:
+    from winsdk.windows.devices.bluetooth.advertisement import BluetoothLEAdvertisementWatcher, BluetoothLEScanningMode
+except Exception:  # pragma: no cover
+    BluetoothLEAdvertisementWatcher = None
 
 ANCS = uuid.UUID('7905F431-B5CE-4E99-A40F-4B1E122D00D0')
 NOTIF_SRC = uuid.UUID('9FBF120D-6301-42D9-8C58-25E699A21DBD')
@@ -65,10 +76,18 @@ class IphoneBT:
         self.on_notif, self.on_status, self.log = on_notif, on_status, log
         self.loop = None
         self.device_id = None
-        self.state = 'off'          # off | no_adapter | connecting | allow | on | lost
+        self.state = 'off'          # off | no_adapter | connecting | searching | pair | allow | on | lost
+        self.pin = ''
+        self._session = None
         self.name = ''
         self.battery = None
         self.adapter = None         # True/False/None
+        try:
+            if self._session:
+                self._session.close()
+        except Exception:
+            pass
+        self._session = None
         self._dev = self._svc = self._cp = None
         self._subs = []
         self._buf = b''
@@ -88,7 +107,7 @@ class IphoneBT:
 
     def info(self):
         return {'state': self.state, 'name': self.name, 'battery': self.battery, 'adapter': self.adapter,
-                'device': self.device_id, 'supported': HAS_BT}
+                'device': self.device_id, 'supported': HAS_BT, 'pin': self.pin}
 
     def connect(self, device_id):
         self.device_id = device_id
@@ -154,7 +173,102 @@ class IphoneBT:
         out.sort(key=lambda x: (not x['apple'], x['name'].lower()))
         return out
 
+    async def _scan_nearby(self, seconds=12):
+        """Ищет ближайший iPhone по рекламе Apple (Nearby Info) — iPhone должен быть разблокирован и рядом."""
+        if BluetoothLEAdvertisementWatcher is None:
+            return None
+        found = {}
+        loop = self.loop
+
+        def got(addr, rssi, kind):
+            v = found.get(addr)
+            if not v or rssi > v[0]:
+                found[addr] = (rssi, kind)
+
+        def on_recv(_s, a):
+            try:
+                for m in a.advertisement.manufacturer_data:
+                    if m.company_id != 0x004C:
+                        continue
+                    b = _bytes(m.data)
+                    if b and b[0] in (0x10, 0x0C, 0x0F, 0x07):  # Nearby Info / Handoff / Nearby Action
+                        loop.call_soon_threadsafe(got, a.bluetooth_address, a.raw_signal_strength_in_d_bm, b[0])
+            except Exception:
+                pass
+        w = BluetoothLEAdvertisementWatcher()
+        try:
+            w.scanning_mode = BluetoothLEScanningMode.ACTIVE
+        except Exception:
+            pass
+        tok = w.add_received(on_recv)
+        self._set('searching')
+        self.log('Ищу iPhone рядом: разблокируйте его и положите рядом с компьютером…')
+        w.start()
+        try:
+            await asyncio.sleep(seconds)
+        finally:
+            try:
+                w.stop()
+                w.remove_received(tok)
+            except Exception:
+                pass
+        best = sorted(((r, addr) for addr, (r, k) in found.items() if k == 0x10), reverse=True) \
+            or sorted(((r, addr) for addr, (r, _k) in found.items()), reverse=True)
+        if not best:
+            self.log('iPhone рядом не найден: включите Bluetooth на iPhone, разблокируйте экран и поднесите ближе')
+            return None
+        rssi, addr = best[0]
+        self.log(f'Нашёл iPhone рядом (сигнал {rssi} дБм) — подключаюсь')
+        try:
+            return await BluetoothLEDevice.from_bluetooth_address_async(addr)
+        except Exception:
+            return None
+
+    async def _pair(self, dev):
+        """Защищённое LE-сопряжение. Без него iPhone не покажет ANCS и запрос «Разрешить уведомления»."""
+        try:
+            pr = dev.device_information.pairing
+            if pr.is_paired:
+                return True
+            if not pr.can_pair:
+                self.log('Bluetooth: iPhone не даёт создать пару — откройте на iPhone Настройки → Bluetooth и держите экран включённым')
+                return False
+            cp = pr.custom
+            loop = self.loop
+
+            def on_req(_s, a):
+                try:
+                    pin = a.pin or ''
+                    if pin:
+                        loop.call_soon_threadsafe(lambda: (self._set('pair', pin=pin), self.log(f'На iPhone появится код {pin} — нажмите «Создать пару»')))
+                    a.accept()
+                except Exception:
+                    pass
+            tok = cp.add_pairing_requested(on_req)
+            self._set('pair', pin='')
+            self.log('На iPhone нажмите «Создать пару», затем «Разрешить» уведомления')
+            kinds = DevicePairingKinds.CONFIRM_ONLY | DevicePairingKinds.CONFIRM_PIN_MATCH | DevicePairingKinds.DISPLAY_PIN
+            try:
+                res = await cp.pair_async(kinds, DevicePairingProtectionLevel.ENCRYPTION_AND_AUTHENTICATION)
+                if res.status not in (DevicePairingResultStatus.PAIRED, DevicePairingResultStatus.ALREADY_PAIRED):
+                    res = await cp.pair_async(kinds, DevicePairingProtectionLevel.ENCRYPTION)
+            finally:
+                try:
+                    cp.remove_pairing_requested(tok)
+                except Exception:
+                    pass
+            self.pin = ''
+            ok = res.status in (DevicePairingResultStatus.PAIRED, DevicePairingResultStatus.ALREADY_PAIRED)
+            if not ok:
+                self.log(f'Bluetooth: пара не создана ({res.status}). Нажмите «Создать пару» на iPhone, когда появится запрос')
+            return ok
+        except Exception as e:
+            self.log(f'Bluetooth: сопряжение не удалось ({e})')
+            return False
+
     async def _open_le(self, device_id):
+        if device_id == 'nearby':
+            return await self._scan_nearby()
         dev = None
         try:
             dev = await BluetoothLEDevice.from_id_async(device_id)
@@ -221,16 +335,34 @@ class IphoneBT:
     async def _connect_once(self):
         self._set('connecting')
         dev = await self._open_le(self.device_id)
+        if dev is None and self.device_id != 'nearby':
+            dev = await self._scan_nearby()  # сопряжённый в Windows iPhone не отвечает по LE — ищем его рядом
         if dev is None:
-            self.log('Bluetooth: iPhone не найден — проверьте, что он рядом и Bluetooth включён')
+            self.log('Bluetooth: iPhone не найден — проверьте, что он рядом, разблокирован и Bluetooth включён')
             return False
         self._dev = dev
         self.name = dev.name or self.name or 'iPhone'
-        res = await dev.get_gatt_services_for_uuid_async(ANCS, BluetoothCacheMode.UNCACHED)
-        if not _ok(res.status) or res.services.size == 0:
-            # iPhone прячет ANCS, пока не разрешены уведомления для этого компьютера
-            self._set('allow')
-            self.log('На iPhone: Настройки → Bluetooth → (i) у компьютера → включите «Показывать уведомления»')
+        if GattSession is not None:  # держим связь, иначе Windows рвёт её до ответа на iPhone
+            try:
+                self._session = await GattSession.from_device_id_async(dev.bluetooth_device_id)
+                self._session.maintain_connection = True
+            except Exception:
+                self._session = None
+        if not await self._pair(dev):
+            await self._close()
+            return False
+        res = None
+        for i in range(36):  # до 3 минут ждём, пока на iPhone нажмут «Разрешить»
+            res = await dev.get_gatt_services_for_uuid_async(ANCS, BluetoothCacheMode.UNCACHED)
+            if _ok(res.status) and res.services.size:
+                break
+            if i == 0:
+                self._set('allow')
+                self.log('На iPhone нажмите «Разрешить» в запросе об уведомлениях. Если запроса нет: '
+                         'Настройки → Bluetooth → (i) у компьютера → включите «Показывать уведомления»')
+            await asyncio.sleep(5)
+        if not res or not _ok(res.status) or res.services.size == 0:
+            self.log('Bluetooth: iPhone так и не разрешил уведомления — попробую ещё раз')
             await self._close()
             return False
         svc = res.services.get_at(0)
@@ -247,7 +379,13 @@ class IphoneBT:
         for c, kind in ((ds, 'd'), (ns, 'n')):  # сначала Data Source, потом Notification Source
             tok = c.add_value_changed(lambda s, a, k=kind: loop.call_soon_threadsafe(self._on_value, k, _bytes(a.characteristic_value)))
             self._subs.append((c, tok))
-            st = await c.write_client_characteristic_configuration_descriptor_async(CCCD.NOTIFY)
+            st = None
+            for _ in range(24):
+                st = await c.write_client_characteristic_configuration_descriptor_async(CCCD.NOTIFY)
+                if _ok(st):
+                    break
+                self._set('allow')
+                await asyncio.sleep(5)
             if not _ok(st):
                 # обычно значит «не разрешено» — iPhone покажет запрос на разрешение
                 self._set('allow')
