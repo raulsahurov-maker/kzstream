@@ -96,9 +96,6 @@ const poolObjs = () => (ME.settings.alerts.pool || []).map(x => typeof x === 'st
 const poolUrls = () => poolObjs().map(x => x.url);
 const ALERT_LIB = [
   ['money-rain', 'Дождь из денег'], ['champion', 'Чемпион'], ['psycho', 'Психопат'], ['mentalist', 'Ментал'],
-  ['meme-boom', 'BOOM!'], ['meme-legend', 'Легенда'], ['meme-shock', 'Шок контент'], ['meme-cool', 'Красавчик'],
-  ['meme-fire', 'Огонь!'], ['meme-dance', 'Танцуем!'], ['meme-treasury', 'Казна пополнена'], ['meme-respect', 'Респект'],
-  ['meme-clap', 'Браво!'], ['meme-rocket', 'До луны!'], ['meme-skull', 'Жесть'], ['meme-catshock', 'Что?!'],
 ];
 function alertStyles() {
   const a = ME.settings.alerts, L = a.layout || 'classic', pool = poolUrls();

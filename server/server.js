@@ -374,7 +374,7 @@ function finalizeDonation(u, d, opts = {}) {
   // случайная мем-гифка из своего набора (Lite) — если нет мем-алерта на точную сумму
   let meme = '';
   // видео-алерты по сумме: подходят те, у кого «от N ₸» ≤ суммы; берём самый «дорогой» уровень, среди равных — случайное
-  const pool = (s.alerts.pool || []).filter(Boolean).map(x => typeof x === 'string' ? { url: x, min: 0 } : x).slice(0, p.shop ? 30 : 1);
+  const pool = (s.alerts.pool || []).filter(x => x && !String(x.url || x).startsWith('/alerts-lib/meme-')).map(x => typeof x === 'string' ? { url: x, min: 0 } : x).slice(0, p.shop ? 30 : 1);
   const fit = pool.filter(x => d.amount >= (+x.min || 0));
   if (!variation && s.alerts.layout === 'meme' && fit.length && d.amount >= (s.alerts.pool_min || 0)) {
     const top = Math.max(...fit.map(x => +x.min || 0)), best = fit.filter(x => (+x.min || 0) === top);
