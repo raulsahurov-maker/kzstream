@@ -32,7 +32,7 @@ import webbrowser
 import requests
 
 APP_NAME = 'KZStream'
-VERSION = '2.3.2'
+VERSION = '2.3.3'
 DEFAULT_SERVER = 'https://kzstream.onrender.com'
 APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
@@ -204,7 +204,9 @@ class Api:
         self.feed = []
         self.update_info = None
         self.paused = False
-        self.bt = IphoneBT(self.on_bt_notif, self.on_bt_status, self.log) if (IS_WIN and HAS_BT and IphoneBT) else None
+        self._diag = []
+        threading.Thread(target=self._diag_loop, daemon=True).start()
+        self.bt = IphoneBT(self.on_bt_notif, self.on_bt_status, self.bt_log) if (IS_WIN and HAS_BT and IphoneBT) else None
 
     # --- связь с интерфейсом
     def push(self, kind, data):
@@ -334,7 +336,7 @@ class Api:
             return {'ok': False, 'error': 'Bluetooth недоступен в этой версии Windows'}
         try:
             devs = self.bt.call(self.bt.list_devices())
-            return {'ok': True, 'devices': devs, 'adapter': self.bt.adapter}
+            return {'ok': True, 'devices': devs, 'adapter': self.bt.adapter, 'why': getattr(self.bt, 'adapter_why', '')}
         except Exception as e:
             return {'ok': False, 'error': f'Не удалось получить список устройств ({e})'}
 
@@ -358,6 +360,27 @@ class Api:
 
     def on_bt_status(self, info):
         self.push('bt', info)
+        st = f"состояние: {info.get('state')}" + (f" ({info.get('why')})" if info.get('why') else '')
+        if not self._diag or not self._diag[-1].endswith(st):
+            self._diag.append(time.strftime('%H:%M:%S ') + st)
+
+    def bt_log(self, msg):
+        self.log(msg)
+        self._diag.append(time.strftime('%H:%M:%S ') + msg)
+
+    def _diag_loop(self):
+        """Шаги подключения iPhone уходят на сервер — так видно, где у стримера всё останавливается (без текста уведомлений)."""
+        import platform
+        while True:
+            time.sleep(15)
+            if not self._diag or not self.cfg.get('token'):
+                continue
+            lines, self._diag = self._diag[:50], self._diag[50:]
+            try:
+                requests.post(f"{self.cfg['server']}/api/app/diag/{self.cfg['token']}", timeout=20,
+                              json={'lines': lines, 'version': VERSION, 'os': platform.platform()})
+            except Exception:
+                self._diag = lines + self._diag
 
     def on_bt_notif(self, app_id, title, subtitle, message, uid):
         self.last_phone_notif = time.time()

@@ -322,7 +322,7 @@
     <section class="page" id="p-connect">
       <div class="ttl"><h2>Подключение телефона</h2></div>
       <div class="methods">
-        <button class="m" data-m="phonelink"><span class="tag ok">Рекомендуем</span><div class="ic">💻</div><b>Связь с телефоном</b><span>Android → Windows. Уведомления Kaspi приходят на компьютер, программа их ловит.</span></button>
+        <button class="m" data-m="phonelink"><span class="tag ok">Рекомендуем</span><div class="ic">💻</div><b>Связь с телефоном</b><span>Android или iPhone → Windows. Уведомления Kaspi приходят на компьютер, программа их ловит.</span></button>
         <button class="m" data-m="android"><div class="ic">🤖</div><b>Приложение на Android</b><span>Телефон сам отправляет донаты. Компьютер не нужен — работает даже с выключенным ПК.</span></button>
         <button class="m" data-m="iphone"><span class="tag ok">Новое</span><div class="ic">🍏</div><b>iPhone по Bluetooth</b><span>Напрямую, без «Связи с телефоном»: программа сама подключается к iPhone и ловит Kaspi.</span></button>
       </div>
@@ -379,9 +379,9 @@ let ST = {}, ME = {}, sum = 0, cnt = 0;
 function toast(t, err) { const e = $('#tst'); e.textContent = t; e.className = 'tst on' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(() => e.className = 'tst', 2600); }
 
 const METHODS = {
-  phonelink: { name: 'Связь с телефоном', title: 'Android через «Связь с телефоном»', steps: [
+  phonelink: { name: 'Связь с телефоном', title: 'Android или iPhone через «Связь с телефоном»', steps: [
     'Откройте на компьютере приложение «Связь с телефоном» (Phone Link) — оно есть в Windows 10/11.<br><button class="btn sm" onclick="api(\'open_phone_link\')">Открыть «Связь с телефоном»</button>',
-    'На Android установите «Связь с Windows» (Link to Windows) и отсканируйте QR-код с экрана компьютера.',
+    '<b>Android:</b> установите «Связь с Windows» (Link to Windows) и отсканируйте QR-код с экрана компьютера.<br><b>iPhone (Windows 11):</b> в «Связи с телефоном» выберите «iPhone», отсканируйте QR-код камерой iPhone, нажмите «Создать пару» и «Разрешить» уведомления — этот запрос приходит всегда.',
     'В «Связи с телефоном» → Настройки → Уведомления: включите показ уведомлений, а на телефоне разрешите доступ к уведомлениям.',
     'Разрешите KZStream читать уведомления Windows.<br><button class="btn sm" onclick="api(\'open_notif_settings\')">Параметры уведомлений Windows</button>',
     'Нажмите «Тестовый донат» — алерт появится в эфире. Готово, держите программу запущенной (можно в трее).'] },
@@ -487,7 +487,7 @@ async function btRefresh() {
   $('#btList').innerHTML = '<div class="dempty">Ищу сопряжённые устройства…</div>'; $('#btGo').disabled = true; btSel = null;
   const r = await api('bt_list');
   if (!r.ok) { $('#btList').innerHTML = `<div class="dempty">${esc(r.error)}</div>`; return; }
-  if (r.adapter === false) { $('#btList').innerHTML = '<div class="dempty">На компьютере не найден Bluetooth 🙁<br>Включите его в параметрах или подключите USB-адаптер Bluetooth 5.0</div>'; return; }
+  if (r.adapter === false) { $('#btList').innerHTML = `<div class="dempty">${esc(r.why || 'На компьютере не найден Bluetooth')} 🙁<br><br>Нет подходящего Bluetooth? Подключите iPhone через «Связь с телефоном» — способ «Связь с телефоном» на странице «Подключение».</div>`; return; }
   const L = r.devices || [];
   if (!L.length) { $('#btList').innerHTML = '<div class="dempty">Сопряжённых устройств нет.<br>Нажмите «Настройки Bluetooth» и добавьте iPhone</div>'; return; }
   $('#btList').innerHTML = L.map((d, i) => `<button class="dv" data-dv="${i}"><span class="di">${d.apple ? '📱' : '🔵'}</span><b>${esc(d.name)}</b><small>${d.apple ? 'iPhone' : 'устройство'}</small></button>`).join('');

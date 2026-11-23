@@ -78,6 +78,7 @@ class IphoneBT:
         self.device_id = None
         self.state = 'off'          # off | no_adapter | connecting | searching | pair | allow | on | lost
         self.pin = ''
+        self.adapter_why = ''
         self._session = None
         self.name = ''
         self.battery = None
@@ -107,7 +108,7 @@ class IphoneBT:
 
     def info(self):
         return {'state': self.state, 'name': self.name, 'battery': self.battery, 'adapter': self.adapter,
-                'device': self.device_id, 'supported': HAS_BT, 'pin': self.pin}
+                'device': self.device_id, 'supported': HAS_BT, 'pin': self.pin, 'why': self.adapter_why}
 
     def connect(self, device_id):
         self.device_id = device_id
@@ -140,14 +141,27 @@ class IphoneBT:
         self.loop.run_forever()
 
     async def check_adapter(self):
+        """Есть ли Bluetooth LE и включён ли он. Причину пишем в self.adapter_why — её видно в программе."""
+        self.adapter_why = ''
         if not HAS_BT:
-            self.adapter = False
+            self.adapter, self.adapter_why = False, 'Bluetooth-модуль Windows недоступен'
             return False
         try:
             a = await BluetoothAdapter.get_default_async()
-            self.adapter = bool(a and a.is_low_energy_supported)
-        except Exception:
-            self.adapter = False
+            if a is None:
+                self.adapter, self.adapter_why = False, 'На компьютере нет Bluetooth (нужен встроенный или USB-адаптер Bluetooth 5.0)'
+            elif not a.is_low_energy_supported:
+                self.adapter, self.adapter_why = False, 'Bluetooth компьютера старый, без Bluetooth LE — нужен адаптер Bluetooth 4.0+ (лучше 5.0)'
+            else:
+                self.adapter = True
+                try:
+                    r = await a.get_radio_async()
+                    if r is not None and int(r.state) != 1:  # 1 = RadioState.On
+                        self.adapter, self.adapter_why = False, 'Bluetooth выключен — включите его: Параметры → Bluetooth и устройства'
+                except Exception:
+                    pass
+        except Exception as e:
+            self.adapter, self.adapter_why = False, f'Не удалось проверить Bluetooth ({e})'
         return self.adapter
 
     async def list_devices(self):
@@ -303,6 +317,7 @@ class IphoneBT:
         if not HAS_BT:
             return self._set('no_adapter')
         if not await self.check_adapter():
+            self.log('Bluetooth: ' + self.adapter_why)
             return self._set('no_adapter')
         fails = 0
         while gen == self._gen and self.device_id:
@@ -362,7 +377,8 @@ class IphoneBT:
                          'Настройки → Bluetooth → (i) у компьютера → включите «Показывать уведомления»')
             await asyncio.sleep(5)
         if not res or not _ok(res.status) or res.services.size == 0:
-            self.log('Bluetooth: iPhone так и не разрешил уведомления — попробую ещё раз')
+            self.log('Bluetooth: iPhone так и не разрешил уведомления — попробую ещё раз. Если запрос не появляется совсем, '
+                     'подключите iPhone через «Связь с телефоном» (Подключение → «Связь с телефоном») — там запрос приходит всегда')
             await self._close()
             return False
         svc = res.services.get_at(0)

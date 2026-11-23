@@ -1047,6 +1047,18 @@ app.post('/api/app/:token/skip', (req, res) => {
   }
   emit(u.id, 'skip', { all: what === 'alert' }); res.json({ ok: true });
 });
+// диагностика iPhone-Bluetooth из программы для Windows: последние шаги подключения у каждого стримера (видно в админке)
+const DIAG = new Map();
+app.post('/api/app/diag/:token', (req, res) => {
+  const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'нет' });
+  const L = DIAG.get(u.id) || [], b = req.body || {};
+  for (const l of (Array.isArray(b.lines) ? b.lines : []).slice(0, 50)) L.push({ t: now(), m: String(l).slice(0, 400), v: String(b.version || '').slice(0, 12), os: String(b.os || '').slice(0, 60) });
+  DIAG.set(u.id, L.slice(-300)); res.json({ ok: true });
+});
+app.get('/api/admin/diag', admin, (req, res) => {
+  const out = [...DIAG.entries()].map(([id, L]) => ({ nick: (userById(id) || {}).nick || id, last: L.length ? L[L.length - 1].t : 0, lines: L.slice(-80) }));
+  res.json(out.sort((a, b) => b.last - a.last));
+});
 app.get('/api/app/me/:token', (req, res) => {
   const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'Сессия устарела, войдите снова' });
   const s = getSettings(u);
@@ -1107,9 +1119,9 @@ app.get('/api/w/:token/faceit', async (req, res) => {
 app.get('/api/faceit/check', async (req, res) => { try { const d = await faceit.getPlayer(req.query.nick || 'donk', true); res.json({ ok: true, key: faceit.hasKey(), ...d, id: undefined, avatar: undefined, debug: faceit.debug() }); } catch (e) { res.json({ ok: false, key: faceit.hasKey(), error: e.message }); } });
 
 // версия программы для Windows — по ней программа предлагает обновиться
-const WIN_APP_VERSION = '2.3.2';
+const WIN_APP_VERSION = '2.3.3';
 app.get('/api/app/version', (req, res) => res.json({ windows: WIN_APP_VERSION, url: `${baseUrl(req)}/update/KZStream-Setup.exe`, setup: `${baseUrl(req)}/update/KZStream-Setup.exe`,
-  notes: 'Исправлено: список iPhone в «Подключение iPhone по Bluetooth» теперь находит сопряжённые устройства' }));
+  notes: 'iPhone по Bluetooth: программа сама создаёт пару и ждёт «Разрешить», понятнее пишет, что не так с Bluetooth. iPhone можно подключить и через «Связь с телефоном»' }));
 
 // --- приём уведомлений от приложений (Android / Windows / iPhone) ---
 function ingest(req, res) {
