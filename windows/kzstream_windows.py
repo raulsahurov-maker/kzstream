@@ -32,7 +32,7 @@ import webbrowser
 import requests
 
 APP_NAME = 'KZStream'
-VERSION = '2.3.3'
+VERSION = '2.3.4'
 DEFAULT_SERVER = 'https://kzstream.onrender.com'
 APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
@@ -723,6 +723,21 @@ def selftest():
                     problems.append('bt:GattSession')
                 else:
                     need.append((ib.GattSession, ('from_device_id_async',)))
+                if not ib.HAS_PERIPH:
+                    problems.append('bt:peripheral')
+                else:
+                    for cls, nm in ((ib.GattServiceProvider, 'create_async'), (ib.BluetoothLEDevice, 'get_device_selector_from_connection_status')):
+                        if not hasattr(cls, nm):
+                            problems.append(f'bt:{cls.__name__}.{nm}')
+                    if not (hasattr(ib.GattServiceProvider, 'start_advertising_with_parameters') or hasattr(ib.GattServiceProvider, 'start_advertising')):
+                        problems.append('bt:start_advertising')
+                    try:
+                        _p = ib.BluetoothLEAdvertisementPublisher()
+                        _p.advertisement.data_sections.append(ib.BluetoothLEAdvertisementDataSection(0x15, ib._buffer(ib.ANCS.bytes[::-1])))
+                        _ap = ib.GattServiceProviderAdvertisingParameters(); _ap.is_connectable = True; _ap.is_discoverable = True
+                        _cp = ib.GattLocalCharacteristicParameters(); _cp.characteristic_properties = ib.GattCharacteristicProperties.READ
+                    except Exception as e:
+                        problems.append(f'bt:periph-objects: {e}')
                 if ib.BluetoothLEAdvertisementWatcher is None:
                     problems.append('bt:AdvertisementWatcher')
                 for nm in ('CONFIRM_ONLY', 'CONFIRM_PIN_MATCH', 'DISPLAY_PIN'):

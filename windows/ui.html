@@ -295,12 +295,13 @@
           <li>На iPhone включите Bluetooth, разблокируйте экран и положите телефон рядом с компьютером.</li>
           <li>Нажмите <b>«🔎 Найти iPhone рядом»</b> — сопрягать в настройках Windows не нужно. (Если iPhone уже сопряжён в Windows, можно выбрать его в списке.)</li>
           <li>На iPhone появится <b>«Запрос на создание пары»</b> — нажмите <b>«Создать пару»</b>.</li>
+          <li>Не нашёлся? Нажмите <b>«📡 Показать ПК в Bluetooth iPhone»</b>, затем на iPhone: Настройки → Bluetooth → внизу <b>«Другие устройства»</b> → нажмите на имя компьютера.</li>
           <li>Сразу после этого — запрос <b>«Разрешить … получать уведомления?»</b> → <b>«Разрешить»</b>. Программа ждёт до 3 минут. Если запроса нет: Настройки → Bluetooth → (i) у компьютера → включите <b>«Показывать уведомления»</b>.</li>
         </ol>
         <div class="dlist" id="btList"><div class="dempty">Нажмите «Обновить список»,<br>чтобы найти сопряжённый iPhone</div></div>
         <div class="bnote" id="btNote">Сопряжённого iPhone нет? Нажмите «Настройки Bluetooth» и добавьте его. Если на компьютере нет Bluetooth — подойдёт любой USB-адаптер Bluetooth 5.0.</div>
         <div class="brow"><button class="btn" onclick="api('open_bluetooth')">⚙ Настройки Bluetooth</button><button class="btn" id="btRef">↻ Обновить список</button></div>
-        <div class="brow"><button class="btn p" id="btNear">🔎 Найти iPhone рядом</button></div>
+        <div class="brow"><button class="btn p" id="btNear">🔎 Найти iPhone рядом</button><button class="btn p" id="btVis">📡 Показать ПК в Bluetooth iPhone</button></div>
         <div class="brow"><button class="btn p" id="btGo" disabled>Подключить</button><button class="btn" id="btClose">Отмена</button></div>
       </div>
     </div></div>
@@ -458,7 +459,7 @@ function hero() {
   $('#startDot').className = 'dot ' + (ok ? 'ok' : ST.paused ? 'no' : 'wait'); $('#startS').textContent = t;
   $('#navDot').style.background = ok ? 'var(--ok)' : ST.paused || n === 'denied' ? 'var(--b)' : '#555';
 }
-const BTS = { on: 'Подключён', connecting: 'Подключаюсь…', searching: 'Ищу iPhone рядом…', pair: 'На iPhone нажмите «Создать пару»', allow: 'На iPhone нажмите «Разрешить» уведомления', lost: 'Связь пропала — переподключаюсь…', no_adapter: 'Нет Bluetooth на компьютере', off: 'Не подключён', unsupported: 'Bluetooth недоступен' };
+const BTS = { on: 'Подключён', connecting: 'Подключаюсь…', searching: 'Ищу iPhone рядом…', visible: 'На iPhone: Настройки → Bluetooth → «Другие устройства» → нажмите на этот ПК', pair: 'На iPhone нажмите «Создать пару»', allow: 'На iPhone нажмите «Разрешить» уведомления', lost: 'Связь пропала — переподключаюсь…', no_adapter: 'Нет Bluetooth на компьютере', off: 'Не подключён', unsupported: 'Bluetooth недоступен' };
 function btText(b) { return (b.state === 'on' && b.name ? b.name + ' — ' : '') + (BTS[b.state] || 'Не подключён') + (b.state === 'pair' && b.pin ? ' · код ' + b.pin : ''); }
 function phoneUi(c) {
   if (c && c.bt) ST.bt = c.bt;
@@ -469,7 +470,7 @@ function phoneUi(c) {
   $('#plBat').textContent = ip && b.state === 'on' && b.battery != null ? '🔋 ' + b.battery + '%' : '';
   const ok = ip ? b.state === 'on' : !!(c && c.phone_link);
   $('#plC').classList.toggle('ok', ok);
-  $('#plDot').className = 'dot ' + (ok ? 'ok' : ip && ['connecting', 'lost', 'allow', 'pair', 'searching'].includes(b.state) ? 'wait' : 'no');
+  $('#plDot').className = 'dot ' + (ok ? 'ok' : ip && ['connecting', 'lost', 'allow', 'pair', 'searching', 'visible'].includes(b.state) ? 'wait' : 'no');
   $('#plS').textContent = ip ? btText(b) : ok ? 'Открыта' : 'Не открыта';
   $('#btLink').classList.toggle('hide', ip);
   btNow();
@@ -499,6 +500,7 @@ $('#btRef').onclick = btRefresh;
 $('#btClose').onclick = () => $('#btm').classList.add('hide');
 $('#btGo').onclick = async () => { if (!btSel) return; const r = await api('bt_connect', btSel.id, btSel.name); if (!r.ok) return toast(r.error, true); ST = { ...ST, ...r }; method('iphone', true); phoneUi({}); toast('Подключаюсь к ' + btSel.name + ' — разрешите уведомления на iPhone'); };
 $('#btNear').onclick = async () => { const r = await api('bt_connect', 'nearby', 'iPhone'); if (!r.ok) return toast(r.error, true); ST = { ...ST, ...r }; method('iphone', true); phoneUi({}); btNow(); toast('Ищу iPhone рядом — разблокируйте его и держите рядом'); };
+$('#btVis').onclick = async () => { const r = await api('bt_connect', 'visible', 'iPhone'); if (!r.ok) return toast(r.error, true); ST = { ...ST, ...r }; method('iphone', true); phoneUi({}); btNow(); toast('На iPhone откройте Настройки → Bluetooth и нажмите на этот компьютер в «Другие устройства»'); };
 $('#btOff').onclick = async () => { ST = { ...ST, ...(await api('bt_disconnect')) }; phoneUi({}); toast('iPhone отключён'); };
 $('#newsOk').onclick = () => { $('#newsM').classList.add('hide'); api('set_option', 'seen_news', '2.3'); };
 $('#newsBt').onclick = () => { $('#newsOk').click(); method('iphone'); btOpen(); };

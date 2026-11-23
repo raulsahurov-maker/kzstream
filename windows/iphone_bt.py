@@ -35,6 +35,16 @@ try:
     from winsdk.windows.devices.bluetooth.advertisement import BluetoothLEAdvertisementWatcher, BluetoothLEScanningMode
 except Exception:  # pragma: no cover
     BluetoothLEAdvertisementWatcher = None
+try:  # компьютер как Bluetooth-аксессуар: его видно в «Настройки → Bluetooth» на iPhone
+    from winsdk.windows.devices.bluetooth.advertisement import BluetoothLEAdvertisementPublisher, BluetoothLEAdvertisementDataSection
+    from winsdk.windows.devices.bluetooth.genericattributeprofile import (
+        GattServiceProvider, GattServiceProviderAdvertisingParameters, GattLocalCharacteristicParameters,
+        GattCharacteristicProperties, GattProtectionLevel)
+    HAS_PERIPH = True
+except Exception:  # pragma: no cover
+    HAS_PERIPH = False
+KZ_SVC = uuid.UUID('6b7a5354-7265-616d-0001-4b5a53747265')
+KZ_CHR = uuid.UUID('6b7a5354-7265-616d-0002-4b5a53747265')
 
 ANCS = uuid.UUID('7905F431-B5CE-4E99-A40F-4B1E122D00D0')
 NOTIF_SRC = uuid.UUID('9FBF120D-6301-42D9-8C58-25E699A21DBD')
@@ -76,19 +86,14 @@ class IphoneBT:
         self.on_notif, self.on_status, self.log = on_notif, on_status, log
         self.loop = None
         self.device_id = None
-        self.state = 'off'          # off | no_adapter | connecting | searching | pair | allow | on | lost
+        self.state = 'off'          # off | no_adapter | connecting | searching | visible | pair | allow | on | lost
         self.pin = ''
         self.adapter_why = ''
         self._session = None
         self.name = ''
         self.battery = None
         self.adapter = None         # True/False/None
-        try:
-            if self._session:
-                self._session.close()
-        except Exception:
-            pass
-        self._session = None
+        self._adv = None
         self._dev = self._svc = self._cp = None
         self._subs = []
         self._buf = b''
@@ -280,9 +285,96 @@ class IphoneBT:
             self.log(f'Bluetooth: сопряжение не удалось ({e})')
             return False
 
+    def _stop_visible(self):
+        a, self._adv = self._adv, None
+        if not a:
+            return
+        for f in (lambda: a[1].stop(), lambda: a[0].stop_advertising()):
+            try:
+                f()
+            except Exception:
+                pass
+
+    async def _connected_le(self):
+        sel = BluetoothLEDevice.get_device_selector_from_connection_status(BluetoothConnectionStatus.CONNECTED)
+        items = await DeviceInformation.find_all_async(sel, [])
+        return {d.id: (d.name or '') for d in items}
+
+    async def _wait_visible(self, seconds=240):
+        """Компьютер объявляет себя аксессуаром, которому нужны уведомления Apple (ANCS solicitation).
+        iPhone показывает его в «Настройки → Bluetooth → Другие устройства»; пользователь нажимает — iPhone
+        подключается сам, создаёт пару и спрашивает «Разрешить уведомления?». Так подключаются часы и браслеты."""
+        if not HAS_PERIPH:
+            self.log('Bluetooth: эта версия Windows не умеет быть видимой для iPhone')
+            return None
+        self._stop_visible()
+        try:
+            r = await GattServiceProvider.create_async(KZ_SVC)
+            prov = r.service_provider
+        except Exception as e:
+            prov, r = None, e
+        if prov is None:
+            self.log(f'Bluetooth: адаптер не умеет быть видимым для iPhone ({getattr(r, "error", r)}) — используйте «Найти iPhone рядом»')
+            return None
+        try:
+            cp = GattLocalCharacteristicParameters()
+            cp.characteristic_properties = GattCharacteristicProperties.READ
+            cp.read_protection_level = GattProtectionLevel.PLAIN
+            cp.static_value = _buffer(b'KZStream')
+            await prov.service.create_characteristic_async(KZ_CHR, cp)
+        except Exception:
+            pass
+        ap = GattServiceProviderAdvertisingParameters()
+        ap.is_connectable = True
+        ap.is_discoverable = True
+        try:
+            prov.start_advertising_with_parameters(ap)
+        except Exception:
+            try:
+                prov.start_advertising()
+            except Exception as e:
+                self.log(f'Bluetooth: видимость не включилась ({e})')
+                return None
+        pub = BluetoothLEAdvertisementPublisher()
+        try:  # тип 0x15 — «запрошенные службы»: по нему iPhone понимает, что это аксессуар для уведомлений
+            pub.advertisement.data_sections.append(BluetoothLEAdvertisementDataSection(0x15, _buffer(ANCS.bytes[::-1])))
+            pub.start()
+        except Exception as e:
+            self.log(f'Bluetooth: запрос уведомлений в рекламе не включился ({e})')
+        self._adv = (prov, pub)
+        try:
+            before = await self._connected_le()
+        except Exception:
+            before = {}
+        self._set('visible')
+        self.log('Компьютер виден для iPhone. На iPhone: Настройки → Bluetooth → внизу «Другие устройства» → '
+                 'нажмите на имя этого компьютера → «Создать пару» → «Разрешить» уведомления')
+        gen = self._gen
+        for _ in range(seconds // 2):
+            if gen != self._gen:
+                return None
+            await asyncio.sleep(2)
+            try:
+                now = await self._connected_le()
+            except Exception:
+                continue
+            for i in [i for i in now if i not in before]:
+                try:
+                    dev = await BluetoothLEDevice.from_id_async(i)
+                except Exception:
+                    dev = None
+                if dev is not None:
+                    self.log(f'Устройство «{dev.name or now[i] or "iPhone"}» подключилось к компьютеру')
+                    return dev
+        self.log('Bluetooth: iPhone не подключился за 4 минуты. Нажмите на имя компьютера в «Другие устройства» на iPhone')
+        self._stop_visible()
+        return None
+
     async def _open_le(self, device_id):
         if device_id == 'nearby':
             return await self._scan_nearby()
+        if device_id == 'visible':
+            return await self._wait_visible()
         dev = None
         try:
             dev = await BluetoothLEDevice.from_id_async(device_id)
@@ -309,6 +401,13 @@ class IphoneBT:
                 self._dev.close()
         except Exception:
             pass
+        try:
+            if self._session:
+                self._session.close()
+        except Exception:
+            pass
+        self._session = None
+        self._stop_visible()
         self._dev = self._svc = self._cp = None
 
     async def _keep(self, gen):
@@ -350,7 +449,7 @@ class IphoneBT:
     async def _connect_once(self):
         self._set('connecting')
         dev = await self._open_le(self.device_id)
-        if dev is None and self.device_id != 'nearby':
+        if dev is None and self.device_id not in ('nearby', 'visible'):
             dev = await self._scan_nearby()  # сопряжённый в Windows iPhone не отвечает по LE — ищем его рядом
         if dev is None:
             self.log('Bluetooth: iPhone не найден — проверьте, что он рядом, разблокирован и Bluetooth включён')
