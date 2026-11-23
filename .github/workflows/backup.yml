@@ -10,24 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Скачать и зашифровать копию
-        env:
-          BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+      - name: Скачать зашифрованную копию
         run: |
-          if [ -z "$BACKUP_KEY" ]; then echo "Нет секрета BACKUP_KEY"; exit 1; fi
           for i in 1 2 3; do
-            code=$(curl -s -o db.json.gz -w "%{http_code}" --max-time 120 -H "x-backup-key: $BACKUP_KEY" https://kzstream.onrender.com/api/backup) && [ "$code" = "200" ] && break
-            echo "Попытка $i: $code"; sleep 30
+            code=$(curl -s -o kzstream-db.kzb -w "%{http_code}" --max-time 120 https://kzstream.onrender.com/api/backup) && [ "$code" = "200" ] && break
+            echo "Попытка $i: $code"; sleep 40
           done
           [ "$code" = "200" ] || exit 1
-          gzip -t db.json.gz
-          # репозиторий публичный — без ключа файл бесполезен
-          openssl enc -aes-256-cbc -pbkdf2 -salt -in db.json.gz -out kzstream-db.json.gz.enc -pass env:BACKUP_KEY
-          rm db.json.gz
-          ls -la kzstream-db.json.gz.enc
+          head -c 4 kzstream-db.kzb | grep -q KZB1
+          ls -la kzstream-db.kzb
+      # копия зашифрована открытым ключом — без закрытого ключа владельца её не открыть
       - uses: actions/upload-artifact@v4
         with:
           name: kzstream-db-${{ github.run_number }}
-          path: kzstream-db.json.gz.enc
+          path: kzstream-db.kzb
           retention-days: 30
-# Расшифровать: openssl enc -d -aes-256-cbc -pbkdf2 -in kzstream-db.json.gz.enc -out db.json.gz -pass pass:КЛЮЧ

@@ -1084,15 +1084,22 @@ app.post('/api/app/diag/:token', (req, res) => {
   for (const l of (Array.isArray(b.lines) ? b.lines : []).slice(0, 50)) L.push({ t: now(), m: String(l).slice(0, 400), v: String(b.version || '').slice(0, 12), os: String(b.os || '').slice(0, 60) });
   DIAG.set(u.id, L.slice(-300)); res.json({ ok: true });
 });
-// ежедневная резервная копия базы (забирает GitHub Actions по секретному ключу BACKUP_KEY и шифрует)
+// ежедневная резервная копия базы: шифруется открытым ключом (server/backup-public.pem) —
+// открыть копию можно только закрытым ключом, который хранится у владельца. Забирает GitHub Actions.
+let lastBackup = 0;
 app.get('/api/backup', (req, res) => {
-  const key = process.env.BACKUP_KEY || '';
-  if (!key || key.length < 16 || req.get('x-backup-key') !== key) return res.status(404).end();
+  if (now() - lastBackup < 20 * 60e3) return res.status(429).json({ error: 'не чаще раза в 20 минут' });
+  lastBackup = now();
   const out = { at: now(), tables: {} };
   for (const t of TABLES) {
     try { out.tables[t] = t === 'file_data' ? q(`SELECT file, length(data) size FROM file_data`).all() : q(`SELECT * FROM ${t}`).all(); } catch (e) { out.tables[t] = { error: e.message }; }
   }
-  res.set('Content-Type', 'application/gzip').send(require('zlib').gzipSync(Buffer.from(JSON.stringify(out))));
+  const zlib = require('zlib'), pub = fs.readFileSync(path.join(__dirname, 'backup-public.pem'));
+  const key = crypto.randomBytes(32), iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const enc = Buffer.concat([c.update(zlib.gzipSync(Buffer.from(JSON.stringify(out)))), c.final()]);
+  const ek = crypto.publicEncrypt({ key: pub, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' }, key);
+  const len = Buffer.alloc(2); len.writeUInt16BE(ek.length);
+  res.set('Content-Type', 'application/octet-stream').send(Buffer.concat([Buffer.from('KZB1'), len, ek, iv, c.getAuthTag(), enc]));
 });
 app.get('/api/admin/diag', admin, (req, res) => {
   const out = [...DIAG.entries()].map(([id, L]) => ({ nick: (userById(id) || {}).nick || id, last: L.length ? L[L.length - 1].t : 0, lines: L.slice(-80) }));
