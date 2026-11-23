@@ -19,6 +19,24 @@ const clean = u => String(u || '').trim().replace(/^@/, '').replace(/^https?:\/\
 
 module.exports = function setupTikTok(app, d) {
   const { auth, q, getSettings, saveSettings, userById, userByToken, emit, emitSpeaker, baseUrl, censor, canTts, isLite } = d;
+  const watched = d.watched || (() => true);
+  // Квота Euler Stream общая на всех стримеров (бесплатно ~1000 подключений в сутки).
+  // Поэтому: 1) не стучимся, пока у стримера не открыт ни виджет, ни кабинет, ни программа;
+  // 2) сначала бесплатно спрашиваем у TikTok, идёт ли эфир; 3) после «лимита» все ждут вместе.
+  let eulerPauseUntil = 0, probeWorks = null;
+  const EULER_LOG = []; // время каждого подключения к Euler за сутки — видно в админке
+  async function probeLive(user) {
+    try {
+      const r = await fetch('https://www.tiktok.com/api-live/user/room/?' + new URLSearchParams({ aid: '1988', app_name: 'tiktok_web', device_platform: 'web_pc', uniqueId: user, sourceType: '54' }),
+        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36', Accept: 'application/json', Referer: 'https://www.tiktok.com/' }, signal: AbortSignal.timeout(8000) });
+      const j = await r.json();
+      const room = j && j.data && (j.data.liveRoom || j.data.user && j.data.user);
+      if (!j || !j.data) { if (j && (j.statusCode === 19881007 || /not exist/i.test(j.message || ''))) return 'nouser'; return null; }
+      probeWorks = true;
+      const st = j.data.liveRoom && j.data.liveRoom.status, rid = j.data.user && j.data.user.roomId;
+      return st === 2 || (st == null && rid && rid !== '0') ? 'live' : 'off';
+    } catch { return null; }
+  }
   const conns = new Map(); // user_id -> { c, state, retry, since, user, err }
 
   const cfg = u => { const s = getSettings(u); const t = s.tiktok || {}; const o = { ...DEF, ...t }; for (const k of EV) o[k] = { ...DEF[k], ...(t[k] || {}) }; o.likes = { ...DEF.likes, ...(t.likes || {}) }; o.tts = { ...DEF.tts, ...(t.tts || {}) }; o.chat = { ...DEF.chat, ...(t.chat || {}) }; return o; };
@@ -71,9 +89,16 @@ module.exports = function setupTikTok(app, d) {
     if (!Lib) return setState(uid, 'error', 'Модуль TikTok не установлен на сервере');
     const KEY = process.env.SIGN_API_KEY || process.env.EULER_API_KEY;
     // облачное подключение Euler Stream: эфир находит и держит их сервер (TikTok не пускает дата-центры напрямую)
-    const cloud = () => {
+    const cloud = async () => {
       if (conns.get(uid) !== x) return;
+      if (!watched(uid)) { setState(uid, 'waiting', 'Жду, когда откроете виджет в TikTok Live Studio, кабинет или программу KZStream'); return later(30); }
+      if (Date.now() < eulerPauseUntil) { setState(uid, 'waiting', 'Сервис TikTok перегружен — подключусь через минуту сам'); return later(Math.ceil((eulerPauseUntil - Date.now()) / 1000) + 5 + Math.random() * 20); }
+      const pr = await probeLive(user);
+      if (conns.get(uid) !== x) return;
+      if (pr === 'nouser') { setState(uid, 'error', `Аккаунт @${user} не найден — проверьте юзернейм`); return later(600); }
+      if (pr === 'off' && ((x.off = (x.off || 0) + 1) % 10 !== 0)) { setState(uid, 'waiting', 'Эфир не запущен — запустите LIVE на @' + user + ', подключусь сам за ~30 сек'); return later(30); }
       x.tries++;
+      EULER_LOG.push(Date.now()); while (EULER_LOG.length && Date.now() - EULER_LOG[0] > 864e5) EULER_LOG.shift();
       const url = 'wss://ws.eulerstream.com?' + new URLSearchParams({ uniqueId: user, apiKey: KEY }).toString();
       let ws; try { ws = new WS(url); } catch (e) { setState(uid, 'error', 'Не удалось открыть подключение: ' + e.message); return later(60); }
       x.c = { disconnect: () => { try { ws.close(); } catch { } } };
@@ -103,10 +128,10 @@ module.exports = function setupTikTok(app, d) {
         if (conns.get(uid) !== x) return;
         const r = String(reason || '');
         console.error(`TikTok(cloud) @${user}: закрыто ${code} ${r.slice(0, 200)}`);
-        if (code === 4404) { x.off = (x.off || 0) + 1; setState(uid, 'waiting', 'TikTok не видит эфир @' + user + ' — запустите LIVE с этого аккаунта, подключусь сам'); return later(x.off <= 10 ? 60 : 180); }
+        if (code === 4404) { x.off = (x.off || 0) + 1; setState(uid, 'waiting', 'TikTok не видит эфир @' + user + ' — запустите LIVE с этого аккаунта, подключусь сам'); return later(probeWorks ? 30 : Math.min(600, 60 * x.off)); }
         if (code === 4005) { setState(uid, 'waiting', 'Эфир завершён — жду следующий'); return later(60); }
         if (code === 4401 || code === 4403) { setState(uid, 'error', 'Ключ Euler Stream не подошёл или тариф не даёт подключение (' + code + ')'); return later(300); }
-        if (code === 4429) { setState(uid, 'waiting', 'Лимит подключений Euler Stream — пробую позже'); return later(120); }
+        if (code === 4429) { eulerPauseUntil = Date.now() + 180e3; setState(uid, 'waiting', 'Сервис TikTok перегружен — подключусь через пару минут сам'); return later(200 + Math.random() * 60); }
         if (code === 4400 && /unique|user/i.test(r)) { setState(uid, 'error', `Аккаунт @${user} не найден — проверьте юзернейм`); return later(300); }
         setState(uid, opened && x.state === 'live' ? 'connecting' : 'waiting', (opened ? 'Связь с эфиром прервалась — переподключаюсь…' : 'Подключаюсь…') + (r ? ' (' + r.slice(0, 80) + ')' : ''));
         later(Math.min(90, 10 * x.tries));
@@ -157,12 +182,22 @@ module.exports = function setupTikTok(app, d) {
       }
     };
     const later = sec => { clearTimeout(x.retry); x.retry = setTimeout(go, sec * 1000); };
+    goers.set(uid, go);
     go();
   }
+  // открыли виджет/кабинет/программу — если ждём эфир, проверяем сразу
+  d.onWatch && d.onWatch(uid => { const x = conns.get(uid); if (x && x.state === 'waiting' && x.retry && !(Date.now() < eulerPauseUntil)) { clearTimeout(x.retry); x.retry = setTimeout(() => go2(uid), 1500); } });
+  const goers = new Map();
+  function go2(uid) { const f = goers.get(uid); if (f) f(); }
+  // проверка, видит ли сервер эфир без Euler (для поддержки): не чаще раза в 5 сек
+  let lastProbe = 0;
+  app.get('/api/tiktok/probe', async (req, res) => { if (Date.now() - lastProbe < 5000) return res.status(429).json({ error: 'подождите' }); lastProbe = Date.now(); res.json({ user: clean(req.query.u), result: await probeLive(clean(req.query.u) || 'tiktok'), probe_works: probeWorks }); });
+  app.get('/api/admin/tiktok', (req, res, next) => d.admin(req, res, () => res.json({ euler_24h: EULER_LOG.length, pause_s: Math.max(0, Math.round((eulerPauseUntil - Date.now()) / 1000)), probe_works: probeWorks,
+    conns: [...conns.entries()].map(([id, x]) => ({ id, user: x.user, state: x.state, err: x.err, tries: x.tries, watched: watched(id) })) })));
   function stop(uid, quiet) {
     const x = conns.get(uid); if (!x) return;
     clearTimeout(x.retry); try { x.c && x.c.disconnect(); } catch { }
-    conns.delete(uid); if (!quiet) emit(uid, 'tt_status', { state: 'off' });
+    conns.delete(uid); goers.delete(uid); if (!quiet) emit(uid, 'tt_status', { state: 'off' });
   }
 
   const pub = (u, req) => ({ tts_ok: canTts(u), lite: isLite(u), settings: cfg(u), status: status(u.id), widget: `${baseUrl(req)}/w/tiktok.html?t=${u.token}`, likes_widget: `${baseUrl(req)}/w/likes.html?t=${u.token}` });
