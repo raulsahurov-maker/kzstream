@@ -173,7 +173,6 @@ const VOICES = {
   monster: ['en-US-BrianMultilingualNeural', 'Монстр', '-45%', '-15%', 'ru'],
   helium: ['ru-RU-SvetlanaNeural', 'Гелий', '+80%', '+10%', 'ru'],
   sleepy: ['ru-RU-DmitryNeural', 'Сонный', '-8%', '-35%', 'ru'],
-  announcer: ['ru-RU-DmitryNeural', 'Диктор', '', '-8%', 'ru'],
   princess: ['ru-RU-SvetlanaNeural', 'Принцесса', '+28%', '+4%', 'ru'],
   granny: ['ru-RU-SvetlanaNeural', 'Бабуля', '-15%', '-25%', 'ru'],
   kid: ['ru-RU-SvetlanaNeural', 'Ребёнок', '+38%', '+6%', 'ru'],
