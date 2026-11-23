@@ -167,6 +167,22 @@ const VOICES = {
   fast: ['ru-RU-DmitryNeural', 'Скороговорка', '', '+55%', 'ru'],
   giant: ['ru-RU-SvetlanaNeural', 'Великанша', '-30%', '-10%', 'ru'],
   baby: ['kk-KZ-AigulNeural', 'Балақай', '+45%', '+5%', 'kk'],
+  florian: ['de-DE-FlorianMultilingualNeural', 'Флориан', '', '', 'ru'],
+  seraphina: ['de-DE-SeraphinaMultilingualNeural', 'Серафина', '', '', 'ru'],
+  hyunsu: ['ko-KR-HyunsuMultilingualNeural', 'Хёнсу', '', '', 'ru'],
+  thalita: ['pt-BR-ThalitaMultilingualNeural', 'Талита', '', '', 'ru'],
+  william: ['en-AU-WilliamMultilingualNeural', 'Уильям', '', '', 'ru'],
+  monster: ['ru-RU-DmitryNeural', 'Монстр', '-45%', '-18%', 'ru'],
+  helium: ['ru-RU-SvetlanaNeural', 'Гелий', '+80%', '+10%', 'ru'],
+  sleepy: ['ru-RU-DmitryNeural', 'Сонный', '-8%', '-35%', 'ru'],
+  announcer: ['ru-RU-DmitryNeural', 'Диктор', '-6%', '-6%', 'ru'],
+  princess: ['ru-RU-SvetlanaNeural', 'Принцесса', '+28%', '+4%', 'ru'],
+  granny: ['ru-RU-SvetlanaNeural', 'Бабуля', '-15%', '-25%', 'ru'],
+  kid: ['ru-RU-SvetlanaNeural', 'Ребёнок', '+38%', '+6%', 'ru'],
+  aksakal: ['kk-KZ-DauletNeural', 'Ақсақал', '-20%', '-18%', 'kk'],
+  rapper: ['en-US-AndrewMultilingualNeural', 'Рэпер', '', '+35%', 'ru'],
+  boss: ['en-US-BrianMultilingualNeural', 'Босс', '-25%', '-8%', 'ru'],
+  alien: ['en-US-AvaMultilingualNeural', 'Инопланетянка', '+55%', '+12%', 'ru'],
 };
 const THEMES = ['default', 'neon', 'sunset', 'mint', 'royal', 'mono', 'candy', 'steppe', 'ice', 'gold'];
 function defaults(nick) {
@@ -782,9 +798,9 @@ app.get('/api/overview', auth, (req, res) => {
   else { const n = range === '7d' ? 7 : 30; series = Array.from({ length: n }, (_, i) => { const d = new Date(dayStart + tz - (n - 1 - i) * 864e5); return { label: String(d.getUTCDate()).padStart(2, '0') + '.' + String(d.getUTCMonth() + 1).padStart(2, '0'), sum: 0, cnt: 0 }; }); for (const r of rows) { const b = series[n - 1 - Math.floor((dayStart + 864e5 - 1 - r.done_at) / 864e5)]; if (b) { b.sum += r.amount; b.cnt++; } } }
   const recent = q(`SELECT name, amount, message, done_at FROM donations WHERE user_id=? AND status='done' AND hidden=0 ORDER BY done_at DESC LIMIT 6`).all(u.id);
   const top = q(`SELECT name, SUM(amount) total FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND done_at>=? GROUP BY lower(name) ORDER BY total DESC LIMIT 5`).all(u.id, monthStart);
-  const appOn = [...(channels.get(u.id) || [])].some(r => r.kzApp);
+  const seen = APP_SEEN.get(u.id), alive = !!(seen && now() - seen.t < 50e3);
   const lastIn = q('SELECT MAX(created_at) t FROM ingest_log WHERE user_id=?').get(u.id).t || 0;
-  res.json({ app: { windows: appOn, last_ingest: lastIn }, cards, range, series: series.map(({ label, sum, cnt }) => ({ label, sum, cnt })), recent, top, since: u.created_at, avatar: s.page.avatar || '', title: s.page.title || u.nick });
+  res.json({ app: { windows: alive && seen.running, windows_idle: alive && !seen.running, last_ingest: lastIn }, cards, range, series: series.map(({ label, sum, cnt }) => ({ label, sum, cnt })), recent, top, since: u.created_at, avatar: s.page.avatar || '', title: s.page.title || u.nick });
 });
 app.get('/api/files', auth, (req, res) => res.json(q('SELECT id,name,mime,size,file,created_at FROM files WHERE user_id=? ORDER BY id DESC').all(req.user.id).map(f => ({ ...f, url: '/u/' + f.file }))));
 app.delete('/api/files/:id', auth, (req, res) => {
@@ -1049,6 +1065,13 @@ app.post('/api/app/:token/skip', (req, res) => {
 });
 // диагностика iPhone-Bluetooth из программы для Windows: последние шаги подключения у каждого стримера (видно в админке)
 const DIAG = new Map();
+// программа для Windows шлёт «я работаю» каждые 15 сек; нет сигнала 50 сек — значит закрыта
+const APP_SEEN = new Map();
+app.post('/api/app/ping/:token', (req, res) => {
+  const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'нет' });
+  if (req.body && req.body.closing) APP_SEEN.delete(u.id); else APP_SEEN.set(u.id, { t: now(), running: !!(req.body && req.body.running), v: String((req.body || {}).version || '').slice(0, 12) });
+  res.json({ ok: true });
+});
 app.post('/api/app/diag/:token', (req, res) => {
   const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'нет' });
   const L = DIAG.get(u.id) || [], b = req.body || {};
@@ -1119,9 +1142,9 @@ app.get('/api/w/:token/faceit', async (req, res) => {
 app.get('/api/faceit/check', async (req, res) => { try { const d = await faceit.getPlayer(req.query.nick || 'donk', true); res.json({ ok: true, key: faceit.hasKey(), ...d, id: undefined, avatar: undefined, debug: faceit.debug() }); } catch (e) { res.json({ ok: false, key: faceit.hasKey(), error: e.message }); } });
 
 // версия программы для Windows — по ней программа предлагает обновиться
-const WIN_APP_VERSION = '2.3.4';
+const WIN_APP_VERSION = '2.3.5';
 app.get('/api/app/version', (req, res) => res.json({ windows: WIN_APP_VERSION, url: `${baseUrl(req)}/update/KZStream-Setup.exe`, setup: `${baseUrl(req)}/update/KZStream-Setup.exe`,
-  notes: 'iPhone по Bluetooth: новая кнопка «Показать ПК в Bluetooth iPhone» — компьютер появляется в настройках Bluetooth на iPhone. Программа сама создаёт пару и ждёт «Разрешить», понятнее пишет, что не так с Bluetooth. iPhone можно подключить и через «Связь с телефоном»' }));
+  notes: 'Сайт теперь точно видит, запущена ли программа. Плюс новое подключение iPhone по Bluetooth' }));
 
 // --- приём уведомлений от приложений (Android / Windows / iPhone) ---
 function ingest(req, res) {

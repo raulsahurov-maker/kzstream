@@ -221,13 +221,13 @@
       $('#ovRecent').innerHTML = o.recent.length ? o.recent.map(r => `<div class="ov-l"><span class="p">💸</span><span class="n">${esc(r.name)}<small>${esc(r.message || '—')}</small></span><span class="muted" style="font-size:12px;white-space:nowrap">${new Date(r.done_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span><span class="s">${fmt(r.amount)}</span></div>`).join('') : '<div class="muted">Пока нет донатов</div>';
       const on = o.app.windows || (o.app.last_ingest && Date.now() - o.app.last_ingest < 30 * 60e3);
       $('#sbApp').classList.toggle('on', !!on);
-      $('#sbApp span').textContent = o.app.windows ? 'Программа активна' : on ? 'Телефон передаёт донаты' : 'Программа не активна';
+      $('#sbApp span').textContent = o.app.windows ? 'Программа активна' : on ? 'Телефон передаёт донаты' : o.app.windows_idle ? 'Программа открыта, но остановлена' : 'Программа не активна';
     } catch { }
   }
   let ovT = 0; const ovSoon = () => { clearTimeout(ovT); ovT = setTimeout(overview, 400); };
   addEventListener('kz:stats', ovSoon);
   addEventListener('kz:me', () => { profile(); ovSoon(); openActive(); if (!loaded) { fill(); loaded = true; } });
-  setInterval(() => { if (!document.hidden) overview(); }, 30000);
+  setInterval(() => { if (!document.hidden) overview(); }, 20000);
   addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
   if (window.KZME) dispatchEvent(new Event('kz:me'));
 })();

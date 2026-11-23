@@ -33,7 +33,7 @@
       box.querySelector('[data-vl]').textContent = e.vol + '%'; box.querySelector('[data-f=tts]').checked = e.tts; box.querySelector('[data-f=text]').value = e.text;
       if (box.querySelector('[data-f=sound]').value !== e.sound && e.sound) box.querySelector('[data-f=sound]').insertAdjacentHTML('afterbegin', `<option value="${e.sound}">🎧 свой звук</option>`), box.querySelector('[data-f=sound]').value = e.sound;
     }
-    const VL = typeof VOICE_LIST !== 'undefined' ? VOICE_LIST : [['dmitry', 'Дмитрий', '']];
+    const VL = window.VOICE_LIST || [['dmitry', 'Дмитрий', '']];
     if (!$('#tts_voice').options.length) $('#tts_voice').innerHTML = VL.map(([id, nm, ds]) => `<option value="${id}">${nm}${ds ? ' — ' + ds : ''}</option>`).join('');
     $('#tts_on').checked = c.tts.on; $('#tts_voice').value = c.tts.voice; $('#tts_vol').value = c.tts.vol; $('#tts_vl').textContent = c.tts.vol + '%';
     document.querySelectorAll('#chatWho [data-cw]').forEach(b => b.classList.toggle('on', b.dataset.cw === (c.chat.who || 'all'))); $('#chat_on').checked = c.chat.on; $('#chat_name').checked = c.chat.name; $('#chat_prefix').value = c.chat.prefix; $('#chat_max').value = c.chat.max; $('#tt_w_chat').value = D.widget + '&ev=chat';

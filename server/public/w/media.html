@@ -5,11 +5,10 @@
   #wrap{position:fixed;inset:0;display:flex;flex-direction:column;opacity:0;transform:scale(.97);transition:.35s;pointer-events:none}
   #wrap.on{opacity:1;transform:none;pointer-events:auto}
   #pbox{flex:1;position:relative;background:#000;border-radius:16px 16px 0 0;overflow:hidden}
-  #player{position:absolute;inset:0;width:100%;height:100%}
+  #player{position:absolute;left:0;top:0;width:854px;height:480px;transform-origin:0 0;transform:scale(var(--pk,1),var(--pky,1))}
   .cap{display:flex;align-items:center;gap:16px;padding:12px 20px;background:linear-gradient(90deg,rgba(14,6,28,.96),rgba(30,8,40,.94));border-radius:0 0 16px 16px;position:relative;border:2px solid #ff3ea5;border-top:none;box-shadow:0 0 26px rgba(255,62,165,.45),inset 0 0 22px rgba(255,62,165,.12)}
   .cap::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#ff3ea5,#ff7a45,#ffd23f,#3ee8ff);box-shadow:0 0 14px #ff3ea5}
-  .cap .ic{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#ff3ea5,#ff7a45);display:grid;place-items:center;flex:none;font-size:22px;box-shadow:0 0 18px rgba(255,62,165,.8);animation:pulse 1.4s ease-in-out infinite alternate}
-  @keyframes pulse{to{box-shadow:0 0 30px rgba(255,62,165,1);transform:scale(1.06)}}
+  .cap .ic{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#ff3ea5,#ff7a45);display:grid;place-items:center;flex:none;font-size:22px;box-shadow:0 0 18px rgba(255,62,165,.8);}
   .cap .tx{flex:1;min-width:0}
   .cap .who{font-family:Unbounded,sans-serif;font-weight:800;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;text-shadow:0 0 8px #ff3ea5,0 0 18px rgba(255,62,165,.7)}
   .cap .who span{color:#3ee8ff;text-shadow:0 0 8px #3ee8ff,0 0 18px rgba(62,232,255,.7)}
@@ -24,7 +23,7 @@
   .mb .row1{display:flex;gap:12px;align-items:stretch}
   .mb .th{position:relative;width:118px;height:118px;flex:none;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 8px 26px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.08)}
   body.bar #pbox{display:block;position:absolute;inset:0;border-radius:0;background:#000}
-  body.bar #player{left:50%;width:210px;height:118px;transform:translateX(-50%)}
+  body.bar #player{left:50%;width:256px;height:144px;transform:translateX(-50%)}
   .mb .rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
   .mb .panel{background:rgba(10,10,14,.88);border:1px solid rgba(255,255,255,.07);border-radius:14px;box-shadow:0 8px 26px rgba(0,0,0,.45)}
   .mb .ttl{display:flex;align-items:center;height:54px;overflow:hidden}
@@ -35,8 +34,8 @@
   .mb .dn{flex:none;max-width:42%;padding:0 18px;border-left:2px solid #ffc531;line-height:1.35;display:flex;align-items:center;font:800 19px Oswald,Manrope,sans-serif;text-transform:uppercase;color:#ffc531;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mb .wv{display:flex;align-items:center;gap:14px;height:54px;padding:0 16px;font:800 15px Oswald,Manrope,sans-serif;color:#e8e8e8}
   .mb .bars{flex:1;height:28px;display:flex;align-items:center;justify-content:space-between;gap:2px;overflow:hidden}
-  .mb .bars i{flex:1;min-width:2px;max-width:6px;border-radius:2px;background:rgba(255,197,49,.35);height:30%;transition:height .25s}
-  .mb .bars i.p{background:#ffc531;box-shadow:0 0 6px rgba(255,197,49,.6)}
+  .mb .bars i{flex:1;min-width:2px;max-width:6px;border-radius:2px;background:rgba(255,197,49,.35);height:100%;transform:scaleY(.3);transition:transform .9s linear;will-change:transform}
+  .mb .bars i.p{background:#ffc531}
   .mb .pg{margin-top:10px;height:9px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden}
   .mb .pg b{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb100,#ffd25a);border-radius:9px;box-shadow:0 0 10px rgba(255,197,49,.7);transition:width .5s linear}
   .mb .cv{position:absolute;inset:0;z-index:2;background:#16121f center/cover no-repeat;display:grid;place-items:center;font-size:46px;color:#ffc531}
@@ -71,15 +70,18 @@
     if (!BAR) return; const k = dur ? Math.min(1, cur / dur) : 0;
     $('tc').textContent = mmss(cur); $('td').textContent = mmss(dur); $('pg').style.width = k * 100 + '%';
     const L = $('bars').children, n = L.length, playing = (() => { try { return player.getPlayerState() === YT.PlayerState.PLAYING; } catch { return false; } })();
-    for (let i = 0; i < n; i++) { const h = playing ? 18 + Math.abs(Math.sin(i * 1.7 + cur * 3.1)) * 62 + Math.random() * 20 : 18; L[i].style.height = Math.min(100, h) + '%'; L[i].classList.toggle('p', i / n <= k); }
+    for (let i = 0; i < n; i++) { const h = playing ? 18 + Math.abs(Math.sin(i * 1.7 + cur * 3.1)) * 62 + Math.random() * 20 : 18; L[i].style.transform = 'scaleY(' + Math.min(1, h / 100).toFixed(2) + ')'; L[i].classList.toggle('p', i / n <= k); }
   }
+  // размер плеера: рисуем 854×480 и растягиваем — YouTube не грузит 1080p/4K, видеокарта не перегружается
+  function fit() { if (BAR) return; const b = $('pbox'); if (!b) return; document.documentElement.style.setProperty('--pk', b.clientWidth / 854); document.documentElement.style.setProperty('--pky', b.clientHeight / 480); }
+  addEventListener('resize', fit); setTimeout(fit, 50);
   const ytId = u => (String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/) || [])[1];
   const post = (path, body) => fetch('/api/w/' + token + '/media/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
   function note(t) { const m = $('msg'); m.textContent = t; m.style.display = 'block'; clearTimeout(note.t); note.t = setTimeout(() => m.style.display = 'none', 3500); }
 
   window.onYouTubeIframeAPIReady = () => {
-    player = new YT.Player('player', { width: '100%', height: '100%',
-      playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, disablekb: 1, iv_load_policy: 3, fs: 0 },
+    player = new YT.Player('player', {
+      width: 854, height: 480, playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, disablekb: 1, iv_load_policy: 3, fs: 0 },
       events: {
         onReady: () => { ready = true; next(); },
         onStateChange: e => {
@@ -102,13 +104,13 @@
     const id = ytId(item.media_url); if (!id) { cur = item; return finish('played'); }
     cur = item; startedAt = 0;
     setTitle('Загрузка…'); if (BAR) { $('dn').textContent = item.name || 'Аноним'; barTick(0, 0); const cv = $('cv'); cv.className = 'cv img'; cv.textContent = ''; cv.style.backgroundImage = `url(https://i.ytimg.com/vi/${id}/hqdefault.jpg)`; } $('who').innerHTML = `ЗАКАЗАЛ: <span>${KZ.esc(item.name || 'Аноним')}</span>`; $('amt').textContent = item.amount ? fmt(item.amount) : '';
-    $('wrap').classList.add('on');
+    $('wrap').classList.add('on'); fit();
     try { player.setVolume(vol()); player.loadVideoById({ videoId: id, startSeconds: 0 }); player.playVideo(); } catch { }
     // если браузер не дал включить со звуком — включаем без звука и просим один клик
     clearTimeout(watchT);
     watchT = setTimeout(() => { try { if (cur && player.getPlayerState() !== YT.PlayerState.PLAYING) { player.mute(); player.playVideo(); setTimeout(() => { if (cur && player.getPlayerState() === YT.PlayerState.PLAYING) showTap(); }, 1200); } } catch { } }, 2500);
     clearTimeout(limitT); limitT = setTimeout(() => finish('played'), (S.max_sec || 180) * 1000 + 4000);
-    clearInterval(tick); tick = setInterval(() => { try { const d = Math.min(player.getDuration() || 0, S.max_sec || 180); if (d) $('bar').style.width = Math.min(100, player.getCurrentTime() / d * 100) + '%'; barTick(player.getCurrentTime(), d); } catch { } }, 300);
+    clearInterval(tick); tick = setInterval(() => { try { const d = Math.min(player.getDuration() || 0, S.max_sec || 180); if (d) $('bar').style.width = Math.min(100, player.getCurrentTime() / d * 100) + '%'; barTick(player.getCurrentTime(), d); } catch { } }, 1000);
   }
   function finish(how) {
     clearTimeout(limitT); clearTimeout(watchT); clearInterval(tick); $('bar').style.width = 0;

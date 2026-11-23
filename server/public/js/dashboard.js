@@ -73,7 +73,14 @@ const VOICE_LIST = [
   ['villain', 'Злодей', 'очень низкий, зловещий'], ['oldman', 'Дед', 'медленный, старческий'],
   ['cartoon', 'Мультик', 'мультяшный, смешной'], ['fast', 'Скороговорка', 'очень быстрый'],
   ['giant', 'Великанша', 'низкий женский'], ['baby', 'Балақай', 'детский · қазақша'],
+  ['florian', 'Флориан', 'немецкий акцент'], ['seraphina', 'Серафина', 'немецкий акцент, женский'],
+  ['hyunsu', 'Хёнсу', 'корейский акцент'], ['thalita', 'Талита', 'бразильский акцент'], ['william', 'Уильям', 'австралийский акцент'],
+  ['monster', 'Монстр', 'страшный, очень низкий'], ['helium', 'Гелий', 'как надышался шариком'], ['sleepy', 'Сонный', 'медленный, зевающий'],
+  ['announcer', 'Диктор', 'серьёзный, как на ТВ'], ['princess', 'Принцесса', 'нежный женский'], ['granny', 'Бабуля', 'медленная, ласковая'],
+  ['kid', 'Ребёнок', 'детский голос'], ['aksakal', 'Ақсақал', 'мудрый · қазақша'], ['rapper', 'Рэпер', 'быстрый, с акцентом'],
+  ['boss', 'Босс', 'низкий, уверенный'], ['alien', 'Инопланетянка', 'высокий, странный'],
 ];
+window.VOICE_LIST = VOICE_LIST; // и для озвучки чата TikTok
 let VOICESEL = 'dmitry', voiceAudio = null;
 function voicePicker() {
   $('#a_voices').innerHTML = VOICE_LIST.map(([id, nm, ds]) => `<div class="vc ${VOICESEL === id ? 'on' : ''}" data-v="${id}"><button type="button" class="play" data-play="${id}" title="Прослушать">▶</button><b>${nm}</b><span>${ds}</span></div>`).join('');
@@ -90,6 +97,9 @@ const poolObjs = () => (ME.settings.alerts.pool || []).map(x => typeof x === 'st
 const poolUrls = () => poolObjs().map(x => x.url);
 const ALERT_LIB = [
   ['money-rain', 'Дождь из денег'], ['champion', 'Чемпион'], ['psycho', 'Психопат'], ['mentalist', 'Ментал'],
+  ['meme-boom', 'BOOM!'], ['meme-legend', 'Легенда'], ['meme-shock', 'Шок контент'], ['meme-cool', 'Красавчик'],
+  ['meme-fire', 'Огонь!'], ['meme-dance', 'Танцуем!'], ['meme-treasury', 'Казна пополнена'], ['meme-respect', 'Респект'],
+  ['meme-clap', 'Браво!'], ['meme-rocket', 'До луны!'], ['meme-skull', 'Жесть'], ['meme-catshock', 'Что?!'],
 ];
 function alertStyles() {
   const a = ME.settings.alerts, L = a.layout || 'classic', pool = poolUrls();

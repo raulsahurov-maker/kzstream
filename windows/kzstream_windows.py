@@ -32,7 +32,7 @@ import webbrowser
 import requests
 
 APP_NAME = 'KZStream'
-VERSION = '2.3.4'
+VERSION = '2.3.5'
 DEFAULT_SERVER = 'https://kzstream.onrender.com'
 APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
@@ -373,7 +373,14 @@ class Api:
         import platform
         while True:
             time.sleep(15)
-            if not self._diag or not self.cfg.get('token'):
+            if not self.cfg.get('token'):
+                continue
+            try:  # сайт показывает «Программа активна», только пока идут эти сигналы
+                requests.post(f"{self.cfg['server']}/api/app/ping/{self.cfg['token']}", timeout=15,
+                              json={'running': bool(self.running), 'version': VERSION})
+            except Exception:
+                pass
+            if not self._diag:
                 continue
             lines, self._diag = self._diag[:50], self._diag[50:]
             try:
@@ -436,6 +443,11 @@ class Api:
     def quit(self):
         self.quitting = True
         self.running = False
+        try:  # сразу сообщаем сайту, что программа закрыта
+            if self.cfg.get('token'):
+                requests.post(f"{self.cfg['server']}/api/app/ping/{self.cfg['token']}", json={'closing': True}, timeout=4)
+        except Exception:
+            pass
         try:
             if self._tray:
                 self._tray.stop()
