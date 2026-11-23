@@ -58,39 +58,71 @@ body.d-pastel{--bg:#fdf3f8;--bg2:#fff;--line:rgba(120,80,140,.15);--muted:#7a6b8
 body.d-amethyst{--c:#b47cff;background:radial-gradient(ellipse at 50% 0,rgba(180,124,255,.35),transparent 60%),linear-gradient(#170a2e,#0b0618) fixed}body.d-amethyst .card{background:rgba(40,20,70,.55);border-color:rgba(180,124,255,.3)}body.d-amethyst .ava{border-radius:50%;box-shadow:0 0 0 3px #b47cff,0 0 40px rgba(180,124,255,.6)}
 #fx{position:fixed;inset:0;pointer-events:none;z-index:50}#fx.under{z-index:0}.wrap{position:relative;z-index:1}
 @media(max-width:380px){.devs{grid-template-columns:1fr}}
+.lang{position:fixed;top:12px;right:12px;z-index:60;display:flex;gap:3px;padding:3px;border-radius:12px;background:rgba(10,10,16,.75);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(6px)}.lang button{padding:6px 11px;border-radius:9px;background:none;color:#aab;font:800 13px Manrope,sans-serif}.lang button.on{background:var(--c);color:#fff}
+.wl{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}.wl:last-child{border:0}.wl i{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-weight:800;color:#fff;background:color-mix(in srgb,var(--c) 70%,#222)}.wl div{flex:1;min-width:0}.wl b{font-weight:800}.wl em{font-style:normal;color:var(--c);font-weight:800;margin-left:6px}.wl p{margin:3px 0 0;color:var(--muted);font-size:14px;line-height:1.4;word-wrap:break-word}.wl small{flex:none;color:var(--dim);font-size:12px;font-weight:700}
 </style>
 </head>
 <body>
+<div class="lang" id="lang"><button data-l="ru">RU</button><button data-l="kz">KZ</button></div>
 <div class="wrap">
   <div class="banner" id="banner"></div>
   <div class="head"><div class="ava" id="ava">K</div><h1 id="title">…</h1><p id="desc"></p><div id="tt"></div><div class="soc" id="soc"></div></div>
-  <div class="card" id="extraCard" style="display:none"><h3 style="margin-bottom:8px">ℹ️ Информация</h3><div class="extra" id="extra"></div></div>
+  <div class="card" id="extraCard" style="display:none"><h3 style="margin-bottom:8px" data-i="info">ℹ️ Информация</h3><div class="extra" id="extra"></div></div>
 
   <div class="card" id="payCard">
-    <h3 style="margin-bottom:14px">Задонатить через Kaspi</h3>
-    <div class="kaspi"><div class="k">K</div><div><div class="num" id="num">—</div><div class="rcv" id="rcv"></div></div><button id="copy">Копировать</button></div>
+    <h3 style="margin-bottom:14px" data-i="pay">Задонатить через Kaspi</h3>
+    <div class="kaspi"><div class="k">K</div><div><div class="num" id="num">—</div><div class="rcv" id="rcv"></div></div><button id="copy" data-i="copy">Копировать</button></div>
     <div id="cards"></div>
     <div class="steps" style="margin-top:18px">
-      <div class="st"><span>Скопируйте номер и откройте <b>Kaspi.kz</b> → <b>Переводы</b> → <b>Клиенту Kaspi</b>.</span></div>
-      <div class="st"><span>Введите сумму <b id="minTxt"></b>.</span></div>
-      <div class="st"><span>В поле <b>«Сообщение получателю»</b> напишите текст — он появится в эфире TikTok Live и будет озвучен.</span></div>
-      <div class="st"><span>Нажмите «Перевести». Готово — донат сразу в эфире!</span></div>
+      <div class="st"><span data-ih="s1">Скопируйте номер и откройте <b>Kaspi.kz</b> → <b>Переводы</b> → <b>Клиенту Kaspi</b>.</span></div>
+      <div class="st"><span><span data-i="s2">Введите сумму</span> <b id="minTxt"></b>.</span></div>
+      <div class="st"><span data-ih="s3">В поле <b>«Сообщение получателю»</b> напишите текст — он появится в эфире TikTok Live и будет озвучен.</span></div>
+      <div class="st"><span data-i="s4">Нажмите «Перевести». Готово — донат сразу в эфире!</span></div>
     </div>
     <div class="perks" id="perks"></div>
   </div>
 
   <div class="card" id="goalCard" style="display:none"><div class="goal-t"><span id="gTitle"></span><span id="gPct"></span></div><div class="track"><div class="fill" id="gFill" style="width:0"></div></div><div class="muted" style="margin-top:8px;font-size:14px" id="gNums"></div></div>
-  <div class="card" id="topCard" style="display:none"><h3 style="margin-bottom:8px">🏆 Топ донатеров месяца</h3><div id="top"></div></div>
+  <div class="card" id="topCard" style="display:none"><h3 style="margin-bottom:8px" data-i="top">🏆 Топ донатеров месяца</h3><div id="top"></div></div>
 
+  <div class="card" id="wallCard" style="display:none"><h3 style="margin-bottom:8px" data-i="wall">💬 Последние донаты</h3><div id="wall"></div></div>
   <div id="blocks"></div>
-  <div class="card" id="schCard" style="display:none"><h3 style="margin-bottom:10px">📅 Когда я в эфире</h3><div class="days" id="days"></div><div class="muted" id="schT" style="font-size:14px"></div></div>
+  <div class="card" id="schCard" style="display:none"><h3 style="margin-bottom:10px" data-i="sch">📅 Когда я в эфире</h3><div class="days" id="days"></div><div class="muted" id="schT" style="font-size:14px"></div></div>
   <div class="card" id="devCard" style="display:none"><h3 style="margin-bottom:12px" id="devT">🖥 Мой ПК</h3><div class="devs" id="devs"></div></div>
-  <div class="foot">Работает на <a href="/" style="color:var(--c)">KZStream</a> · деньги приходят напрямую стримеру, без комиссии<br>Сервис не является продуктом или партнёром АО «Kaspi Bank»</div>
+  <div class="foot"><span data-ih="foot">Работает на <a href="/" style="color:var(--c)">KZStream</a> · деньги приходят напрямую стримеру, без комиссии<br>Сервис не является продуктом или партнёром АО «Kaspi Bank»</span></div>
 </div>
 <script src="/js/socicons.js"></script>
 <script>
 (() => {
   const $ = s => document.querySelector(s);
+  // язык: RU / KZ (запоминается; казахский — если телефон на казахском)
+  let L = 'ru'; try { L = localStorage.kzLang || ((navigator.language || '').startsWith('kk') ? 'kz' : 'ru'); } catch { }
+  const D = {
+    info: ['ℹ️ Информация', 'ℹ️ Ақпарат'], pay: ['Задонатить через Kaspi', 'Kaspi арқылы донат жіберу'], copy: ['Копировать', 'Көшіру'], copied: ['Скопировано ✓', 'Көшірілді ✓'],
+    s1: ['Скопируйте номер и откройте <b>Kaspi.kz</b> → <b>Переводы</b> → <b>Клиенту Kaspi</b>.', 'Нөмірді көшіріп, <b>Kaspi.kz</b> → <b>Аударымдар</b> → <b>Kaspi клиентіне</b> бөлімін ашыңыз.'],
+    s2: ['Введите сумму', 'Соманы енгізіңіз:'],
+    s3: ['В поле <b>«Сообщение получателю»</b> напишите текст — он появится в эфире TikTok Live и будет озвучен.', '<b>«Алушыға хабарлама»</b> өрісіне мәтін жазыңыз — ол TikTok Live эфирінде шығып, дауыстап оқылады.'],
+    s4: ['Нажмите «Перевести». Готово — донат сразу в эфире!', '«Аудару» батырмасын басыңыз. Дайын — донат бірден эфирде!'],
+    top: ['🏆 Топ донатеров месяца', '🏆 Айдың үздік донатерлері'], sch: ['📅 Когда я в эфире', '📅 Эфир уақыты'], wall: ['💬 Последние донаты', '💬 Соңғы донаттар'],
+    foot: ['Работает на <a href="/" style="color:var(--c)">KZStream</a> · деньги приходят напрямую стримеру, без комиссии<br>Сервис не является продуктом или партнёром АО «Kaspi Bank»', '<a href="/" style="color:var(--c)">KZStream</a> негізінде · ақша стримерге тікелей, комиссиясыз түседі<br>Сервис «Kaspi Bank» АҚ өнімі немесе серіктесі емес'],
+    from: ['от {x}', '{x} бастап'], days: [['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'], ['Дс', 'Сс', 'Ср', 'Бс', 'Жм', 'Сб', 'Жс']],
+    start: ['Начало в {a}', 'Басталуы: {a}'], end: [', до {b}', ', {b} дейін'], tz: [' (время Казахстана)', ' (Қазақстан уақыты)'],
+    pc: ['🖥 Мой ПК', '🖥 Менің компьютерім'], laptop: ['💻 Мой ноутбук', '💻 Менің ноутбугым'], intt: ['в TikTok', 'TikTok-та'],
+    nonum: ['Номер не указан', 'Нөмір көрсетілмеген'], rcv: ['Получатель: ', 'Алушы: '], other: ['Другой банк', 'Басқа банк'],
+    tts: ['🗣 Озвучка', '🗣 Дауыстау'], ttsd: ['Сообщение прочитают голосом', 'Хабарламаны дауыстап оқиды'],
+    mus: ['🎵 Музыка', '🎵 Музыка'], musd: ['Вставьте ссылку YouTube в сообщение — ', 'Хабарламаға YouTube сілтемесін қойыңыз — '],
+    rou: ['🎰 Рулетка', '🎰 Рулетка'], roud: ['Донат {x} крутит рулетку с заданием', '{x} донат тапсырмасы бар рулетканы айналдырады'],
+    of: ['{a} из {b}', '{a} / {b}'], nf: ['Стример не найден', 'Стример табылмады'], ttl: ['Донат для {n} — KZStream', '{n} үшін донат — KZStream'], num: ['Номер Kaspi', 'Kaspi нөмірі'],
+    now: ['только что', 'жаңа ғана'], min: ['{x} мин назад', '{x} мин бұрын'], hr: ['{x} ч назад', '{x} сағ бұрын'], day: ['{x} дн назад', '{x} күн бұрын'],
+    dev: { cpu: ['Процессор', 'Процессор'], gpu: ['Видеокарта', 'Бейнекарта'], ram: ['Память', 'Жады'], mb: ['Материнская плата', 'Аналық плата'], storage: ['Накопитель', 'Жинақтағыш'], monitor: ['Монитор', 'Монитор'], mouse: ['Мышь', 'Тінтуір'], keyboard: ['Клавиатура', 'Пернетақта'], headphones: ['Наушники', 'Құлаққап'], mic: ['Микрофон', 'Микрофон'], camera: ['Камера', 'Камера'], pad: ['Коврик', 'Кілемше'] },
+  };
+  const I = L === 'kz' ? 1 : 0;
+  const t = (k, o = {}) => String(D[k][I]).replace(/\{(\w)\}/g, (_, v) => o[v] ?? '');
+  document.documentElement.lang = L === 'kz' ? 'kk' : 'ru';
+  document.querySelectorAll('[data-i]').forEach(e => e.textContent = t(e.dataset.i));
+  document.querySelectorAll('[data-ih]').forEach(e => e.innerHTML = t(e.dataset.ih));
+  document.querySelectorAll('#lang button').forEach(b => { b.classList.toggle('on', b.dataset.l === L); b.onclick = () => { try { localStorage.kzLang = b.dataset.l; } catch { } location.reload(); }; });
+  const ago = ms => { const m = Math.floor((Date.now() - ms) / 60000); return m < 1 ? t('now') : m < 60 ? t('min', { x: m }) : m < 1440 ? t('hr', { x: Math.floor(m / 60) }) : t('day', { x: Math.floor(m / 1440) }); };
   const nick = decodeURIComponent(location.pathname.split('/')[2] || '');
   const fmt = n => Number(n || 0).toLocaleString('ru-RU').replace(/,/g, ' ') + ' ₸';
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -116,7 +148,7 @@ body.d-amethyst{--c:#b47cff;background:radial-gradient(ellipse at 50% 0,rgba(180
   }
   fetch('/api/page/' + encodeURIComponent(nick)).then(r => r.ok ? r.json() : Promise.reject()).then(p => {
     const pg = p.page, name = pg.title || p.nick;
-    document.title = `Донат для ${name} — KZStream`;
+    document.title = t('ttl', { n: name });
     if (pg.color) document.documentElement.style.setProperty('--c', pg.color);
     $('#title').textContent = name; $('#desc').textContent = pg.description;
     if (p.badges && p.badges.length) $('#title').insertAdjacentHTML('afterend', '<div class="bdg">' + p.badges.map(b => `<span class="bd" style="--b:${esc(b.color)}" title="${esc(b.name)}"><i>${esc(b.icon)}</i>${esc(b.name)}</span>`).join('') + '</div>');
@@ -124,33 +156,34 @@ body.d-amethyst{--c:#b47cff;background:radial-gradient(ellipse at 50% 0,rgba(180
     if (pg.banner) $('#banner').style.backgroundImage = `url("${pg.banner}")`;
     const KS = window.KZSOC;
     $('#soc').innerHTML = KS.list.filter(([k]) => /^https?:\/\//.test((pg.socials || {})[k] || '')).map(([k, n, c]) => `<a href="${esc(pg.socials[k])}" target="_blank" rel="noopener" title="${n}" class="si" style="background:${c}">${KS.icon(k, 22)}</a>`).join('');
-    if (pg.tiktok) $('#tt').innerHTML = `<a class="ttbtn" href="https://www.tiktok.com/@${encodeURIComponent(pg.tiktok)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="#fff"><path d="M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-2.6-2.6c.3 0 .5 0 .8.1V9.7a5.8 5.8 0 1 0 5 5.7V9a7.4 7.4 0 0 0 4.3 1.4V7.3a4.3 4.3 0 0 1-3.3-1.5z"/></svg>@${esc(pg.tiktok)} в TikTok</a>`;
+    if (pg.tiktok) $('#tt').innerHTML = `<a class="ttbtn" href="https://www.tiktok.com/@${encodeURIComponent(pg.tiktok)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="#fff"><path d="M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-2.6-2.6c.3 0 .5 0 .8.1V9.7a5.8 5.8 0 1 0 5 5.7V9a7.4 7.4 0 0 0 4.3 1.4V7.3a4.3 4.3 0 0 1-3.3-1.5z"/></svg>@${esc(pg.tiktok)} ${t('intt')}</a>`;
     if (pg.extra) { $('#extraCard').style.display = ''; $('#extra').textContent = pg.extra; }
     if (pg.bg) { document.body.classList.add('hasbg'); document.body.style.setProperty('--bgimg', `url("${pg.bg}")`); }
     if (pg.design && pg.design !== 'classic') document.body.classList.add('d-' + pg.design);
     const sc = pg.schedule || {};
-    if (sc.days && sc.days.length) { $('#schCard').style.display = ''; $('#days').innerHTML = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((d, i) => `<span class="${sc.days.includes(i) ? 'on' : ''}">${d}</span>`).join(''); $('#schT').textContent = sc.start ? `Начало в ${sc.start}${sc.end ? ', до ' + sc.end : ''} (время Казахстана)` : ''; }
-    const dv = pg.devices || {}, DN = { cpu: 'Процессор', gpu: 'Видеокарта', ram: 'Память', mb: 'Материнская плата', storage: 'Накопитель', monitor: 'Монитор', mouse: 'Мышь', keyboard: 'Клавиатура', headphones: 'Наушники', mic: 'Микрофон', camera: 'Камера', pad: 'Коврик' };
+    if (sc.days && sc.days.length) { $('#schCard').style.display = ''; $('#days').innerHTML = D.days[I].map((d, i) => `<span class="${sc.days.includes(i) ? 'on' : ''}">${d}</span>`).join(''); $('#schT').textContent = sc.start ? t('start', { a: sc.start }) + (sc.end ? t('end', { b: sc.end }) : '') + t('tz') : ''; }
+    const dv = pg.devices || {}, DN = Object.fromEntries(Object.entries(D.dev).map(([k, v]) => [k, v[I]]));
     const dl = [...Object.keys(DN).filter(k => dv.items && dv.items[k]).map(k => [DN[k], dv.items[k]]), ...(dv.custom || []).map(r => [r.k, r.v])];
-    if (dl.length) { $('#devCard').style.display = ''; $('#devT').textContent = dv.type === 'laptop' ? '💻 Мой ноутбук' : '🖥 Мой ПК'; $('#devs').innerHTML = dl.map(([k, v]) => `<div class="dv"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join(''); }
+    if (dl.length) { $('#devCard').style.display = ''; $('#devT').textContent = t(dv.type === 'laptop' ? 'laptop' : 'pc'); $('#devs').innerHTML = dl.map(([k, v]) => `<div class="dv"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join(''); }
     const bl = pg.blocks || {};
     $('#blocks').innerHTML = (bl.texts || []).map(t => `<div class="card tblk">${t.title ? `<h3 style="margin-bottom:8px">${esc(t.title)}</h3>` : ''}<p>${esc(t.text)}</p></div>`).join('') + (bl.links || []).map(l => `<div class="card">${l.title ? `<h3 style="margin-bottom:10px">${esc(l.title)}</h3>` : ''}<div class="lbtns">${l.items.map(i => `<a href="${esc(i.url)}" target="_blank" rel="noopener nofollow">${esc(i.label)}</a>`).join('')}</div></div>`).join('');
     const BK = { halyk: '#0a8a4b', freedom: '#7ac143', jusan: '#ff6a13', bcc: '#00a0e3', forte: '#9b2b7c', home: '#e30613', eurasian: '#003b7a', otbasy: '#00a651' };
-    let c2 = pg.cards2 || []; if (!c2.length && pg.cards) c2 = [{ bank: 'Другой банк', number: pg.cards }];
-    $('#cards').innerHTML = c2.map((c, i) => { const k = Object.keys(BK).find(b => c.bank.toLowerCase().includes(b)); return `<div class="cardx"><span class="bk" style="background:${k ? BK[k] : 'color-mix(in srgb,var(--c) 70%,#222)'}">${esc(c.bank.slice(0, 2).toUpperCase())}</span><span class="cn"><b>${esc(c.bank)}</b><span>${esc(c.number)}</span></span><button data-cp="${i}">Копировать</button></div>`; }).join('');
-    $('#cards').onclick = e => { const b = e.target.closest('[data-cp]'); if (!b) return; const t = c2[+b.dataset.cp].number.replace(/\s/g, ''); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => b.textContent = 'Скопировано ✓').catch(() => prompt('Номер', t)); };
+    let c2 = pg.cards2 || []; if (!c2.length && pg.cards) c2 = [{ bank: t('other'), number: pg.cards }];
+    $('#cards').innerHTML = c2.map((c, i) => { const k = Object.keys(BK).find(b => c.bank.toLowerCase().includes(b)); return `<div class="cardx"><span class="bk" style="background:${k ? BK[k] : 'color-mix(in srgb,var(--c) 70%,#222)'}">${esc(c.bank.slice(0, 2).toUpperCase())}</span><span class="cn"><b>${esc(c.bank)}</b><span>${esc(c.number)}</span></span><button data-cp="${i}">${t('copy')}</button></div>`; }).join('');
+    $('#cards').onclick = e => { const b = e.target.closest('[data-cp]'); if (!b) return; const tx = c2[+b.dataset.cp].number.replace(/\s/g, ''); (navigator.clipboard ? navigator.clipboard.writeText(tx) : Promise.reject()).then(() => b.textContent = t('copied')).catch(() => prompt(t('num'), tx)); };
     if (pg.effect && pg.effect !== 'none') fx(pg.effect, pg.effect_layer);
-    $('#num').textContent = pg.kaspi || 'Номер не указан'; $('#rcv').textContent = pg.receiver ? 'Получатель: ' + pg.receiver : '';
-    $('#minTxt').textContent = 'от ' + fmt(pg.min_amount);
+    $('#num').textContent = pg.kaspi || t('nonum'); $('#rcv').textContent = pg.receiver ? t('rcv') + pg.receiver : '';
+    $('#minTxt').textContent = t('from', { x: fmt(pg.min_amount) });
     const perks = [];
-    if (p.tts) perks.push(`<div class="perk"><b>🗣 Озвучка</b>Сообщение прочитают голосом${p.tts.min ? ' от ' + fmt(p.tts.min) : ''}</div>`);
-    if (p.media) perks.push(`<div class="perk"><b>🎵 Музыка</b>Вставьте ссылку YouTube в сообщение — от ${fmt(p.media.min)}</div>`);
-    if (p.roulette) perks.push(`<div class="perk"><b>🎰 Рулетка</b>Донат от ${fmt(p.roulette.min)} крутит рулетку с заданием</div>`);
+    if (p.tts) perks.push(`<div class="perk"><b>${t('tts')}</b>${t('ttsd')}${p.tts.min ? ' · ' + t('from', { x: fmt(p.tts.min) }) : ''}</div>`);
+    if (p.media) perks.push(`<div class="perk"><b>${t('mus')}</b>${t('musd')}${t('from', { x: fmt(p.media.min) })}</div>`);
+    if (p.roulette) perks.push(`<div class="perk"><b>${t('rou')}</b>${t('roud', { x: t('from', { x: fmt(p.roulette.min) }) })}</div>`);
     $('#perks').innerHTML = perks.join('');
-    $('#copy').onclick = () => { const t = (pg.kaspi || '').replace(/\s/g, ''); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => $('#copy').textContent = 'Скопировано ✓').catch(() => prompt('Номер Kaspi', t)); };
-    if (p.goal && p.goal.target) { $('#goalCard').style.display = ''; const pc = Math.min(100, p.goal.sum / p.goal.target * 100); $('#gTitle').textContent = '🎯 ' + p.goal.title; $('#gPct').textContent = Math.floor(pc) + '%'; $('#gNums').textContent = `${fmt(p.goal.sum)} из ${fmt(p.goal.target)}`; setTimeout(() => $('#gFill').style.width = pc + '%', 100); }
+    $('#copy').onclick = () => { const tx = (pg.kaspi || '').replace(/\s/g, ''); (navigator.clipboard ? navigator.clipboard.writeText(tx) : Promise.reject()).then(() => $('#copy').textContent = t('copied')).catch(() => prompt(t('num'), tx)); };
+    if (p.goal && p.goal.target) { $('#goalCard').style.display = ''; const pc = Math.min(100, p.goal.sum / p.goal.target * 100); $('#gTitle').textContent = '🎯 ' + p.goal.title; $('#gPct').textContent = Math.floor(pc) + '%'; $('#gNums').textContent = t('of', { a: fmt(p.goal.sum), b: fmt(p.goal.target) }); setTimeout(() => $('#gFill').style.width = pc + '%', 100); }
     if (p.top && p.top.length) { $('#topCard').style.display = ''; $('#top').innerHTML = p.top.map((t, i) => `<div class="top-r"><span class="pos">${i + 1}</span><span class="nm">${esc(t.name)}</span><span class="sm">${fmt(t.total)}</span></div>`).join(''); }
-  }).catch(() => { $('#title').textContent = 'Стример не найден'; $('#payCard').style.display = 'none'; });
+    if (p.wall && p.wall.length) { $('#wallCard').style.display = ''; $('#wall').innerHTML = p.wall.map(w => `<div class="wl"><i>${esc((w.name || '?')[0].toUpperCase())}</i><div><b>${esc(w.name)}</b><em>${fmt(w.amount)}</em>${w.message ? `<p>${esc(w.message)}</p>` : ''}</div><small>${ago(w.at)}</small></div>`).join(''); }
+  }).catch(() => { $('#title').textContent = t('nf'); $('#payCard').style.display = 'none'; });
 })();
 </script>
 </body>

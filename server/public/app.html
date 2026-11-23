@@ -210,6 +210,7 @@
 .lp-pv{position:sticky;top:18px;display:flex;flex-direction:column;align-items:center;gap:8px}
 .lp-phone{width:320px;height:640px;border-radius:44px;padding:12px;background:#07080d;border:2px solid rgba(255,255,255,.12);box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 0 0 6px #14151d}.lp-phone iframe{width:100%;height:100%;border:0;border-radius:32px;background:#0b0c12}
 .lp-at{display:flex;align-items:center;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03)}.lp-at span{padding:0 4px 0 14px;color:#fe2c55;font-weight:800}.lp-at input{border:0!important;background:none!important}
+.sw-row{display:flex;align-items:center;gap:10px;font-weight:700;margin:8px 0;cursor:pointer}.sw-row input{width:18px;height:18px;accent-color:#ff3b5c}
 .lp-cnt{float:right;font-weight:600;color:#6b6f85;font-size:12px}
 .lp-seg{display:inline-flex;gap:4px;padding:4px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.lp-seg button{padding:8px 14px;border-radius:9px;border:0;background:none;color:#9aa0b8;font:800 13px Manrope;cursor:pointer}.lp-seg button.on{background:#ff3b5c;color:#fff}
 .lp-devs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.lp-devs label{display:block;font-size:12.5px;font-weight:700;color:#9aa0b8;margin-bottom:5px}
@@ -713,6 +714,12 @@ aside{display:flex;flex-direction:column}
             <div class="field"><label>Дополнительная информация <span class="lp-cnt" data-for="pg_extra"></span></label><textarea id="pg_extra" maxlength="500" rows="3" placeholder="Правила донатов, цели, промокоды…"></textarea></div>
             <div class="field"><label>Минимальная сумма доната, ₸</label><input type="number" id="pg_min" min="1"></div>
           </div>
+          <div class="card">
+            <h3>💬 Стена донатов</h3><p class="hint">Последние донаты с сообщениями на вашей странице — зрители видят, что донатят другие. Тестовые и скрытые донаты не показываются.</p>
+            <label class="sw-row"><input type="checkbox" id="pg_wall"> Показывать стену донатов</label>
+            <label class="sw-row"><input type="checkbox" id="pg_wall_msg"> Показывать сообщения (ссылки скрываются, мат вырезается)</label>
+            <div class="field" style="max-width:220px"><label>Сколько донатов показывать</label><select id="pg_wall_count"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></div>
+          </div>
         </div>
 
         <div class="lp-pane" data-p="cards">
@@ -952,6 +959,7 @@ aside{display:flex;flex-direction:column}
 <script src="/w/sfx.js"></script>
 <script src="/js/tiktok.js"></script>
 <script src="/js/socicons.js"></script>
+<script src="/js/i18n.js"></script>
 <script src="/js/page.js"></script>
 <script>document.querySelectorAll("[data-new-until]").forEach(b => { if (Date.now() > new Date(b.dataset.newUntil + "T23:59:59+05:00").getTime()) b.remove(); });</script>
 </body>

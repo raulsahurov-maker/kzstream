@@ -391,6 +391,26 @@
   </div>
 </div>
 
+<!-- PROMO -->
+<section id="promo" style="padding:60px 0 20px">
+  <div class="wrap promo-g">
+    <div class="reveal">
+      <span class="eyebrow">Смотрите за 24 секунды</span>
+      <h2 style="font-size:clamp(28px,3.6vw,42px);font-weight:700;margin:10px 0 14px">Как KZStream выглядит в эфире</h2>
+      <p style="color:var(--muted);font-size:17px;line-height:1.6;margin-bottom:22px">Зритель переводит на Kaspi — через пару секунд алерт с озвучкой уже в эфире TikTok. Плюс виджеты, личная страница и вся статистика в кабинете.</p>
+      <button class="btn btn-ghost" id="promoSnd" type="button">🔊 Включить звук</button>
+    </div>
+    <div class="promo-ph reveal"><video id="promoV" src="/media/promo.mp4" poster="/media/promo.jpg" autoplay muted loop playsinline preload="metadata"></video></div>
+  </div>
+</section>
+<style>
+.promo-g{display:grid;grid-template-columns:1fr 340px;gap:48px;align-items:center}
+.promo-ph{width:340px;aspect-ratio:9/16;border-radius:40px;padding:10px;background:#07080d;border:2px solid rgba(255,255,255,.12);box-shadow:0 40px 100px rgba(0,0,0,.55),0 0 80px rgba(255,59,92,.18)}
+.promo-ph video{width:100%;height:100%;border-radius:30px;object-fit:cover;display:block;background:#0b0c12}
+@media(max-width:860px){.promo-g{grid-template-columns:1fr;text-align:center}.promo-ph{margin:0 auto;width:min(300px,80vw)}}
+</style>
+<script>document.getElementById('promoSnd').onclick=function(){var v=document.getElementById('promoV');v.muted=!v.muted;if(!v.muted){v.currentTime=0;v.play();}this.textContent=v.muted?'🔊 Включить звук':'🔇 Выключить звук';};</script>
+
 <!-- HOW -->
 <section id="how">
   <div class="wrap">

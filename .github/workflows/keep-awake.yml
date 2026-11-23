@@ -5,9 +5,32 @@ on:
     - cron: '*/10 * * * *'
   workflow_dispatch:
 
+permissions:
+  issues: write
+
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 6
     steps:
-      - run: curl -s -o /dev/null -w "%{http_code}\n" --max-time 90 https://kzstream.onrender.com/healthz || true
+      - name: Проверить сайт и сообщить, если он упал
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          ok=0
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 https://kzstream.onrender.com/healthz || echo 000)
+            echo "Попытка $i: $code"
+            if [ "$code" = "200" ]; then ok=1; break; fi
+            sleep 40
+          done
+          open=$(gh issue list -R "$REPO" --label site-down --state open --json number --jq '.[0].number' || true)
+          if [ "$ok" = "1" ]; then
+            if [ -n "$open" ]; then gh issue close "$open" -R "$REPO" -c "✅ Сайт снова работает ($(date -u '+%Y-%m-%d %H:%M') UTC)"; fi
+          else
+            if [ -z "$open" ]; then
+              gh label create site-down -R "$REPO" --color d73a4a --description "Сайт не отвечает" 2>/dev/null || true
+              gh issue create -R "$REPO" --label site-down --title "🔴 Сайт KZStream не отвечает" --body "kzstream.onrender.com не ответил 3 раза подряд (последний код: $code). Проверьте Render: https://dashboard.render.com"
+            fi
+          fi

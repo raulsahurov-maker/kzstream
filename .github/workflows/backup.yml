@@ -1,0 +1,33 @@
+name: Резервная копия базы
+
+on:
+  schedule:
+    - cron: '13 22 * * *'   # каждый день в 03:13 по Алматы
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Скачать и зашифровать копию
+        env:
+          BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+        run: |
+          if [ -z "$BACKUP_KEY" ]; then echo "Нет секрета BACKUP_KEY"; exit 1; fi
+          for i in 1 2 3; do
+            code=$(curl -s -o db.json.gz -w "%{http_code}" --max-time 120 -H "x-backup-key: $BACKUP_KEY" https://kzstream.onrender.com/api/backup) && [ "$code" = "200" ] && break
+            echo "Попытка $i: $code"; sleep 30
+          done
+          [ "$code" = "200" ] || exit 1
+          gzip -t db.json.gz
+          # репозиторий публичный — без ключа файл бесполезен
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in db.json.gz -out kzstream-db.json.gz.enc -pass env:BACKUP_KEY
+          rm db.json.gz
+          ls -la kzstream-db.json.gz.enc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kzstream-db-${{ github.run_number }}
+          path: kzstream-db.json.gz.enc
+          retention-days: 30
+# Расшифровать: openssl enc -d -aes-256-cbc -pbkdf2 -in kzstream-db.json.gz.enc -out db.json.gz -pass pass:КЛЮЧ

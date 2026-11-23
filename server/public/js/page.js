@@ -121,6 +121,7 @@
   }
   function mark() { dirty = true; $('#lpSave').textContent = 'Сохранить •'; }
   $('#pg_tiktok').addEventListener('change', () => { const t = $('[data-soc=tiktok]'), v = $('#pg_tiktok').value.trim().replace(/^https?:\/\/(www\.)?tiktok\.com\/@?/i, '').replace(/^@/, '').split(/[/?#\s]/)[0]; $('#pg_tiktok').value = v; if (v && !t.value.trim()) { t.value = KS.norm('tiktok', v); socCheck(); } });
+  $('#p-page').addEventListener('change', e => { if (e.target.closest('.lp-ed') && e.target.type === 'checkbox' || e.target.tagName === 'SELECT') mark(); });
   $('#p-page').addEventListener('input', e => { if (e.target.closest('.lp-ed')) { mark(); if (e.target.dataset.soc) socCheck(); if (e.target.tagName === 'TEXTAREA') counters(); } });
 
   // ---------- загрузка в форму ----------
@@ -128,6 +129,7 @@
     const me = ME(); if (!me) return; const pg = me.settings.page;
     const v = (id, x) => { const el = $('#' + id); if (el) el.value = x ?? ''; };
     v('lpLink', me.urls.page); $('#lpOpen').href = me.urls.page;
+    $('#pg_wall').checked = !!pg.wall; $('#pg_wall_msg').checked = pg.wall_msg !== false; v('pg_wall_count', String(pg.wall_count || 10));
     v('pg_title', pg.title); v('pg_tiktok', pg.tiktok); v('pg_description', pg.description); v('pg_extra', pg.extra); v('pg_min', pg.min_amount);
     v('pg_kaspi', pg.kaspi); v('pg_receiver', pg.receiver);
     let cards2 = pg.cards2 || []; if (!cards2.length && pg.cards) cards2 = [{ bank: 'Карта', number: pg.cards }];
@@ -149,7 +151,7 @@
   addEventListener('hashchange', () => { if (location.hash === '#page' && !fr) frame(); });
 
   window.pageCollect = () => ({ page: {
-    title: $('#pg_title').value, tiktok: $('#pg_tiktok').value, description: $('#pg_description').value, extra: $('#pg_extra').value, min_amount: +$('#pg_min').value,
+    title: $('#pg_title').value, wall: $('#pg_wall').checked, wall_msg: $('#pg_wall_msg').checked, wall_count: +$('#pg_wall_count').value, tiktok: $('#pg_tiktok').value, description: $('#pg_description').value, extra: $('#pg_extra').value, min_amount: +$('#pg_min').value,
     kaspi: $('#pg_kaspi').value, receiver: $('#pg_receiver').value,
     cards2: readRows('#lpCards').filter(c => c.bank || c.number).map(c => ({ bank: c.bank || 'Карта', number: c.number })), cards: '',
     devices: { type: S.devType, items: Object.fromEntries($$('[data-dev]').map(i => [i.dataset.dev, i.value.trim()]).filter(x => x[1])), custom: readRows('#lpCustom').filter(r => r.k && r.v) },

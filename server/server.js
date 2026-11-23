@@ -186,7 +186,7 @@ function defaults(nick) {
   return {
     page: { title: nick, description: 'Спасибо за поддержку стрима!', kaspi: '', receiver: '', min_amount: 100, cards: '', avatar: '', banner: '', color: '#ff3b5c',
       socials: { twitch: '', youtube: '', tiktok: '', instagram: '', telegram: '', discord: '', donationalerts: '' },
-      tiktok: '', extra: '', bg: '', design: 'classic', effect: 'none', effect_layer: 'over',
+      tiktok: '', extra: '', wall: false, wall_count: 10, wall_msg: true, bg: '', design: 'classic', effect: 'none', effect_layer: 'over',
       devices: { type: 'pc', items: {}, custom: [] }, schedule: { days: [], start: '', end: '' }, cards2: [], blocks: { texts: [], links: [] } },
     alerts: { duration: 6, gif: '', sound: '', volume: 0.8, min_alert: 0, show_msg: true, theme: 'default',
       tts: true, min_tts: 0, tts_lang: 'ru', tts_voice: 'dmitry', tts_rate: 1, tts_read_name: false, variations: [], layout: 'classic', pool: [], pool_min: 0 },
@@ -592,6 +592,9 @@ app.put('/api/settings', auth, (req, res) => {
     // личная страница: TikTok, доп. инфо, девайсы, расписание, карты, свои блоки, оформление
     if (pg.tiktok !== undefined) s.page.tiktok = clampStr(String(pg.tiktok).replace(/^https?:\/\/(www\.)?tiktok\.com\/@?/i, '').replace(/^@/, '').split(/[/?#\s]/)[0], 40);
     if (pg.extra !== undefined) s.page.extra = clampStr(pg.extra, 500);
+    if (pg.wall !== undefined) s.page.wall = !!pg.wall;
+    if (pg.wall_msg !== undefined) s.page.wall_msg = !!pg.wall_msg;
+    if (pg.wall_count !== undefined) s.page.wall_count = Math.max(3, Math.min(20, Math.round(+pg.wall_count) || 10));
     const DEV = ['cpu', 'gpu', 'ram', 'mb', 'storage', 'monitor', 'mouse', 'keyboard', 'headphones', 'mic', 'camera', 'pad'];
     if (pg.devices) {
       const dv = pg.devices, items = {};
@@ -1034,7 +1037,10 @@ app.get('/api/page/:nick', (req, res) => {
     goal: { title: s.goal.title, sum: goalSum(u, s), target: s.goal.target },
     top: topList(u, { ...s, top: { period: 'month', count: 5 } }),
     media: s.media.enabled ? { min: s.media.min } : null, roulette: s.roulette.enabled ? { min: s.roulette.min } : null,
-    tts: p.tts && s.alerts.tts ? { min: s.alerts.min_tts || 0 } : null });
+    tts: p.tts && s.alerts.tts ? { min: s.alerts.min_tts || 0 } : null,
+    // стена донатов — только если стример включил её сам
+    wall: s.page.wall ? q(`SELECT name, amount, message, done_at FROM donations WHERE user_id=? AND status='done' AND hidden=0 AND source!='test' ORDER BY done_at DESC LIMIT ?`).all(u.id, s.page.wall_count || 10)
+      .map(d => ({ name: d.name, amount: d.amount, at: d.done_at, message: s.page.wall_msg === false ? '' : censor(String(d.message || '').replace(/https?:\/\/\S+/g, '🎵').slice(0, 160), s) })) : null });
 });
 app.get('/api/donate/status/:id', (req, res) => {
   const d = q('SELECT status FROM donations WHERE id=?').get(+req.params.id);
@@ -1077,6 +1083,16 @@ app.post('/api/app/diag/:token', (req, res) => {
   const L = DIAG.get(u.id) || [], b = req.body || {};
   for (const l of (Array.isArray(b.lines) ? b.lines : []).slice(0, 50)) L.push({ t: now(), m: String(l).slice(0, 400), v: String(b.version || '').slice(0, 12), os: String(b.os || '').slice(0, 60) });
   DIAG.set(u.id, L.slice(-300)); res.json({ ok: true });
+});
+// ежедневная резервная копия базы (забирает GitHub Actions по секретному ключу BACKUP_KEY и шифрует)
+app.get('/api/backup', (req, res) => {
+  const key = process.env.BACKUP_KEY || '';
+  if (!key || key.length < 16 || req.get('x-backup-key') !== key) return res.status(404).end();
+  const out = { at: now(), tables: {} };
+  for (const t of TABLES) {
+    try { out.tables[t] = t === 'file_data' ? q(`SELECT file, length(data) size FROM file_data`).all() : q(`SELECT * FROM ${t}`).all(); } catch (e) { out.tables[t] = { error: e.message }; }
+  }
+  res.set('Content-Type', 'application/gzip').send(require('zlib').gzipSync(Buffer.from(JSON.stringify(out))));
 });
 app.get('/api/admin/diag', admin, (req, res) => {
   const out = [...DIAG.entries()].map(([id, L]) => ({ nick: (userById(id) || {}).nick || id, last: L.length ? L[L.length - 1].t : 0, lines: L.slice(-80) }));
