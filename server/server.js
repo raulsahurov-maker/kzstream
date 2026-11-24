@@ -1305,14 +1305,29 @@ app.get('/api/tts/sample', auth, async (req, res) => {
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /api/\nDisallow: /w/\nSitemap: ${baseUrl(req)}/sitemap.xml\n`));
 app.get('/sitemap.xml', (req, res) => {
   const b = baseUrl(req), d = new Date().toISOString().slice(0, 10);
-  const pages = ['/', '/download', '/rules', '/policy', ...q('SELECT nick FROM users ORDER BY id DESC LIMIT 5000').all().map(u => '/d/' + encodeURIComponent(u.nick))];
+  const pages = ['/', '/download', '/rules', '/policy', ...q('SELECT * FROM users ORDER BY id DESC LIMIT 5000').all().filter(u => { try { return !!getSettings(u).page.kaspi; } catch { return false; } }).map(u => '/d/' + encodeURIComponent(u.nick))];
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pages.map(p => `<url><loc>${b}${p}</loc><lastmod>${d}</lastmod></url>`).join('')}</urlset>`);
 });
 app.get('/healthz', (req, res) => res.send('ok'));
 
 // --- страницы ---
 const PUB = path.join(__dirname, 'public');
-app.get('/d/:nick', (req, res) => res.sendFile(path.join(PUB, 'donate.html')));
+let DONATE_HTML = null;
+const escH = v => String(v || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+app.get('/d/:nick', (req, res) => {
+  // заголовок и описание прямо в HTML — Google видит их без JavaScript
+  if (!DONATE_HTML) DONATE_HTML = fs.readFileSync(path.join(PUB, 'donate.html'), 'utf8');
+  const u = q('SELECT * FROM users WHERE lower(nick)=lower(?)').get(String(req.params.nick || '').slice(0, 40));
+  let seo = '<meta name="robots" content="noindex">';
+  if (u) {
+    const pg = getSettings(u).page, name = pg.title || u.nick, b = baseUrl(req), url = `${b}/d/${encodeURIComponent(u.nick)}`;
+    const desc = (pg.description ? pg.description.slice(0, 120) + ' · ' : '') + `Задонатить ${name} через Kaspi — сообщение появится в эфире TikTok Live.`;
+    seo = `<title>Донат для ${escH(name)} — Kaspi · KZStream</title><meta name="description" content="${escH(desc)}"><link rel="canonical" href="${url}">`
+      + `<meta property="og:title" content="Донат для ${escH(name)}"><meta property="og:description" content="${escH(desc)}"><meta property="og:url" content="${url}"><meta property="og:image" content="${pg.avatar ? b + escH(pg.avatar) : b + '/og.jpg'}">`
+      + (pg.kaspi ? '' : '<meta name="robots" content="noindex">');
+  }
+  res.type('html').send((seo.includes('<title>') ? DONATE_HTML.replace(/<title>[^<]*<\/title>/, '').replace(/<meta name="description"[^>]*>/, '') : DONATE_HTML).replace('<!--SEO-->', seo));
+});
 app.get('/app', (req, res) => res.sendFile(path.join(PUB, 'app.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(PUB, 'admin.html')));
 app.get('/download', (req, res) => res.sendFile(path.join(PUB, 'download.html')));
