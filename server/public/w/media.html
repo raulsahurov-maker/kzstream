@@ -5,7 +5,7 @@
   #wrap{position:fixed;inset:0;display:flex;flex-direction:column;opacity:0;transform:scale(.97);transition:.35s;pointer-events:none}
   #wrap.on{opacity:1;transform:none;pointer-events:auto}
   #pbox{flex:1;position:relative;background:#000;border-radius:16px 16px 0 0;overflow:hidden}
-  #player{position:absolute;left:0;top:0;width:854px;height:480px;transform-origin:0 0;transform:scale(var(--pk,1),var(--pky,1))}
+  #player{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;transform:scale(var(--pk,1),var(--pky,1))}
   .cap{display:flex;align-items:center;gap:16px;padding:12px 20px;background:linear-gradient(90deg,rgba(14,6,28,.96),rgba(30,8,40,.94));border-radius:0 0 16px 16px;position:relative;border:2px solid #ff3ea5;border-top:none;box-shadow:0 0 26px rgba(255,62,165,.45),inset 0 0 22px rgba(255,62,165,.12)}
   .cap::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#ff3ea5,#ff7a45,#ffd23f,#3ee8ff);box-shadow:0 0 14px #ff3ea5}
   .cap .ic{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#ff3ea5,#ff7a45);display:grid;place-items:center;flex:none;font-size:22px;box-shadow:0 0 18px rgba(255,62,165,.8);}
@@ -72,8 +72,8 @@
     const L = $('bars').children, n = L.length, playing = (() => { try { return player.getPlayerState() === YT.PlayerState.PLAYING; } catch { return false; } })();
     for (let i = 0; i < n; i++) { const h = playing ? 18 + Math.abs(Math.sin(i * 1.7 + cur * 3.1)) * 62 + Math.random() * 20 : 18; L[i].style.transform = 'scaleY(' + Math.min(1, h / 100).toFixed(2) + ')'; L[i].classList.toggle('p', i / n <= k); }
   }
-  // размер плеера: рисуем 854×480 и растягиваем — YouTube не грузит 1080p/4K, видеокарта не перегружается
-  function fit() { if (BAR) return; const b = $('pbox'); if (!b) return; document.documentElement.style.setProperty('--pk', b.clientWidth / 854); document.documentElement.style.setProperty('--pky', b.clientHeight / 480); }
+  // размер плеера: рисуем 1280×720 (720p) и растягиваем — YouTube не грузит 1080p/4K, но картинка чёткая, видеокарта не перегружается
+  function fit() { if (BAR) return; const b = $('pbox'); if (!b) return; document.documentElement.style.setProperty('--pk', b.clientWidth / 1280); document.documentElement.style.setProperty('--pky', b.clientHeight / 720); }
   addEventListener('resize', fit); setTimeout(fit, 50);
   const ytId = u => (String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/) || [])[1];
   const post = (path, body) => fetch('/api/w/' + token + '/media/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
@@ -81,7 +81,7 @@
 
   window.onYouTubeIframeAPIReady = () => {
     player = new YT.Player('player', {
-      width: 854, height: 480, playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, disablekb: 1, iv_load_policy: 3, fs: 0 },
+      width: 1280, height: 720, playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, disablekb: 1, iv_load_policy: 3, fs: 0 },
       events: {
         onReady: () => { ready = true; next(); },
         onStateChange: e => {
