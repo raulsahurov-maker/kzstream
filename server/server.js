@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS payments(id INTEGER PRIMARY KEY, user_id INTEGER, pla
 CREATE TABLE IF NOT EXISTS files(id INTEGER PRIMARY KEY, user_id INTEGER, name TEXT, mime TEXT, size INTEGER, file TEXT, created_at INTEGER);
 CREATE TABLE IF NOT EXISTS file_data(file TEXT PRIMARY KEY, data BLOB);
 CREATE TABLE IF NOT EXISTS page_files(file TEXT PRIMARY KEY, user_id INTEGER, kind TEXT, mime TEXT, created_at INTEGER);
+CREATE TABLE IF NOT EXISTS bt_diag(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, t INTEGER, m TEXT, v TEXT);
 CREATE TABLE IF NOT EXISTS ingest_log(id INTEGER PRIMARY KEY, user_id INTEGER, hash TEXT, text TEXT, result TEXT, created_at INTEGER);
 CREATE INDEX IF NOT EXISTS il_user ON ingest_log(user_id, hash);
 `;
@@ -92,7 +93,7 @@ async function pushLoop() {
 const q = (sql) => { const st = db.prepare(sql); return {
   get: (...a) => clean(st.get(...a)), all: (...a) => st.all(...a).map(clean),
   run: (...a) => { const r = st.run(...a); if (remote) { outbox.push({ sql, args: a }); pushLoop(); } return r; } }; };
-const TABLES = ['users', 'sessions', 'donations', 'payments', 'files', 'file_data', 'ingest_log', 'faceit_track', 'page_files'];
+const TABLES = ['users', 'sessions', 'donations', 'payments', 'files', 'file_data', 'ingest_log', 'faceit_track', 'page_files', 'bt_diag'];
 async function initStorage() {
   if (!USE_TURSO) { console.log('Локальная база: ' + LOCAL_DB); return; }
   const { createClient } = require('@libsql/client');
@@ -1081,9 +1082,16 @@ app.post('/api/app/ping/:token', (req, res) => {
 app.post('/api/app/diag/:token', (req, res) => {
   const u = userByToken(req.params.token); if (!u) return res.status(404).json({ error: 'нет' });
   const L = DIAG.get(u.id) || [], b = req.body || {};
-  for (const l of (Array.isArray(b.lines) ? b.lines : []).slice(0, 50)) L.push({ t: now(), m: String(l).slice(0, 400), v: String(b.version || '').slice(0, 12), os: String(b.os || '').slice(0, 60) });
-  DIAG.set(u.id, L.slice(-300)); res.json({ ok: true });
+  for (const l of (Array.isArray(b.lines) ? b.lines : []).slice(0, 50)) {
+    const row = { t: now(), m: String(l).slice(0, 400), v: String(b.version || '').slice(0, 12), os: String(b.os || '').slice(0, 60) };
+    L.push(row); q('INSERT INTO bt_diag(user_id,t,m,v) VALUES(?,?,?,?)').run(u.id, row.t, row.m, row.v + ' · ' + row.os);
+  }
+  DIAG.set(u.id, L.slice(-300));
+  q('DELETE FROM bt_diag WHERE user_id=? AND id NOT IN (SELECT id FROM bt_diag WHERE user_id=? ORDER BY id DESC LIMIT 400)').run(u.id, u.id);
+  res.json({ ok: true });
 });
+// журнал подключения iPhone — стример видит свой, админ видит всех (переживает перезапуск сайта)
+app.get('/api/my/btlog', auth, (req, res) => res.json({ lines: q('SELECT t, m, v FROM bt_diag WHERE user_id=? ORDER BY id DESC LIMIT 150').all(req.user.id).reverse() }));
 // ежедневная резервная копия базы: шифруется открытым ключом (server/backup-public.pem) —
 // открыть копию можно только закрытым ключом, который хранится у владельца. Забирает GitHub Actions.
 let lastBackup = 0;
@@ -1102,6 +1110,9 @@ app.get('/api/backup', (req, res) => {
   res.set('Content-Type', 'application/octet-stream').send(Buffer.concat([Buffer.from('KZB1'), len, ek, iv, c.getAuthTag(), enc]));
 });
 app.get('/api/admin/diag', admin, (req, res) => {
+  const rows = q('SELECT user_id, t, m, v FROM bt_diag ORDER BY id DESC LIMIT 2000').all(), by = new Map();
+  for (const r of rows) { if (!by.has(r.user_id)) by.set(r.user_id, []); by.get(r.user_id).push({ t: r.t, m: r.m, v: r.v }); }
+  if (by.size) return res.json([...by.entries()].map(([id, L]) => ({ nick: (userById(id) || {}).nick || id, last: L[0].t, lines: L.slice(0, 120).reverse() })));
   const out = [...DIAG.entries()].map(([id, L]) => ({ nick: (userById(id) || {}).nick || id, last: L.length ? L[L.length - 1].t : 0, lines: L.slice(-80) }));
   res.json(out.sort((a, b) => b.last - a.last));
 });
@@ -1165,9 +1176,9 @@ app.get('/api/w/:token/faceit', async (req, res) => {
 app.get('/api/faceit/check', async (req, res) => { try { const d = await faceit.getPlayer(req.query.nick || 'donk', true); res.json({ ok: true, key: faceit.hasKey(), ...d, id: undefined, avatar: undefined, debug: faceit.debug() }); } catch (e) { res.json({ ok: false, key: faceit.hasKey(), error: e.message }); } });
 
 // версия программы для Windows — по ней программа предлагает обновиться
-const WIN_APP_VERSION = '2.3.5';
+const WIN_APP_VERSION = '2.3.6';
 app.get('/api/app/version', (req, res) => res.json({ windows: WIN_APP_VERSION, url: `${baseUrl(req)}/update/KZStream-Setup.exe`, setup: `${baseUrl(req)}/update/KZStream-Setup.exe`,
-  notes: 'Сайт теперь точно видит, запущена ли программа. Плюс новое подключение iPhone по Bluetooth' }));
+  notes: 'iPhone по Bluetooth: подробный журнал подключения — его видно на сайте в разделе «Установка»' }));
 
 // --- приём уведомлений от приложений (Android / Windows / iPhone) ---
 function ingest(req, res) {

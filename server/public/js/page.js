@@ -230,5 +230,10 @@
   addEventListener('kz:me', () => { profile(); ovSoon(); openActive(); if (!loaded) { fill(); loaded = true; } });
   setInterval(() => { if (!document.hidden) overview(); }, 20000);
   addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+  // журнал iPhone-Bluetooth
+  async function btLog() { try { const r = await api('/api/my/btlog'); const el = $('#btLog'); if (!el) return; el.textContent = r.lines.length ? r.lines.map(l => new Date(l.t).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '  ' + l.m).join('\n') : 'Пока пусто — подключите iPhone в программе KZStream для Windows'; el.scrollTop = el.scrollHeight; } catch { } }
+  if ($('#btLogRef')) $('#btLogRef').onclick = btLog;
+  addEventListener('hashchange', () => { if (location.hash === '#devices') btLog(); });
+  if (location.hash === '#devices') setTimeout(btLog, 1500);
   if (window.KZME) dispatchEvent(new Event('kz:me'));
 })();

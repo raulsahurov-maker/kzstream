@@ -456,6 +456,12 @@ class IphoneBT:
             return False
         self._dev = dev
         self.name = dev.name or self.name or 'iPhone'
+        try:  # подробности для журнала поддержки (видно на сайте в «Установка»)
+            pr = dev.device_information.pairing
+            self.log(f'диаг: устройство «{dev.name}», адрес {dev.bluetooth_address:012X}, тип адреса {int(dev.bluetooth_address_type)}, '
+                     f'связь {int(dev.connection_status)}, пара LE {pr.is_paired}, можно создать пару {pr.can_pair}')
+        except Exception as e:
+            self.log(f'диаг: не удалось прочитать устройство ({e})')
         if GattSession is not None:  # держим связь, иначе Windows рвёт её до ответа на iPhone
             try:
                 self._session = await GattSession.from_device_id_async(dev.bluetooth_device_id)
@@ -470,6 +476,15 @@ class IphoneBT:
             res = await dev.get_gatt_services_for_uuid_async(ANCS, BluetoothCacheMode.UNCACHED)
             if _ok(res.status) and res.services.size:
                 break
+            if i in (0, 6, 18):
+                try:
+                    allr = await dev.get_gatt_services_async(BluetoothCacheMode.UNCACHED)
+                    uu = [str(allr.services.get_at(k).uuid)[4:8] for k in range(allr.services.size)] if _ok(allr.status) else []
+                    self.log(f'диаг: ANCS статус {int(res.status)}, всех служб {len(uu)} ({",".join(uu) or "—"}), '
+                             f'связь {int(dev.connection_status)}, пара {dev.device_information.pairing.is_paired}, '
+                             f'защита {int(dev.device_information.pairing.protection_level)}')
+                except Exception as e:
+                    self.log(f'диаг: список служб не получен ({e})')
             if i == 0:
                 self._set('allow')
                 self.log('На iPhone нажмите «Разрешить» в запросе об уведомлениях. Если запроса нет: '

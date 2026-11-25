@@ -409,6 +409,11 @@ aside{display:flex;flex-direction:column}
     </div>
     <div class="card"><h3>Последние уведомления от приложения</h3><p class="hint">Здесь видно, что приходит с телефона и как сервер это распознал.</p>
       <table><thead><tr><th>Время</th><th>Текст</th><th>Результат</th></tr></thead><tbody id="ingestLog"></tbody></table></div>
+      <div class="card" id="btLogCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">📋 Журнал подключения iPhone по Bluetooth</h3><button class="btn btn-ghost btn-sm" id="btLogRef" type="button">↻ Обновить</button></div>
+      <p class="hint">Сюда программа KZStream для Windows присылает шаги подключения iPhone. Если iPhone не подключается — сделайте скриншот этого журнала и отправьте в поддержку.</p>
+      <div id="btLog" style="max-height:320px;overflow:auto;font:600 12.5px/1.55 ui-monospace,Consolas,monospace;background:rgba(0,0,0,.25);border-radius:12px;padding:12px;color:#cfd3e3;white-space:pre-wrap">Пока пусто — подключите iPhone в программе</div>
+    </div>
   </section>
 
   <!-- АЛЕРТЫ -->
