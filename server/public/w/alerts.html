@@ -43,6 +43,13 @@
   @keyframes flip{0%{transform:translateY(160px) rotateY(0) scale(.6)}35%{transform:translateY(-120px) rotateY(1440deg) scale(1.05)}75%{transform:translateY(10px) rotateY(2340deg) scale(1)}88%{transform:translateY(-14px) rotateY(2340deg)}100%{transform:translateY(0) rotateY(2340deg)}}
   .verdict{font-family:Unbounded;font-weight:800;font-size:40px;letter-spacing:.06em;background:linear-gradient(180deg,#fff6c8,#ffc84a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #7a4a00);opacity:0;transform:scale(.4);transition:.45s cubic-bezier(.2,1.6,.4,1);margin-bottom:10px}
   .verdict.on{opacity:1;transform:none}
+  /* КАРТОЧКА: своё фото, прозрачность, цвета, шрифт */
+  .kc{display:flex;align-items:center;gap:26px;padding:26px 40px 26px 28px;min-width:520px;max-width:min(980px,92vw);position:relative;opacity:0;transform:translateY(30px) scale(.9);transition:.55s cubic-bezier(.2,1.3,.4,1);text-align:left}
+  .kc.show{opacity:1;transform:none}.kc.hide{opacity:0;transform:translateY(-20px) scale(.96);transition:.4s}
+  .kc .ph{flex:none;width:150px;height:150px;border-radius:50%;background:center/cover;display:grid;place-items:center;font:800 64px Unbounded,sans-serif;color:#fff;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+  .kc .nm{font-size:44px;font-weight:800;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+  .kc .nm b{margin-left:14px}
+  .kc .tx{margin-top:10px;font-size:30px;font-weight:700;line-height:1.3;word-wrap:break-word;text-shadow:0 2px 10px rgba(0,0,0,.35)}
 </style></head>
 <body>
 <canvas id="rain"></canvas><div id="stage"></div>
@@ -115,7 +122,7 @@
   }
   const isVid = u => /\.(mp4|webm)(\?|$)/i.test(u || '');
   function sparks(box) { for (let i = 0; i < 18; i++) { const sp = document.createElement('i'); sp.className = 'spark'; const a = Math.random() * 6.28, r = 120 + Math.random() * 160; sp.style.cssText = `left:50%;top:50%;--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r}px;animation-delay:${.3 + Math.random() * .3}s;opacity:0`; box.appendChild(sp); } }
-  const capHtml = d => `<div class="nm">${esc(d.name)} — <span class="sum">${fmt(d.amount)}</span></div>${d.message ? `<div class="tx">${esc(d.message)}</div>` : ''}`;
+  const capHtml = d => `<div class="nm">${esc(d.name)} — <span class="sum">${fmt(d.amount)}</span></div>${d.message ? `<div class="tx">${esc(prettyMsg(d.message))}</div>` : ''}`;
   // проигрывание видео с его звуком (мем-алерт); гифка просто висит указанное время
   function playVideo(el) {
     if (aborted) return Promise.resolve();
@@ -158,6 +165,20 @@
   const coinSound = () => { for (let i = 0; i < 10; i++) tone(2200 + i * 80, i * .2, .07, 'triangle', .08); tone(3520, 2.3, .9, 'sine', .25); tone(4186, 2.35, .9, 'sine', .15); };
   const EAGLE = `<svg viewBox="0 0 120 90"><g fill="#7a4300"><path d="M60 22c-4 0-7 3-7 7 0 2 1 4 2 5l-6 3c-12-14-30-20-46-18 10 6 18 13 23 22-8-2-15-1-21 2 11 2 20 6 27 12l-6 6h8l2-3c4 2 8 3 12 3l-2 10 6-6 6 6-2-10c4 0 8-1 12-3l2 3h8l-6-6c7-6 16-10 27-12-6-3-13-4-21-2 5-9 13-16 23-22-16-2-34 4-46 18l-6-3c1-1 2-3 2-5 0-4-3-7-7-7z"/><circle cx="57" cy="27" r="1.6" fill="#ffd36a"/><path d="M53 29l-5 2 5 1z"/></g><g fill="none" stroke="#7a4300" stroke-width="2.4"><path d="M18 14c8-9 18-12 26-12M102 14c-8-9-18-12-26-12" opacity=".55"/></g></svg>`;
 
+  // ссылки в сообщении не показываем: YouTube → «🎵 заказ музыки»
+  function prettyMsg(m) { return String(m || '').replace(/(https?:\/\/|www\.)\S+/gi, u => /youtu\.?be|youtube\.com/i.test(u) ? '🎵 заказ музыки' : '🔗').trim(); }
+  const CF = { unbounded: ['Unbounded', 800], manrope: ['Manrope', 800], montserrat: ['Montserrat', 800], russo: ['Russo One', 400], rubik: ['Rubik', 700], comfortaa: ['Comfortaa', 700], oswald: ['Oswald', 600], lobster: ['Lobster', 400], caveat: ['Caveat', 700], pixel: ['Press Start 2P', 400] };
+  const fontLoaded = {};
+  function loadFont(k) { const f = CF[k] || CF.unbounded; if (fontLoaded[f[0]]) return f; fontLoaded[f[0]] = 1; const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=' + f[0].replace(/ /g, '+') + ':wght@' + f[1] + '&display=swap&subset=cyrillic'; document.head.appendChild(l); return f; }
+  const hexA = (h, a) => { const n = parseInt((h || '#000000').slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+  function cardHtml(d, C) {
+    C = Object.assign({ img: '', bg: '#0f3b3a', bg2: '#4b2a7a', op: .75, grad: true, border: '#ffffff', name: '#ffffff', sum: '#5ef2e6', text: '#ffffff', font: 'unbounded', radius: 28 }, C || {});
+    const f = loadFont(C.font), bg = C.op <= 0 ? 'transparent' : C.grad ? `linear-gradient(110deg,${hexA(C.bg, C.op)},${hexA(C.bg2, C.op)})` : hexA(C.bg, C.op);
+    const msg = prettyMsg(d.message);
+    return `<div class="kc" style="background:${bg};border-radius:${C.radius}px;border:2px solid ${hexA(C.border, C.op <= 0 ? 0 : .28)};font-family:'${f[0]}',Manrope,sans-serif;${C.op > 0 ? 'box-shadow:0 18px 50px rgba(0,0,0,.35);backdrop-filter:blur(6px);' : ''}">
+      <div class="ph" style="${C.img ? `background-image:url('${esc(C.img)}')` : `background:linear-gradient(135deg,${C.sum},${C.bg2})`}">${C.img ? '' : esc((d.name || '?')[0].toUpperCase())}</div>
+      <div style="min-width:0"><div class="nm" style="color:${C.name};font-weight:${f[1]}">${esc(d.name)}<b style="color:${C.sum};font-weight:${f[1]}">${fmt(d.amount)}</b></div>${msg && S.show_msg !== false ? `<div class="tx" style="color:${C.text}">${esc(msg)}</div>` : ''}</div></div>`;
+  }
   async function next() {
     if (busy || !queue.length || !S) return; busy = true; aborted = false;
     const d = queue.shift(), v = d.variation, stage = document.getElementById('stage');
@@ -166,7 +187,11 @@
     const t0 = Date.now(); let el;
     const say = async () => { if (d.voice_url) await playAudio(d.voice_url, 1); if (d.tts) { const txt = noName(cleanTts(d.message), d.name); if (txt) await speak(txt, d.tts_voice); } };
 
-    if (L === 'meme' && mediaSrc) {
+    if (L === 'card') {
+      stage.innerHTML = cardHtml(d, S.card); stage.style.alignItems = { top: 'flex-start', bottom: 'flex-end' }[(S.card || {}).pos] || 'center';
+      el = stage.firstElementChild; await new Promise(r => setTimeout(r, 60)); requestAnimationFrame(() => el.classList.add('show'));
+      await playAudio(v?.sound || S.sound || DEF_SOUND); await say();
+    } else if (L === 'meme' && mediaSrc) {
       stage.innerHTML = `<div class="meme">${isVid(mediaSrc) ? `<video class="mv" src="${esc(mediaSrc)}" playsinline preload="auto"></video>` : `<img class="mv" src="${esc(mediaSrc)}">`}<div class="cap">${capHtml(d)}</div></div>`;
       el = stage.firstElementChild; requestAnimationFrame(() => el.classList.add('show'));
       const vid = el.querySelector('video');
@@ -186,7 +211,7 @@
       stage.innerHTML = `<div class="alert">${mediaEl(mediaSrc)}<div class="box">
         <div class="title">${esc(d.name)} — <span class="sum">${fmt(d.amount)}</span></div>
         ${v?.text ? `<div class="vtext">${esc(v.text)}</div>` : ''}
-        ${d.message ? `<div class="msg">${esc(d.message)}</div>` : ''}</div></div>`;
+        ${d.message ? `<div class="msg">${esc(prettyMsg(d.message))}</div>` : ''}</div></div>`;
       el = stage.firstElementChild; requestAnimationFrame(() => el.classList.add('show'));
       sparks(el.querySelector('.box'));
       await playAudio(v?.sound || S.sound || DEF_SOUND); await say();
@@ -194,7 +219,7 @@
     const left = S.duration * 1000 - (Date.now() - t0);
     if (left > 0 && !aborted) await wait(left);
     el.classList.add('hide'); el.style.transition = '.4s'; el.style.opacity = 0; await new Promise(r => setTimeout(r, 450));
-    stage.innerHTML = ''; skipFn = null; busy = false;
+    stage.innerHTML = ''; stage.style.alignItems = ''; skipFn = null; busy = false;
     setTimeout(next, 400);
   }
   document.getElementById('unmute').onclick = function () { this.style.display = 'none'; };

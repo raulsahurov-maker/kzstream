@@ -333,6 +333,26 @@ aside{display:flex;flex-direction:column}
         <div class="my-alerts" id="libAlerts" style="margin-bottom:14px"></div>
         <div class="as-sec">Стили KZStream</div>
         <div class="as-grid" id="asGrid"></div>
+        <div id="cardCfg" hidden style="margin-top:16px;padding:16px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)">
+          <h3 style="margin:0 0 10px">🖼 Карточка с фото — настройки</h3>
+          <div id="cc_pv" style="padding:22px;border-radius:14px;background:repeating-conic-gradient(#1b1d27 0 25%,#232633 0 50%) 0 0/22px 22px;margin-bottom:14px;overflow:hidden"></div>
+          <div class="field"><label>Готовые цвета</label><div id="cc_presets" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>
+          <div class="row"><div class="field"><label>Фото (из «Хранилища»)</label><div style="display:flex;gap:6px"><select id="cc_img" style="flex:1"></select><button class="btn btn-ghost btn-sm" id="cc_imgClear" type="button">✕</button></div><small>Загрузите фото в «Хранилище» — оно появится в списке.</small></div>
+            <div class="field"><label>Шрифт</label><select id="cc_font"></select></div></div>
+          <div class="field"><label>Прозрачность фона: <b id="cc_opv">75%</b></label><input type="range" id="cc_op" min="0" max="100" step="5"><small>0% — совсем без фона, только фото и текст.</small></div>
+          <div class="row" style="flex-wrap:wrap">
+            <div class="field"><label>Фон</label><input type="color" id="cc_bg"></div>
+            <div class="field" id="cc_bg2w"><label>Фон 2 (градиент)</label><input type="color" id="cc_bg2"></div>
+            <div class="field"><label>Рамка</label><input type="color" id="cc_border"></div>
+            <div class="field"><label>Имя</label><input type="color" id="cc_name"></div>
+            <div class="field"><label>Сумма</label><input type="color" id="cc_sum"></div>
+            <div class="field"><label>Текст</label><input type="color" id="cc_text"></div>
+          </div>
+          <div class="row"><label class="sw-row" style="flex:1"><input type="checkbox" id="cc_grad"> Градиент из двух цветов</label>
+            <div class="field" style="flex:1"><label>Скругление углов</label><input type="range" id="cc_radius" min="0" max="60"></div>
+            <div class="field" style="flex:1"><label>Где на экране</label><select id="cc_pos"><option value="center">По центру</option><option value="top">Сверху</option><option value="bottom">Снизу</option></select></div></div>
+          <button class="btn btn-primary" id="cc_save" type="button">Сохранить карточку</button>
+        </div>
       </div>
       <div class="card" style="grid-column:1/-1">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>Превью — так алерт выглядит в TikTok Live</h3><div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="pvSound">🔇 Звук выключен</button><button class="btn btn-ghost btn-sm" id="pvHide">🙈 Скрыть превью</button></div></div><p class="hint">Отправьте тестовый донат и смотрите. Кнопка звука включает или выключает звук и озвучку <b>только здесь, на сайте</b> — в эфире алерты звучат как обычно.</p>

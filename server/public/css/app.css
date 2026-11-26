@@ -26,6 +26,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 textarea{min-height:90px;resize:vertical}
 input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
 input[type=range]{padding:0;accent-color:var(--accent)}
+input[type=color]{height:44px;padding:4px 6px;cursor:pointer}input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-webkit-color-swatch{border:none;border-radius:8px}
 .check{display:flex;align-items:center;gap:10px;font-size:14.5px;margin-bottom:12px;cursor:pointer}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .copy-row{display:flex;gap:8px}

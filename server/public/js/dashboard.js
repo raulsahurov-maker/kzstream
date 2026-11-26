@@ -64,20 +64,9 @@ function postGoal(extra) { $('#goalFrame').style.height = ({ water: 430, thermo:
 // ---------- голоса озвучки ----------
 const VOICE_LIST = [
   ['dmitry', 'Дмитрий', 'мужской · русский'], ['svetlana', 'Светлана', 'женский · русский'],
-  ['bass', 'Бас', 'низкий мужской'], ['chipmunk', 'Бурундук', 'писклявый, смешной'],
   ['daulet', 'Дәулет', 'мужской · қазақша'], ['aigul', 'Айгүл', 'женский · қазақша'],
-  ['andrew', 'Эндрю', 'американский акцент'], ['ava', 'Ава', 'американский акцент'],
-  ['emma', 'Эмма', 'английский акцент'], ['remy', 'Реми', 'французский акцент'], ['giuseppe', 'Джузеппе', 'итальянский акцент'],
-  ['brian', 'Брайан', 'американский, мужской'], ['vivienne', 'Вивьен', 'французский, женский'],
-  ['ostap', 'Остап', 'украинский акцент'], ['polina', 'Полина', 'украинский акцент'],
-  ['villain', 'Злодей', 'очень низкий, зловещий'], ['oldman', 'Дед', 'медленный, старческий'],
-  ['cartoon', 'Мультик', 'мультяшный, смешной'], ['fast', 'Скороговорка', 'очень быстрый'],
-  ['giant', 'Великанша', 'низкий женский'], ['baby', 'Балақай', 'детский · қазақша'],
-  ['hyunsu', 'Хёнсу', 'корейский акцент'], ['thalita', 'Талита', 'бразильский акцент'], ['william', 'Уильям', 'австралийский акцент'],
-  ['monster', 'Монстр', 'страшный, очень низкий'], ['helium', 'Гелий', 'как надышался шариком'], ['sleepy', 'Сонный', 'медленный, зевающий'],
-  ['princess', 'Принцесса', 'нежный женский'], ['granny', 'Бабуля', 'медленная, ласковая'],
-  ['kid', 'Ребёнок', 'детский голос'], ['aksakal', 'Ақсақал', 'мудрый · қазақша'], ['rapper', 'Рэпер', 'быстрый, с акцентом'],
-  ['boss', 'Босс', 'низкий, уверенный'], ['alien', 'Инопланетянка', 'высокий, странный'],
+  ['andrew', 'Эндрю', 'мужской, живой · лёгкий акцент'], ['brian', 'Брайан', 'мужской, спокойный · лёгкий акцент'],
+  ['ava', 'Ава', 'женский, живой · лёгкий акцент'], ['emma', 'Эмма', 'женский, мягкий · лёгкий акцент'],
 ];
 window.VOICE_LIST = VOICE_LIST; // и для озвучки чата TikTok
 let VOICESEL = 'dmitry', voiceAudio = null;
@@ -87,6 +76,7 @@ function voicePicker() {
 
 // ---------- стиль алерта и «Мои алерты» (главная) ----------
 const ALERT_STYLES = [
+  { id: 'card', name: 'Карточка с фото', desc: 'Своё фото, прозрачность, цвета и шрифт', free: true, pv: `<div style="display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:12px;background:linear-gradient(110deg,rgba(15,59,58,.85),rgba(75,42,122,.85));border:1px solid rgba(255,255,255,.3)"><i style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#5ef2e6,#4b2a7a)"></i><div style="text-align:left;line-height:1.1"><b style="font-size:9px;color:#fff">Аружан <span style="color:#5ef2e6">555 ₸</span></b><br><span style="font-size:8px;color:#fff">Привет!</span></div></div>` },
   { id: 'classic', name: 'Классика KZStream', desc: 'Гифка + карточка с именем', free: true, pv: `<div style="padding:6px 10px;border-radius:8px;border:1.5px solid #ff3b5c;background:#0e0f1a;font:800 9px Unbounded;color:#fff">Әлихан — <span style="color:#ff7a45">1 000 ₸</span></div>` },
   { id: 'meme', name: 'Мем-алерт', desc: 'Ваше видео, снизу имя и текст', free: true, pv: `<div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:62px;height:34px;border-radius:5px;background:linear-gradient(135deg,#333,#111);display:grid;place-items:center;font-size:14px">🎬</div><div style="font:800 7px Unbounded;color:#fff;padding:2px 6px;border-radius:4px;border:1px solid #ff3b5c">Әлихан — 1 000 ₸</div></div>` },
   { id: 'money', name: 'Денежный дождь', desc: 'Сыплются купюры тенге', free: false, pv: `<div style="position:absolute;inset:0">${[[8, 6, -20, '#2f8fd6'], [40, 30, 15, '#c79a2d'], [70, 4, 30, '#3a9c6a'], [20, 40, 50, '#c06a3a'], [86, 38, -10, '#2f8fd6'], [56, 50, -35, '#3a9c6a']].map(([x, y, r, c]) => `<i style="position:absolute;left:${x}%;top:${y}%;width:30px;height:15px;border-radius:2px;background:${c};transform:rotate(${r}deg);font:800 8px Unbounded;color:#fff;display:grid;place-items:center;font-style:normal">₸</i>`).join('')}</div><b style="position:relative;font:800 15px Unbounded;color:#ffc84a;text-shadow:0 2px 0 #7a4a00">+1 000 ₸</b>` },
@@ -103,6 +93,7 @@ function alertStyles() {
   $('#myAlerts').innerHTML = mine.map(f => `<div class="ma ${pool.includes(f.url) ? 'on' : ''}" data-ma="${f.url}">${f.mime.startsWith('video') ? `<video src="${f.url}#t=0.5" muted preload="metadata"></video>` : `<img src="${f.url}">`}<span class="ck">${pool.includes(f.url) ? '✓' : ''}</span><span class="nmm">${esc(f.name)}</span></div>`).join('') || '<div class="muted" style="font-size:13px;grid-column:1/-1">Загрузите своё видео или гифку — например, мем. При донате оно появится, снизу будет имя донатера и его текст, а голос прочитает сообщение.</div>';
   $('#libAlerts').innerHTML = ALERT_LIB.map(([id, nm]) => { const url = `/alerts-lib/${id}.mp4`, on = pool.includes(url);
     return `<div class="ma ${on ? 'on' : ''}" data-ma="${url}"><video src="${url}" poster="/alerts-lib/${id}.jpg" muted loop playsinline preload="none"></video><span class="ck">${on ? '✓' : ''}</span><span class="nmm">${nm}</span></div>`; }).join('');
+  acardUi();
   $('#asGrid').innerHTML = ALERT_STYLES.map(st => `<div class="as ${L === st.id ? 'on' : ''}" data-as="${st.id}"><div class="ap">${st.pv}</div>${!st.free && !ME.plan.shop ? '<span class="tg">🔒 Lite</span>' : ''}<b>${st.name}</b><span>${st.desc}</span></div>`).join('');
 }
 function vidAmounts() {
@@ -114,6 +105,39 @@ function vidAmounts() {
       <div class="vnm"><b>${esc(it.nm)}</b><span>${it.lib ? 'Готовый алерт KZStream' : 'Ваш файл'}</span></div>
       <label class="vmin">от <input type="number" min="0" step="100" value="${min}" placeholder="0"> ₸</label>
       <label class="sw2"><input type="checkbox" ${on ? 'checked' : ''}><i></i></label></div>`; }).join('');
+}
+// ---------- «Карточка с фото»: настройки ----------
+const ACARD_DEF = { img: '', bg: '#0f3b3a', bg2: '#4b2a7a', op: 0.75, grad: true, border: '#ffffff', name: '#ffffff', sum: '#5ef2e6', text: '#ffffff', font: 'unbounded', radius: 28, pos: 'center' };
+const ACARD_FONTS = [['unbounded', 'Unbounded'], ['manrope', 'Manrope'], ['montserrat', 'Montserrat'], ['russo', 'Russo One'], ['rubik', 'Rubik'], ['comfortaa', 'Comfortaa'], ['oswald', 'Oswald'], ['lobster', 'Lobster'], ['caveat', 'Caveat'], ['pixel', 'Press Start 2P']];
+const ACARD_PRESETS = [['Бирюза', { bg: '#0f3b3a', bg2: '#4b2a7a', sum: '#5ef2e6', name: '#ffffff', text: '#ffffff', grad: true }], ['Огонь', { bg: '#7a1020', bg2: '#ff7a00', sum: '#ffd23f', name: '#ffffff', text: '#ffffff', grad: true }], ['Неон', { bg: '#120a2e', bg2: '#ff2bd6', sum: '#00f0ff', name: '#ffffff', text: '#e9e3ff', grad: true }], ['Лес', { bg: '#0b3d1e', bg2: '#1f7a4c', sum: '#b8ff6a', name: '#ffffff', text: '#eaffea', grad: true }], ['Золото', { bg: '#1a1408', bg2: '#5a4310', sum: '#ffcf4a', name: '#fff6dc', text: '#fff6dc', grad: true }], ['Белый', { bg: '#ffffff', bg2: '#e6ecff', sum: '#ff3b5c', name: '#111111', text: '#333333', grad: true }], ['Без фона', { op: 0 }]];
+let ACARD = null;
+function acardUi() {
+  const box = $('#cardCfg'); if (!box) return;
+  box.hidden = (ME.settings.alerts.layout || 'classic') !== 'card';
+  if (!ACARD) ACARD = { ...ACARD_DEF, ...(ME.settings.alerts.card || {}) };
+  if (!box.dataset.init) {
+    box.dataset.init = 1;
+    $('#cc_font').innerHTML = ACARD_FONTS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
+    $('#cc_presets').innerHTML = ACARD_PRESETS.map(([n], i) => `<button type="button" class="btn btn-ghost btn-sm" data-cp="${i}">${n}</button>`).join('');
+    $('#cc_presets').onclick = e => { const b = e.target.closest('[data-cp]'); if (!b) return; Object.assign(ACARD, { op: ACARD.op || .75 }, ACARD_PRESETS[+b.dataset.cp][1]); acardFill(); acardPv(); };
+    box.addEventListener('input', () => { acardRead(); acardPv(); });
+    box.addEventListener('change', () => { acardRead(); acardPv(); });
+    $('#cc_save').onclick = () => { acardRead(); saveAlerts({ card: ACARD, layout: 'card' }, 'Карточка сохранена ✓ — отправьте тестовый донат'); };
+    $('#cc_imgClear').onclick = () => { ACARD.img = ''; acardFill(); acardPv(); };
+  }
+  const imgs = FILES.filter(f => /^image\//.test(f.mime));
+  $('#cc_img').innerHTML = '<option value="">— без фото (первая буква имени) —</option>' + imgs.map(f => `<option value="${f.url}">${f.name}</option>`).join('');
+  acardFill(); acardPv();
+}
+function acardFill() { for (const k of ['bg', 'bg2', 'border', 'name', 'sum', 'text', 'font', 'pos']) $('#cc_' + k).value = ACARD[k]; $('#cc_img').value = ACARD.img || ''; $('#cc_op').value = Math.round(ACARD.op * 100); $('#cc_opv').textContent = Math.round(ACARD.op * 100) + '%'; $('#cc_radius').value = ACARD.radius; $('#cc_grad').checked = !!ACARD.grad; }
+function acardRead() { for (const k of ['bg', 'bg2', 'border', 'name', 'sum', 'text', 'font', 'pos']) ACARD[k] = $('#cc_' + k).value; ACARD.img = $('#cc_img').value; ACARD.op = +$('#cc_op').value / 100; $('#cc_opv').textContent = $('#cc_op').value + '%'; ACARD.radius = +$('#cc_radius').value; ACARD.grad = $('#cc_grad').checked; $('#cc_bg2w').style.opacity = ACARD.grad ? 1 : .4; }
+function acardPv() {
+  const C = ACARD, f = ACARD_FONTS.find(x => x[0] === C.font) || ACARD_FONTS[0], ha = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+  if (!document.getElementById('ccf-' + C.font)) { const l = document.createElement('link'); l.id = 'ccf-' + C.font; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=' + f[1].replace(/ /g, '+') + ':wght@400;600;700;800&display=swap'; document.head.appendChild(l); }
+  const bg = C.op <= 0 ? 'transparent' : C.grad ? `linear-gradient(110deg,${ha(C.bg, C.op)},${ha(C.bg2, C.op)})` : ha(C.bg, C.op);
+  $('#cc_pv').innerHTML = `<div style="display:flex;align-items:center;gap:16px;padding:16px 26px 16px 16px;border-radius:${C.radius * .6}px;background:${bg};border:2px solid ${ha(C.border, C.op <= 0 ? 0 : .28)};font-family:'${f[1]}',Manrope;max-width:100%">
+    <div style="flex:none;width:84px;height:84px;border-radius:50%;background:${C.img ? `center/cover url('${C.img}')` : `linear-gradient(135deg,${C.sum},${C.bg2})`};display:grid;place-items:center;color:#fff;font:800 36px Unbounded">${C.img ? '' : 'А'}</div>
+    <div style="min-width:0;text-align:left"><div style="font-size:26px;font-weight:800;color:${C.name};text-shadow:0 2px 10px rgba(0,0,0,.35)">Аружан <span style="color:${C.sum}">555 ₸</span></div><div style="margin-top:4px;font-size:18px;font-weight:700;color:${C.text};text-shadow:0 2px 8px rgba(0,0,0,.35)">Привет! Классный стрим 🔥 · 🎵 заказ музыки</div></div></div>`;
 }
 async function saveAlerts(part, msg) {
   try { const r = await api('/api/settings', { method: 'PUT', body: { alerts: part } }); ME.settings = r.settings; if (r.warnings?.length) toast(r.warnings.join('. '), true); else toast(msg || 'Сохранено ✓'); alertStyles(); vidAmounts(); }
@@ -442,6 +466,7 @@ function postInfo() { try { $('#infoFrame').contentWindow.postMessage({ kzInfo: 
 $('#tVoicePlay').onclick = () => { try { voiceAudio?.pause(); } catch { } voiceAudio = new Audio('/api/tts/sample?voice=' + val('tVoice')); voiceAudio.play().catch(() => toast('Не удалось воспроизвести', true)); };
 $('#asGrid').onclick = e => { const c = e.target.closest('.as'); if (!c) return; const st = ALERT_STYLES.find(x => x.id === c.dataset.as);
   if (!st.free && !ME.plan.shop) return toast('«' + st.name + '» — с тарифа Lite. Раздел «Тариф»', true);
+  if (st.id === 'card') { saveAlerts({ layout: 'card', card: ACARD || { ...ACARD_DEF, ...(ME.settings.alerts.card || {}) } }, 'Карточка с фото включена — настройте её ниже 👇'); setTimeout(() => $('#cardCfg').scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); return; }
   if (st.id === 'meme' && !poolUrls().length) {
     toast('Мем-алерт: выберите готовый ролик KZStream или загрузите своё видео 👇');
     ['#libAlerts', '#myAlerts'].forEach(q => { const el = $(q); el.classList.remove('as-flash'); void el.offsetWidth; el.classList.add('as-flash'); });

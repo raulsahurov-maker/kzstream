@@ -144,43 +144,18 @@ const GOAL_STYLES = ['classic', 'neon', 'battery', 'dream', 'water', 'ring', 'th
 const DREAMS = ['pc', 'phone', 'car', 'house', 'travel', 'game', 'mic', 'mouse', 'headphones', 'event'];
 const GOAL_MAX = 2000000;
 // стили алертов: classic и meme (свои видео/гифки) — бесплатно, денежный дождь и монетка — с Lite
-const ALERT_LAYOUTS = ['classic', 'meme', 'money', 'coin'], ALERT_FREE = ['classic', 'meme'];
+const ALERT_LAYOUTS = ['classic', 'meme', 'money', 'coin', 'card'], ALERT_FREE = ['classic', 'meme', 'card'];
+const CARD_FONTS = ['unbounded', 'manrope', 'montserrat', 'russo', 'rubik', 'comfortaa', 'oswald', 'lobster', 'caveat', 'pixel'];
 // голоса озвучки (Microsoft Neural — те же, что на FreeTTS). [голос, название, высота, скорость, язык для запасного варианта]
 const VOICES = {
   dmitry: ['ru-RU-DmitryNeural', 'Дмитрий', '', '', 'ru'],
   svetlana: ['ru-RU-SvetlanaNeural', 'Светлана', '', '', 'ru'],
-  bass: ['ru-RU-DmitryNeural', 'Бас', '-22%', '-8%', 'ru'],
-  chipmunk: ['ru-RU-SvetlanaNeural', 'Бурундук', '+45%', '+18%', 'ru'],
   daulet: ['kk-KZ-DauletNeural', 'Дәулет', '', '', 'kk'],
   aigul: ['kk-KZ-AigulNeural', 'Айгүл', '', '', 'kk'],
   andrew: ['en-US-AndrewMultilingualNeural', 'Эндрю', '', '', 'ru'],
   emma: ['en-US-EmmaMultilingualNeural', 'Эмма', '', '', 'ru'],
-  remy: ['fr-FR-RemyMultilingualNeural', 'Реми', '', '', 'ru'],
-  giuseppe: ['it-IT-GiuseppeMultilingualNeural', 'Джузеппе', '', '', 'ru'],
   ava: ['en-US-AvaMultilingualNeural', 'Ава', '', '', 'ru'],
   brian: ['en-US-BrianMultilingualNeural', 'Брайан', '', '', 'ru'],
-  vivienne: ['fr-FR-VivienneMultilingualNeural', 'Вивьен', '', '', 'ru'],
-  ostap: ['uk-UA-OstapNeural', 'Остап', '', '', 'ru'],
-  polina: ['uk-UA-PolinaNeural', 'Полина', '', '', 'ru'],
-  villain: ['ru-RU-DmitryNeural', 'Злодей', '-35%', '-14%', 'ru'],
-  oldman: ['ru-RU-DmitryNeural', 'Дед', '-12%', '-28%', 'ru'],
-  cartoon: ['ru-RU-SvetlanaNeural', 'Мультик', '+60%', '+8%', 'ru'],
-  fast: ['ru-RU-DmitryNeural', 'Скороговорка', '', '+55%', 'ru'],
-  giant: ['ru-RU-SvetlanaNeural', 'Великанша', '-30%', '-10%', 'ru'],
-  baby: ['kk-KZ-AigulNeural', 'Балақай', '+45%', '+5%', 'kk'],
-  hyunsu: ['ko-KR-HyunsuMultilingualNeural', 'Хёнсу', '', '', 'ru'],
-  thalita: ['pt-BR-ThalitaMultilingualNeural', 'Талита', '', '', 'ru'],
-  william: ['en-AU-WilliamMultilingualNeural', 'Уильям', '', '', 'ru'],
-  monster: ['en-US-BrianMultilingualNeural', 'Монстр', '-45%', '-15%', 'ru'],
-  helium: ['ru-RU-SvetlanaNeural', 'Гелий', '+80%', '+10%', 'ru'],
-  sleepy: ['ru-RU-DmitryNeural', 'Сонный', '-8%', '-35%', 'ru'],
-  princess: ['ru-RU-SvetlanaNeural', 'Принцесса', '+28%', '+4%', 'ru'],
-  granny: ['ru-RU-SvetlanaNeural', 'Бабуля', '-15%', '-25%', 'ru'],
-  kid: ['ru-RU-SvetlanaNeural', 'Ребёнок', '+38%', '+6%', 'ru'],
-  aksakal: ['kk-KZ-DauletNeural', 'Ақсақал', '-20%', '-18%', 'kk'],
-  rapper: ['en-US-AndrewMultilingualNeural', 'Рэпер', '', '+35%', 'ru'],
-  boss: ['en-US-BrianMultilingualNeural', 'Босс', '-25%', '-8%', 'ru'],
-  alien: ['en-US-AvaMultilingualNeural', 'Инопланетянка', '+55%', '+12%', 'ru'],
 };
 const THEMES = ['default', 'neon', 'sunset', 'mint', 'royal', 'mono', 'candy', 'steppe', 'ice', 'gold'];
 function defaults(nick) {
@@ -190,7 +165,8 @@ function defaults(nick) {
       tiktok: '', extra: '', wall: false, wall_count: 10, wall_msg: true, bg: '', design: 'classic', effect: 'none', effect_layer: 'over',
       devices: { type: 'pc', items: {}, custom: [] }, schedule: { days: [], start: '', end: '' }, cards2: [], blocks: { texts: [], links: [] } },
     alerts: { duration: 6, gif: '', sound: '', volume: 0.8, min_alert: 0, show_msg: true, theme: 'default',
-      tts: true, min_tts: 0, tts_lang: 'ru', tts_voice: 'dmitry', tts_rate: 1, tts_read_name: false, variations: [], layout: 'classic', pool: [], pool_min: 0 },
+      tts: true, min_tts: 0, tts_lang: 'ru', tts_voice: 'dmitry', tts_rate: 1, tts_read_name: false, variations: [], layout: 'classic', pool: [], pool_min: 0,
+      card: { img: '', bg: '#0f3b3a', bg2: '#4b2a7a', op: 0.75, grad: true, border: '#ffffff', name: '#ffffff', sum: '#5ef2e6', text: '#ffffff', font: 'unbounded', radius: 28, pos: 'center' } },
     censor: { words: '', strip_links: true },
     nicks: {},
     goal: { title: 'Цель сбора', target: 100000, base: 0, start_at: Date.now(), theme: 'default', style: 'classic' },
@@ -647,6 +623,17 @@ app.put('/api/settings', auth, (req, res) => {
     if (a.tts_voice !== undefined) { if (!VOICES[a.tts_voice]) errors.push('Неизвестный голос'); else if (!p.tts && a.tts_voice !== 'dmitry') errors.push('Выбор голоса — с тарифа Lite'); else { A.tts_voice = a.tts_voice; A.tts_lang = VOICES[a.tts_voice][4]; } }
     if (a.tts_lang !== undefined && a.tts_voice === undefined) { if (!p.ttsAdvanced && a.tts_lang !== 'ru') errors.push('Выбор языка озвучки — тариф Pro'); else if (['ru', 'kk', 'en', 'tr', 'uk'].includes(a.tts_lang)) A.tts_lang = a.tts_lang; }
     if (a.tts_rate !== undefined) A.tts_rate = p.ttsAdvanced ? Math.min(2, Math.max(0.5, +a.tts_rate || 1)) : 1;
+    if (a.card && typeof a.card === 'object') {
+      const c = a.card, C = { ...(A.card || {}) }, col = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : null;
+      if (c.img !== undefined) C.img = /^\/u\/\d+\/[\w.-]+$/.test(c.img || '') || /^\/pf\/\d+\/[\w.-]+$/.test(c.img || '') ? c.img : '';
+      for (const k of ['bg', 'bg2', 'border', 'name', 'sum', 'text']) if (c[k] !== undefined && col(c[k])) C[k] = c[k];
+      if (c.op !== undefined) C.op = Math.max(0, Math.min(1, +c.op || 0));
+      if (c.grad !== undefined) C.grad = !!c.grad;
+      if (c.font !== undefined && CARD_FONTS.includes(c.font)) C.font = c.font;
+      if (c.radius !== undefined) C.radius = Math.max(0, Math.min(60, Math.round(+c.radius) || 0));
+      if (c.pos !== undefined && ['center', 'top', 'bottom'].includes(c.pos)) C.pos = c.pos;
+      A.card = C;
+    }
     if (a.layout !== undefined) { if (!ALERT_LAYOUTS.includes(a.layout)) errors.push('Неизвестный стиль алерта'); else if (!p.shop && !ALERT_FREE.includes(a.layout)) errors.push('Этот стиль алерта доступен с тарифа Lite'); else A.layout = a.layout; }
     if (Array.isArray(a.pool)) {
       // каждое видео: { url, min } — «от скольки тенге» показывать
