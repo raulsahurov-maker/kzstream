@@ -32,7 +32,7 @@ import webbrowser
 import requests
 
 APP_NAME = 'KZStream'
-VERSION = '2.3.7'
+VERSION = '2.0.1'
 DEFAULT_SERVER = 'https://kzstream.onrender.com'
 APP_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), APP_NAME)
 CFG_PATH = os.path.join(APP_DIR, 'config.json')
@@ -460,7 +460,7 @@ class Api:
     def check_update(self, silent=False):
         try:
             j = requests.get(f"{self.cfg['server']}/api/app/version", timeout=40).json()
-            if ver_tuple(j.get('windows')) > ver_tuple(VERSION):
+            if j.get('windows') and ver_tuple(j.get('windows')) != ver_tuple(VERSION):
                 self.update_info = {'version': j['windows'], 'url': j.get('url') or self.cfg['server'] + '/update/KZStream-Setup.exe', 'setup': j.get('setup'), 'notes': j.get('notes', '')}
                 self.push('update', self.update_info)
                 return self.update_info
