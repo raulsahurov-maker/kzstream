@@ -1163,9 +1163,9 @@ app.get('/api/w/:token/faceit', async (req, res) => {
 app.get('/api/faceit/check', async (req, res) => { try { const d = await faceit.getPlayer(req.query.nick || 'donk', true); res.json({ ok: true, key: faceit.hasKey(), ...d, id: undefined, avatar: undefined, debug: faceit.debug() }); } catch (e) { res.json({ ok: false, key: faceit.hasKey(), error: e.message }); } });
 
 // версия программы для Windows — по ней программа предлагает обновиться
-const WIN_APP_VERSION = '2.3.6';
+const WIN_APP_VERSION = '2.3.7';
 app.get('/api/app/version', (req, res) => res.json({ windows: WIN_APP_VERSION, url: `${baseUrl(req)}/update/KZStream-Setup.exe`, setup: `${baseUrl(req)}/update/KZStream-Setup.exe`,
-  notes: 'iPhone по Bluetooth: подробный журнал подключения — его видно на сайте в разделе «Установка»' }));
+  notes: 'Окно «iPhone по Bluetooth» теперь прокручивается и помещается на любом экране' }));
 
 // --- приём уведомлений от приложений (Android / Windows / iPhone) ---
 function ingest(req, res) {

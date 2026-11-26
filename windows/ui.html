@@ -124,11 +124,13 @@
   .feedc{padding:14px}.feedc .feed{max-height:250px;margin-top:0}
   .logc{padding:14px}.logc #log{max-height:110px;margin-top:0}
   .empty .eic{width:46px;height:46px;border-radius:14px;background:var(--card2);display:grid;place-items:center;margin:0 auto 10px;font-size:20px}
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;z-index:50}
-  .mbox{width:min(460px,92vw);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;z-index:50;padding:12px;overflow:auto}
+  .mbox{max-height:calc(100vh - 24px);overflow-y:auto;width:min(460px,92vw);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
   .gwname{margin:18px 0;padding:22px;border-radius:16px;background:var(--bg2);border:1px dashed var(--line);text-align:center;font-family:Unbounded,"Segoe UI",sans-serif;font-weight:800;font-size:24px;min-height:84px}
   .gwname.win{border-style:solid;border-color:var(--warn);color:var(--warn);box-shadow:0 0 30px rgba(255,200,74,.25)}
-  .btm{width:min(560px,94vw);padding:0;overflow:hidden}
+  .btm{width:min(560px,94vw);padding:0;overflow:hidden;display:flex;flex-direction:column}
+  .btm .bth{flex:none}.btm .bb{flex:1;min-height:0;overflow-y:auto}
+  .btm .bb::-webkit-scrollbar,.mbox::-webkit-scrollbar{width:8px}.btm .bb::-webkit-scrollbar-thumb,.mbox::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px}
   .btm .bth{display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line);background:linear-gradient(120deg,rgba(255,59,92,.14),transparent 70%)}
   .btm .bth i{width:40px;height:40px;border-radius:12px;background:var(--grad);display:grid;place-items:center;font-style:normal;font-size:19px;box-shadow:0 8px 22px rgba(255,59,92,.35)}
   .btm .bth h2{font-size:16.5px}.btm .bth small{display:block;color:var(--muted);font-size:12px;font-family:Manrope;font-weight:600;margin-top:2px}
