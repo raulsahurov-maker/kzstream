@@ -56,7 +56,7 @@ module.exports = function setupTikTok(app, d) {
     const u = userById(uid); if (!u) return;
     const c = cfg(u), e = c[type]; if (!e || !e.on) return;
     const x = conns.get(uid);
-    if (type === 'follow' && x) { x.seen = x.seen || new Set(); if (x.seen.has(data.id)) return; x.seen.add(data.id); }
+    if (type === 'follow' && x && data.id) { x.seen = x.seen || new Set(); if (x.seen.has(data.id)) return; x.seen.add(data.id); }
     emit(uid, 'tt', { type, user: data.name, id: data.id, avatar: data.avatar || '', gift: data.gift || '', count: data.count || 1, cfg: { ...e, tts: !!(e.tts && c.tts.on && canTts(u)) }, voice: c.tts.voice, tvol: c.tts.vol, popup: c.popup });
   }
   // топ лайкеров текущего эфира (обнуляется, когда начинается новый эфир)
@@ -127,9 +127,13 @@ module.exports = function setupTikTok(app, d) {
             if (gt === 1 && !m.repeatEnd) continue;
             fire(uid, 'gift', { ...who(m), gift: m.giftDetails?.giftName || m.gift?.name || 'подарок', count: m.repeatCount || 1 });
           }
-          else if (t === 'WebcastSocialMessage') {
-            const k = m.common?.displayText?.key || '';
-            if (k.includes('follow')) fire(uid, 'follow', who(m)); else if (k.includes('share')) fire(uid, 'share', who(m));
+          else if (/social|follow|share/i.test(t)) {
+            // подписка/репост: TikTok помечает их по-разному — смотрим action, displayType, ключ текста и тип события
+            const k = [m.displayType, m.common?.displayText?.key, m.common?.displayText?.defaultPattern, m.label, t].filter(Boolean).join(' ').toLowerCase();
+            const act = +(m.action ?? m.common?.action ?? 0);
+            if (!x.socLog || x.socLog < 5) { x.socLog = (x.socLog || 0) + 1; console.log(`TikTok social @${user}: ${t} act=${act} key=${k.slice(0, 120)}`); }
+            if (act === 1 || /follow/.test(k)) fire(uid, 'follow', who(m));
+            else if (act === 3 || /share/.test(k)) fire(uid, 'share', who(m));
           }
         }
       });
