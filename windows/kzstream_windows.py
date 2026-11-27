@@ -40,7 +40,7 @@ IS_WIN = sys.platform == 'win32'
 NO_WINDOW = 0x08000000 if IS_WIN else 0
 
 MONEY = re.compile(r'\d[\d\s  ]*([.,]\d{1,2})?\s*(₸|тг|тенге|KZT)|(₸|KZT)\s*\d', re.I)
-BANK_WORDS = ('kaspi', 'каспи', 'перевод', 'пополнен', 'поступ', 'зачисл', 'halyk', 'jusan', 'freedom', 'аударым', 'түсті')
+BANK_WORDS = ('kaspi', 'каспи', 'перевод', 'пополнен', 'поступ', 'зачисл', 'halyk', 'homebank', 'jusan', 'freedom', 'ffin', 'bcc', 'centercredit', 'forte', 'homecredit', 'eubank', 'bereke', 'otbasy', 'rbk', 'аударым', 'түсті')
 PHONE_LINK_APPS = ('связь с телефоном', 'phone link', 'your phone', 'ваш телефон', 'телефонмен байланыс')
 
 try:
